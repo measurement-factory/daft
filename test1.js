@@ -6,14 +6,16 @@ class MyTransaction extends Transaction {
 
 class MyTransaction2 extends Transaction {
 	adaptRequest(virginRequest) {
-		return super.adaptRequest("2" + virginRequest + "2");
+		return super.adaptRequest(".2" + virginRequest + "2.");
 	}
 }
 
-Transaction = MyTransaction;
+function myRequestAdapter(virginRequest) {
+	return requestAdapter(".!" + virginRequest + "!.");
+}
 
-NewTypes.setNumbered(Transaction, 2, MyTransaction2);
+Types.setNumbered(Transaction, MyTransaction2, 2);
 
-NewTypes.set("RequestAdapter?", MyAdapterX, function (request) {
-	return request.header.has("If-Modified-Since");
+Types.setMatching(requestAdapter, myRequestAdapter, function (request) {
+	return request.toString().indexOf("x") >= 0;
 });

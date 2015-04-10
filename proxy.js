@@ -1,4 +1,6 @@
-let net = require('net');
+#!/usr/bin/env babel-node
+
+import net from 'net';
 
 let ListeningAddress = 13128; // TODO: Make configurable
 let OriginAddress = { // TODO: Make configurable
@@ -6,95 +8,86 @@ let OriginAddress = { // TODO: Make configurable
 	port: 8080,
 };
 
-class TypeMap {
-    constructor() {
-        this._map = new Map();
-    }
-    set(key, value) {
-        if (this._map.has(key))
-            throw new Error(`Cannot reset ${key} value`);
-        this._map.set(key, value);
-    }
-    get(key, defaultValue) {
-        return this._map.has(key) ? this._map.get(key) : defaultValue;
-    }
+import TypeMap from "./TypeMap";
+let Types = new TypeMap();
+
+function requestAdapter(virginRequest) {
+        return "=" + virginRequest + "=";
 }
 
-let Types = new SetOnceMap();
-
 class Transaction {
-	constructor(clientSocket) {
-		this.clientSocket = clientSocket;
-		this.serverSocket = null;
+	constructor(userSocket) {
+		console.log(`new ${Object.getPrototypeOf(this).constructor.name} transaction`);
 
-		clientSocket.on('data', data => {
+		this.userSocket = userSocket;
+		this.originSocket = null;
+
+		/ * setup event listeners for the user agent socket */
+
+		userSocket.on('data', data => {
 			this.onClientReceive(data);
 		});
  
-		clientSocket.on('end', () => {
-			if (this.serverSocket)
-				this.serverSocket.end();
+		userSocket.on('end', () => {
+			if (this.originSocket)
+				this.originSocket.end();
 		});
 	}
 
 	startConnecting() {
-		let {clientSocket, serverSocket} = this;
+		this.originSocket = net.connect(OriginAddress);
+		let {userSocket, originSocket} = this;
 
-		serverSocket = net.connect(OriginAddress);
+		/ * setup event listeners for the origin socket */
 
-		/ * setup event listeners for the server socket */
-
-		serverSocket.on('connection', () => {
-			console.log(`connected to ${serverSocket.remoteAddress}:${serverSocket.remotePort}`);
+		originSocket.on('connection', () => {
+			console.log(`connected to ${originSocket.remoteAddress}:${originSocket.remotePort}`);
 		});
 
-		serverSocket.on('data', data => {
+		originSocket.on('data', data => {
 			this.onServerReceive(data);
 		});
 
-		serverSocket.on('end', () => {
-			if (this.clientSocket)
-				this.serverSocket.end();
+		originSocket.on('end', () => {
+			if (this.userSocket)
+				this.originSocket.end();
 		});
 	}
 
 	onClientReceive(virginRequest) {
-		if (!this.serverSocket)
+		if (!this.originSocket)
 			this.startConnecting();
 
 		let adaptedRequest = this.adaptRequest(virginRequest);
 
 		// now or when connected
-		this.serverSocket.write(adaptedRequest);
+		this.originSocket.write(adaptedRequest);
 	}
 
 	onServerReceive(message) {
-		this.clientSocket.write(message);
+		this.userSocket.write(message);
 	}
 
 	adaptRequest(virginRequest) {
-		var adatper = Types.getMatching(RequestAdapter, virginRequest);
-		var xact = Types.getNumbered(Transaction, this.xactCount);
-		
-		return virginRequest;
+		let adapter = Types.getMatching(requestAdapter, virginRequest);
+		return adapter(virginRequest);
 	}
 }
 
 class Proxy {
-	start() {
-
+	constructor() {
 		this.xCount = 0;
+	}
 
-		// start a TCP Server
+	start() {
+		// start a TCP server
 		let server = net.createServer();
 
-		server.on('connection', clientSocket => {
+		server.on('connection', userSocket => {
 
 			++this.xCount;
-			let xName = "Transaction" + this.xCount;
-			console.log(`connect for ${xName}`);
-			new (Types.get(xName, Transaction))(clientSocket);
-			// xact->init(clientSocket);
+			new (Types.getNumberedOrMatching(Transaction, this.xCount, "x"))(userSocket);
+			// xact->init(userSocket);
 			// Transactions.splice(Transactions.indexOf(xact), 1);
 		});
 
@@ -104,13 +97,22 @@ class Proxy {
 	}
 }
 
-var fs = require('fs');
-fs.readFile('./test1.js5', function (err, data) {
+
+if (process.argv.length != 3) {
+	console.log(`usage: ${process.argv[1]} <test_case.js5>`);
+	process.exit(-1);
+}
+
+let fname = process.argv[2];
+console.log("Test case:", fname);
+
+import fs from 'fs';
+fs.readFile(fname, function (err, data) {
 	if (err)
 		throw err;
 
 	eval(data.toString());
 
-	let TheProxy = new Proxy();
-	TheProxy.start();
+	let proxy = new Proxy();
+	proxy.start();
 });
