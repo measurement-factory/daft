@@ -84,11 +84,8 @@ class Proxy {
 		let server = net.createServer();
 
 		server.on('connection', userSocket => {
-
 			++this.xCount;
 			new (Types.getNumberedOrMatching(Transaction, this.xCount, "x"))(userSocket);
-			// xact->init(userSocket);
-			// Transactions.splice(Transactions.indexOf(xact), 1);
 		});
 
 		server.listen(ListeningAddress);
