@@ -21,8 +21,8 @@ class Proxy {
 
 		server.on('connection', userSocket => {
 			++this.xCount;
-			let xactType = Global.Types.getNumberedOrMatching(
-				Transaction, this.xCount, "x");
+			let xactType = Global.Types.getNumberedOrMatched(
+				Transaction, this.xCount, userSocket);
 			new xactType(userSocket);
 		});
 
