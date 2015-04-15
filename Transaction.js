@@ -4,16 +4,8 @@ import net from 'net';
 import * as Config from './Config';
 import * as Global from "./Global";
 
-export function RequestAdapter(virginRequest) {
-        return ">" + virginRequest + ">";
-}
+export default class Transaction {
 
-export function ResponseAdapter(virginResponse) {
-        return "<" + virginResponse + "<";
-}
-
-export default
-class Transaction {
 	constructor(userSocket) {
 		let myType = Object.getPrototypeOf(this).constructor.name;
 		console.log(`starting ${myType} transaction`);
@@ -88,12 +80,10 @@ class Transaction {
 	}
 
 	adaptRequest(virginRequest) {
-		let adapter = Global.Types.getMatching(RequestAdapter, this, virginRequest);
-		return adapter(virginRequest);
+		return ">" + virginRequest + ">";
 	}
 
 	adaptResponse(virginResponse) {
-		let adapter = Global.Types.getMatching(ResponseAdapter, this, virginResponse);
-		return adapter(virginResponse);
+		return "<" + virginResponse + "<";
 	}
 }
