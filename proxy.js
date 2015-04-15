@@ -115,7 +115,9 @@ class Proxy {
 
 		server.on('connection', userSocket => {
 			++this.xCount;
-			new (Types.getNumberedOrMatching(Transaction, this.xCount, "x"))(userSocket);
+			let xactType = Types.getNumberedOrMatching(
+				Transaction, this.xCount, "x");
+			new xactType(userSocket);
 		});
 
 		server.listen(ListeningAddress);
