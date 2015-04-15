@@ -27,7 +27,7 @@ class Transaction {
 		this.userSocket = null;
 		this.originSocket = null;
 
-		startServingUser(userSocket);
+		this.startServingUser(userSocket);
 	}
 
 	destructor() {
