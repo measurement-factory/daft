@@ -1,108 +1,14 @@
 #!/usr/bin/env babel-node
 
+/*
+ * A driver script for the do-as-you-are-told HTTP proxy.
+ * Runs a proxy configured with a test case specified on the command line.
+ */
+
 import net from 'net';
-
-let ListeningAddress = 13128; // TODO: Make configurable
-let OriginAddress = { // TODO: Make configurable
-	host: 'localhost',
-	port: 8080,
-};
-
-import TypeMap from "./TypeMap";
-let Types = new TypeMap();
-
-function RequestAdapter(virginRequest) {
-        return ">" + virginRequest + ">";
-}
-
-function ResponseAdapter(virginResponse) {
-        return "<" + virginResponse + "<";
-}
-
-class Transaction {
-	constructor(userSocket) {
-		let myType = Object.getPrototypeOf(this).constructor.name;
-		console.log(`starting ${myType} transaction`);
-
-		this.userSocket = null;
-		this.originSocket = null;
-
-		this.startServingUser(userSocket);
-	}
-
-	destructor() {
-		let myType = Object.getPrototypeOf(this).constructor.name;
-		console.log(`ending ${myType} transaction`);
-	}
-
-	startServingUser(userSocket) {
-		this.userSocket = userSocket;
-
-		/ * setup event listeners for the user agent socket */
-
-		userSocket.on('data', data => {
-			this.onUserReceive(data);
-		});
- 
-		userSocket.on('end', () => {
-			console.log("user disconnected");
-			this.userSocket = null;
-			if (this.originSocket)
-				this.originSocket.end();
-			else
-				this.destructor();
-		});
-	}
-
-	startConnectingToOrigin() {
-		this.originSocket = net.connect(OriginAddress);
-
-		/ * setup event listeners for the origin socket */
-
-		this.originSocket.on('connection', () => {
-			let addr = `${this.originSocket.remoteAddress}:${this.originSocket.remotePort}`;
-			console.log(`connected to ${addr}`);
-		});
-
-		this.originSocket.on('data', data => {
-			this.onOriginReceive(data);
-		});
-
-		this.originSocket.on('end', () => {
-			console.log("origin disconnected");
-			this.originSocket = null;
-			if (this.userSocket)
-				this.userSocket.end();
-			else
-				this.destructor();
-		});
-	}
-
-	onUserReceive(virginRequest) {
-		if (!this.originSocket)
-			this.startConnectingToOrigin();
-
-		let adaptedRequest = this.adaptRequest(virginRequest);
-
-		// now or when finished connecting
-		this.originSocket.write(adaptedRequest);
-	}
-
-	onOriginReceive(virginResponse) {
-		let adaptedResponse = this.adaptResponse(virginResponse);
-		this.userSocket.write(adaptedResponse);
-	}
-
-	adaptRequest(virginRequest) {
-		let adapter = Types.getMatching(RequestAdapter, this, virginRequest);
-		return adapter(virginRequest);
-	}
-
-	adaptResponse(virginResponse) {
-		let adapter = Types.getMatching(ResponseAdapter, this, virginResponse);
-		return adapter(virginResponse);
-	}
-}
+import * as Config from './Config';
+import * as Global from "./Global";
+import Transaction from "./Transaction";
 
 class Proxy {
 	constructor() {
@@ -115,14 +21,13 @@ class Proxy {
 
 		server.on('connection', userSocket => {
 			++this.xCount;
-			let xactType = Types.getNumberedOrMatching(
+			let xactType = Global.Types.getNumberedOrMatching(
 				Transaction, this.xCount, "x");
 			new xactType(userSocket);
 		});
 
-		server.listen(ListeningAddress);
-
-		console.log("Started server at", ListeningAddress);
+		server.listen(Config.ListeningAddress);
+		console.log("Started server at", Config.ListeningAddress);
 	}
 }
 

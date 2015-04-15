@@ -1,3 +1,6 @@
+import * as Global from "./Global";
+import Transaction from "./Transaction";
+
 class MyTransaction extends Transaction {
 	adaptRequest(virginRequest) {
 		return super.adaptRequest("<" + virginRequest + ">");
@@ -11,11 +14,12 @@ class MyTransaction2 extends Transaction {
 }
 
 function MyRequestAdapter(virginRequest) {
-	return RequestAdapter(".!" + virginRequest + "!.");
+	return Transaction.RequestAdapter(".!" + virginRequest + "!.");
 }
 
-Types.setNumbered(Transaction, MyTransaction2, 2);
+Global.Types.setNumbered(Transaction, MyTransaction2, 2);
 
-Types.setMatching(RequestAdapter, MyRequestAdapter, function (xact, request) {
-	return request.toString().indexOf("x") >= 0;
+Global.Types.setMatching(Transaction.RequestAdapter, MyRequestAdapter,
+	function (xact, request) {
+		return request.toString().indexOf("x") >= 0;
 });
