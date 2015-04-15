@@ -10,12 +10,12 @@ class MyTransaction2 extends Transaction {
 	}
 }
 
-function myRequestAdapter(virginRequest) {
-	return requestAdapter(".!" + virginRequest + "!.");
+function MyRequestAdapter(virginRequest) {
+	return RequestAdapter(".!" + virginRequest + "!.");
 }
 
 Types.setNumbered(Transaction, MyTransaction2, 2);
 
-Types.setMatching(requestAdapter, myRequestAdapter, function (request) {
+Types.setMatching(RequestAdapter, MyRequestAdapter, function (xact, request) {
 	return request.toString().indexOf("x") >= 0;
 });

@@ -11,66 +11,96 @@ let OriginAddress = { // TODO: Make configurable
 import TypeMap from "./TypeMap";
 let Types = new TypeMap();
 
-function requestAdapter(virginRequest) {
-        return "=" + virginRequest + "=";
+function RequestAdapter(virginRequest) {
+        return ">" + virginRequest + ">";
+}
+
+function ResponseAdapter(virginResponse) {
+        return "<" + virginResponse + "<";
 }
 
 class Transaction {
 	constructor(userSocket) {
-		console.log(`new ${Object.getPrototypeOf(this).constructor.name} transaction`);
+		let myType = Object.getPrototypeOf(this).constructor.name;
+		console.log(`starting ${myType} transaction`);
 
-		this.userSocket = userSocket;
+		this.userSocket = null;
 		this.originSocket = null;
+
+		startServingUser(userSocket);
+	}
+
+	destructor() {
+		let myType = Object.getPrototypeOf(this).constructor.name;
+		console.log(`ending ${myType} transaction`);
+	}
+
+	startServingUser(userSocket) {
+		this.userSocket = userSocket;
 
 		/ * setup event listeners for the user agent socket */
 
 		userSocket.on('data', data => {
-			this.onClientReceive(data);
+			this.onUserReceive(data);
 		});
  
 		userSocket.on('end', () => {
+			console.log("user disconnected");
+			this.userSocket = null;
 			if (this.originSocket)
 				this.originSocket.end();
+			else
+				this.destructor();
 		});
 	}
 
-	startConnecting() {
+	startConnectingToOrigin() {
 		this.originSocket = net.connect(OriginAddress);
-		let {userSocket, originSocket} = this;
 
 		/ * setup event listeners for the origin socket */
 
-		originSocket.on('connection', () => {
-			console.log(`connected to ${originSocket.remoteAddress}:${originSocket.remotePort}`);
+		this.originSocket.on('connection', () => {
+			let addr = `${this.originSocket.remoteAddress}:${this.originSocket.remotePort}`;
+			console.log(`connected to ${addr}`);
 		});
 
-		originSocket.on('data', data => {
-			this.onServerReceive(data);
+		this.originSocket.on('data', data => {
+			this.onOriginReceive(data);
 		});
 
-		originSocket.on('end', () => {
+		this.originSocket.on('end', () => {
+			console.log("origin disconnected");
+			this.originSocket = null;
 			if (this.userSocket)
-				this.originSocket.end();
+				this.userSocket.end();
+			else
+				this.destructor();
 		});
 	}
 
-	onClientReceive(virginRequest) {
+	onUserReceive(virginRequest) {
 		if (!this.originSocket)
-			this.startConnecting();
+			this.startConnectingToOrigin();
 
 		let adaptedRequest = this.adaptRequest(virginRequest);
 
-		// now or when connected
+		// now or when finished connecting
 		this.originSocket.write(adaptedRequest);
 	}
 
-	onServerReceive(message) {
-		this.userSocket.write(message);
+	onOriginReceive(virginResponse) {
+		let adaptedResponse = this.adaptResponse(virginResponse);
+		this.userSocket.write(adaptedResponse);
 	}
 
 	adaptRequest(virginRequest) {
-		let adapter = Types.getMatching(requestAdapter, virginRequest);
+		let adapter = Types.getMatching(RequestAdapter, this, virginRequest);
 		return adapter(virginRequest);
+	}
+
+	adaptResponse(virginResponse) {
+		let adapter = Types.getMatching(ResponseAdapter, this, virginResponse);
+		return adapter(virginResponse);
 	}
 }
 
