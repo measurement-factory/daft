@@ -14,46 +14,40 @@ class TypeMap {
         this._getItem(key).addNumbered(customBase, filterNum);
     }
 
-    setMatching(key, customBase, matcher) {
+    setMatched(key, customBase, matcher) {
         this._getItem(key).addMatcher(customBase, matcher);
     }
 
 
     getBase(key) {
-        let mapItem = this._map.get(key);
-        return mapItem ? mapItem.getBase(key) : key;
+        return this._getItem(key).getBase();
     }
 
     getNumbered(key, filterNum) {
-        let mapItem = this._map.get(key);
-        return mapItem ? mapItem.getNumbered(filterNum, this.getBase(key)) : key;
+        return this._getItem(key).getNumbered(filterNum);
     }
 
-    getMatching(key, ...matcherArgs) {
-        let mapItem = this._map.get(key);
-        return mapItem ? mapItem.getMatched(matcherArgs, this.getBase(key)) : key;
+    getMatched(key, ...matcherArgs) {
+        return this._getItem(key).getMatched(matcherArgs);
     }
 
-    getNumberedOrMatching(key, number, ...matcherArgs) {
-        let mapItem = this._map.get(key);
-        if (mapItem) {
-            let numberedResult = mapItem.getNumbered(number, null);
-            return numberedResult ? numberedResult : this.getMatching(key, ...matcherArgs);
-        } else {
-            return key;
-        }
+    getNumberedOrMatched(key, number, ...matcherArgs) {
+        return this._getItem(key).getNumberedOrMatched(number, matcherArgs);
     }
 
     _getItem(key) {
+        if (key === undefined || key === null)
+                throw new Error("invalid TypeMap key: " + key);
         if (!this._map.has(key)) {
-            this._map.set(key, new MapItem());
+            this._map.set(key, new MapItem(key));
         }
         return this._map.get(key);
     }
 }
 
 class MapItem {
-    constructor() {
+    constructor(key) {
+        this.key = key;
         this.numbered = new Map();
         this.matchers = [];
     }
@@ -80,16 +74,16 @@ class MapItem {
     }
 
 
-    getBase(defaultValue) {
-        return this.base ? this.base : defaultValue;
+    getBase() {
+        return this.base ? this.base : this.key;
     }
 
-    getNumbered(filterNum, defaultValue) {
+    getNumbered(filterNum) {
         let numbered = this.numbered;
-        return numbered.has(filterNum) ? numbered.get(filterNum) : defaultValue;
+        return numbered.has(filterNum) ? numbered.get(filterNum) : this.getBase();
     }
 
-    getMatched(matcherArgs, defaultValue) {
+    getMatched(matcherArgs) {
         let matchers = this.matchers;
         for (let idx = 0; idx < matchers.length; idx++) {
             let { func, type } = matchers[idx];
@@ -97,6 +91,12 @@ class MapItem {
                 return type;
             }
         }
-        return defaultValue;
+        return this.getBase();
+    }
+
+    getNumberedOrMatched(filterNum, matcherArgs) {
+        return this.numbered.has(filterNum) ?
+                this.getNumbered(filterNum) :
+                this.getMatched(matcherArgs);
     }
 }
