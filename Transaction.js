@@ -3,6 +3,7 @@
 import net from 'net';
 import * as Config from './Config';
 import * as Global from "./Global";
+import RequestParser from "./RequestParser";
 
 export default class Transaction {
 
@@ -13,7 +14,14 @@ export default class Transaction {
 		this.userSocket = null;
 		this.originSocket = null;
 
+		this.requestParser = null;
+		this.responseParser = null;
+
+		this.virginRequest = null;
+		this.adaptedRequest = null;
+
 		this.startServingUser(userSocket);
+		this.sendRequest();
 	}
 
 	destructor() {
@@ -64,14 +72,42 @@ export default class Transaction {
 		});
 	}
 
-	onUserReceive(virginRequest) {
+	onUserReceive(virginData) {
+		this.parseRequest(virginData);
+		this.sendRequest();
+	}
+
+	parseRequest(virginData) {
+		if (!this.requestParser)
+			this.requestParser = new RequestParser(this);
+
+		this.requestParser.parse(virginData);
+
+		if (!this.virginRequest && this.requestParser.message)
+			this.virginRequest = this.requestParser.message;
+	}
+
+	sendRequest() {
+		// XXX: temporary hack until we have a real sender class
+		if (this.sent)
+			return;
+
+		if (!this.adaptedRequest)
+			this.adaptRequest();
+
+		if (!this.adaptedRequest) {
+			console.log("not ready to forward the request");
+			return;
+		}
+
 		if (!this.originSocket)
 			this.startConnectingToOrigin();
 
-		let adaptedRequest = this.adaptRequest(virginRequest);
-
 		// now or when finished connecting
-		this.originSocket.write(adaptedRequest);
+		this.originSocket.write(this.adaptedRequest.header.toString());
+		this.originSocket.write(this.adaptedRequest.delimiter.toString());
+		this.originSocket.write(this.adaptedRequest.body.out());
+		this.sent = true;
 	}
 
 	onOriginReceive(virginResponse) {
@@ -79,11 +115,16 @@ export default class Transaction {
 		this.userSocket.write(adaptedResponse);
 	}
 
-	adaptRequest(virginRequest) {
-		return ">" + virginRequest + ">";
+	adaptRequest() {
+		if (!this.virginRequest)
+			return;
+
+		this.adaptedRequest = this.virginRequest; // XXX: must clone
+		this.adaptedRequest.header +=
+			"Via: DauntingProxy/1.0\r\n";
 	}
 
 	adaptResponse(virginResponse) {
-		return "<" + virginResponse + "<";
+		return virginResponse;
 	}
 }
