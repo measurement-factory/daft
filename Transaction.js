@@ -1,9 +1,10 @@
 /* Transaction is a single (user agent request, origin response) tuple. */
 
 import net from 'net';
+import RequestParser from "./RequestParser";
 import * as Config from './Config';
 import * as Global from "./Global";
-import RequestParser from "./RequestParser";
+import { Must, PrettyMime } from "./Gadgets";
 
 export default class Transaction {
 
@@ -41,9 +42,7 @@ export default class Transaction {
 		userSocket.on('end', () => {
 			console.log("user disconnected");
 			this.userSocket = null;
-			if (this.originSocket)
-				this.originSocket.end();
-			else
+			if (!this.originSocket)
 				this.destructor();
 		});
 	}
@@ -65,9 +64,7 @@ export default class Transaction {
 		this.originSocket.on('end', () => {
 			console.log("origin disconnected");
 			this.originSocket = null;
-			if (this.userSocket)
-				this.userSocket.end();
-			else
+			if (!this.userSocket)
 				this.destructor();
 		});
 	}
@@ -83,45 +80,83 @@ export default class Transaction {
 
 		this.requestParser.parse(virginData);
 
-		if (!this.virginRequest && this.requestParser.message)
+		if (!this.virginRequest && this.requestParser.message) {
 			this.virginRequest = this.requestParser.message;
+			let parsed = this.virginRequest.header.raw() +
+				this.virginRequest.delimiter;
+			console.log(`parsed ${parsed.length} request header bytes:\n` +
+				PrettyMime("c> ", parsed));
+		}
 	}
 
 	sendRequest() {
-		// XXX: temporary hack until we have a real sender class
-		if (this.sent)
-			return;
-
-		if (!this.adaptedRequest)
-			this.adaptRequest();
+		this.adaptRequest();
 
 		if (!this.adaptedRequest) {
-			console.log("not ready to forward the request");
+			console.log("not ready to send the request");
 			return;
 		}
 
-		if (!this.originSocket)
+		if (!this.originSocket) {
 			this.startConnectingToOrigin();
 
+			// when finished connecting
+			let out = this.adaptedRequest.header.raw() +
+				this.adaptedRequest.delimiter.toString();
+			this.originSocket.write(out);
+			console.log(`sending ${out.length} request header bytes:\n` +
+				PrettyMime(">s ", out));
+		}
+
 		// now or when finished connecting
-		this.originSocket.write(this.adaptedRequest.header.toString());
-		this.originSocket.write(this.adaptedRequest.delimiter.toString());
-		this.originSocket.write(this.adaptedRequest.body.out());
-		this.sent = true;
+		let out = this.adaptedRequest.body.out();
+		this.originSocket.write(out);
+		console.log(`sending ${out.length} request body bytes`);
+	}
+
+	adaptRequest() {
+		if (!this.adaptedRequest) {
+			if (this.virginRequest)
+				this.startAdaptingRequest();
+			else
+				this.generateRequest();
+		}
+
+		if (this.adaptedRequest)
+			this.adaptRequestBody();
+	}
+
+	generateRequest() {
+		Must(!this.virginRequest);
+		return; // no adapted request w/o virginRequest by default
+	}
+
+	cloneRequest() {
+		this.adaptedRequest = this.virginRequest.clone();
+		// this.virginRequest may contain a body, and we just cloned it
+		// consume virgin body here so that adaptRequestBody() does not get a
+		// second copy of it
+		this.virginRequest.body.out();
+	}
+
+	// to customize adaptations, use adaptRequestHeader() if possible
+	startAdaptingRequest() {
+		this.cloneRequest();
+		this.adaptRequestHeader();
+	}
+
+	adaptRequestHeader() {
+		this.adaptedRequest.header.add("Via", "DaftProxy/1.0");
+	}
+
+	adaptRequestBody() {
+		this.adaptedRequest.body.in(this.virginRequest.body.out());
 	}
 
 	onOriginReceive(virginResponse) {
 		let adaptedResponse = this.adaptResponse(virginResponse);
 		this.userSocket.write(adaptedResponse);
-	}
-
-	adaptRequest() {
-		if (!this.virginRequest)
-			return;
-
-		this.adaptedRequest = this.virginRequest; // XXX: must clone
-		this.adaptedRequest.header +=
-			"Via: DauntingProxy/1.0\r\n";
+		console.log(`sending ${adaptedResponse.length} response bytes`);
 	}
 
 	adaptResponse(virginResponse) {

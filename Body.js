@@ -9,6 +9,15 @@ export default class Body {
 		this._out = 0;
 	}
 
+	clone() {
+		let dupe = new Body;
+		// shallow copy of POD attributes
+		for (var key in this) {
+			dupe[key] = this[key];
+		}
+		return dupe;
+	}
+
 	setLength(size) {
 		this._length = size;
 	}
@@ -23,13 +32,12 @@ export default class Body {
 	//		this._out < this._length;
 	//}
 
-	outAll() {
-		return this._length !== null &&
-			this._out >= this._length;
+	outedAll() {
+		return this._length !== null && this._out >= this._length;
 	}
 
 	out() {
-		if (this.outAll())
+		if (this.outedAll())
 			return "";
 
 		let piece = this._buf.substring(this._out);

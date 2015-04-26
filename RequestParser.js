@@ -30,8 +30,7 @@ export default class RequestParser {
 		}
 
 		this.message = new Message(match[1], match[2]);
-		this._raw = match[3]; // possibly empty body [prefix]
-		console.log("got headers");
+		this._raw = match[3]; // body [prefix] or an empty string
 
 		this.determineBodyLength();
 	}
@@ -39,7 +38,13 @@ export default class RequestParser {
 	determineBodyLength() {
 		// TODO: set true body length when possible
 		// XXX: do not disclaim body presence when there is one
-		this.message.body.setLength(0);
+		let len = this.message.header.contentLength();
+		if (len === null) // requests do not have bodies by default
+			this.message.body.setLength(0);
+		else if (len !== undefined)
+			this.message.body.setLength(len);
+		else
+			console.log("Warning: Cannot determine message length");
 	}
 
 	parseBody() {
