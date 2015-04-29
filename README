@@ -14,9 +14,8 @@ Daft Proxy listens on IPv4 port 3128 and forwards all messages to
 localhost:80. To customize, modify Config.js.
 
 
-Daft proxy requires Javascrip6.
-
+Daft proxy requires Javascript 6 (i.e., ECMAScript 6).
 
 Usage:
 
-    babel test1.js > test1.js5 && ./proxy.js test1.js5    
+    babel test1.js > test1.js5 && ./proxy.js test1.js5
