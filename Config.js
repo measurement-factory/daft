@@ -12,6 +12,8 @@ export const ProxyingForward = "forward";
 export const ProxyingInReverse = "reverse";
 export const ProxyingMode = ProxyingForward; // TODO: Make configurable
 
+export const ProxySignature = "DaftProxy/1.0";
+
 export function isForwardProxy() {
 	return ProxyingMode === ProxyingForward;
 }

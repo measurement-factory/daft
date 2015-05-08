@@ -1,4 +1,19 @@
 /* Objects shared by many modules except Config which is in Config.js */
 
 import TypeMap from "./TypeMap";
+import { Must } from "./Gadgets";
+
 export let Types = new TypeMap();
+
+export function DefaultSchemePort(scheme) {
+	Must(scheme !== null);
+	let defaultPorts = {
+		http: 80,
+		https: 443,
+		icap: 1344,
+		ftp: 21
+	};
+	const port = defaultPorts[scheme.toLowerCase()];
+	Must(port !== undefined);
+	return port;
+}

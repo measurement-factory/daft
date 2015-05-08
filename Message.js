@@ -2,25 +2,37 @@
 
 import Header from "./Header";
 import Body from "./Body";
+import RequestLine from "./RequestLine";
 
 export default class Message {
 
-	// it is OK to omit the delimiter or both parameters
-	constructor(header, delimiter) {
+	// it is OK to omit parameters
+	constructor(requestLine, header, headerDelimiter) {
+		this.requestLine = new RequestLine();
+		if(requestLine !== undefined)
+			this.requestLine.noteReceived(requestLine);
+
 		this.header = new Header();
 		if (header !== undefined)
 			this.header.noteReceived(header);
 
-		this.delimiter = delimiter !== undefined ? delimiter : "\r\n";
+		this.headerDelimiter = headerDelimiter !== undefined ? headerDelimiter : "\r\n";
 
 		this.body = new Body();
 	}
 
 	clone() {
 		let dupe = new Message();
+		dupe.requestLine = this.requestLine.clone();
 		dupe.header = this.header.clone();
-		dupe.delimiter = this.delimiter;
+		dupe.headerDelimiter = this.headerDelimiter;
 		dupe.body = this.body.clone();
 		return dupe;
+	}
+
+	rawPrefix() {
+		return this.requestLine.raw() +
+			this.header.raw() +
+			this.headerDelimiter;
 	}
 }

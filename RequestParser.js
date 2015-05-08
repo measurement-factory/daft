@@ -1,6 +1,7 @@
 /* Incrementally parses HTTP request messages, including headers and body */
 
 import Message from "./Message";
+import * as Config from './Config';
 
 export default class RequestParser {
 
@@ -15,22 +16,22 @@ export default class RequestParser {
 		this._raw += data;
 
 		if (this.message === null)
-			this.parseHeader();
+			this.parsePrefix();
 
 		if (this.message !== null)
 			this.parseBody();
 	}
 
-	parseHeader() {
-		let messageRe = /^([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
+	parsePrefix() {
+		let messageRe = /^([\s\S]*?\r*\n)([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
 		let match = messageRe.exec(this._raw.toString());
 		if (match === null) {
 			console.log("no end of headers yet");
 			return;
 		}
 
-		this.message = new Message(match[1], match[2]);
-		this._raw = match[3]; // body [prefix] or an empty string
+		this.message = new Message(match[1], match[2], match[3]);
+		this._raw = match[4]; // body [prefix] or an empty string
 
 		this.determineBodyLength();
 	}

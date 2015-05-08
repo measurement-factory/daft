@@ -21,6 +21,8 @@ export default class Transaction {
 		this.virginRequest = null;
 		this.adaptedRequest = null;
 
+		this.ignoreUserData = null;
+
 		this.startServingUser(userSocket);
 		this.sendRequest();
 	}
@@ -45,10 +47,27 @@ export default class Transaction {
 			if (!this.originSocket)
 				this.destructor();
 		});
+
+		userSocket.on('drain', () => {
+			if(!this.userSocket.writeable && this.ignoreUserData !== null)
+				destroyUserSocket();
+		});
+
+	}
+
+	originAddress() {
+		return Config.isReverseProxy() ? Config.OriginAddress : this.forwardingAddress();
+	}
+
+	forwardingAddress() {
+		return {
+			host: this.requestParser.message.requestLine.uri.host,
+			port: this.requestParser.message.requestLine.uri.port
+		}
 	}
 
 	startConnectingToOrigin() {
-		this.originSocket = net.connect(Config.OriginAddress);
+		this.originSocket = net.connect(this.originAddress());
 
 		/ * setup event listeners for the origin socket */
 
@@ -70,7 +89,24 @@ export default class Transaction {
 	}
 
 	onUserReceive(virginData) {
-		this.parseRequest(virginData);
+		if(this.ignoreUserData !== null) {
+			console.log(`ignoring ${virginData.length} received request bytes; reason: ${this.ignoreUserData}`);
+			return;
+		}
+
+		try
+		{
+			this.parseRequest(virginData);
+		}
+		catch (error)
+		{
+			console.log("request parsing error:", error.message);
+			this.ignoreUserData = "request parsing error";
+			this.userSocket.write(this.generateErrorResponse());
+			this.userSocket.end();
+			return;
+		}
+
 		this.sendRequest();
 	}
 
@@ -82,8 +118,7 @@ export default class Transaction {
 
 		if (!this.virginRequest && this.requestParser.message) {
 			this.virginRequest = this.requestParser.message;
-			let parsed = this.virginRequest.header.raw() +
-				this.virginRequest.delimiter;
+			let parsed = this.virginRequest.rawPrefix();
 			console.log(`parsed ${parsed.length} request header bytes:\n` +
 				PrettyMime("c> ", parsed));
 		}
@@ -101,8 +136,7 @@ export default class Transaction {
 			this.startConnectingToOrigin();
 
 			// when finished connecting
-			let out = this.adaptedRequest.header.raw() +
-				this.adaptedRequest.delimiter.toString();
+			let out = this.adaptedRequest.rawPrefix();
 			this.originSocket.write(out);
 			console.log(`sending ${out.length} request header bytes:\n` +
 				PrettyMime(">s ", out));
@@ -142,11 +176,12 @@ export default class Transaction {
 	// to customize adaptations, use adaptRequestHeader() if possible
 	startAdaptingRequest() {
 		this.cloneRequest();
+		this.adaptedRequest.requestLine.uri.makeRelative();
 		this.adaptRequestHeader();
 	}
 
 	adaptRequestHeader() {
-		this.adaptedRequest.header.add("Via", "DaftProxy/1.0");
+		this.adaptedRequest.header.add("Via", Config.ProxySignature);
 	}
 
 	adaptRequestBody() {
@@ -162,4 +197,23 @@ export default class Transaction {
 	adaptResponse(virginResponse) {
 		return virginResponse;
 	}
+
+	generateErrorResponse() {
+		return [
+			"HTTP/1.1 400 Bad Request",
+			"Server: " + Config.ProxySignature,
+			"Connection: close",
+			"\r\n"
+		].join("\r\n");
+	}
+
+	destroyUserSocket() {
+		if(this.userSocket) {
+			this.userSocket.destroy();
+			this.userSocket = null;
+		}
+		if(!this.originSocket)
+			this.destructor();
+	}
+
 }
