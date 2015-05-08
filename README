@@ -18,4 +18,4 @@ Daft proxy requires Javascript 6 (i.e., ECMAScript 6).
 
 Usage:
 
-    babel test1.js > test1.js5 && ./proxy.js test1.js5
+	babel test1.js > test1.js5 && ./proxy.js test1.js5
