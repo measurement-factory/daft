@@ -22,7 +22,8 @@ export default class Agent {
 			++this.xCount;
 			let xactType = Global.Types.getNumberedOrMatched(
 				Transaction, this.xCount, this.socket);
-			new xactType(this.socket, this.request);
+			let xact = new xactType(this.socket, this.request);
+			xact.start();
 		});
 	}
 

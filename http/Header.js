@@ -14,7 +14,7 @@ export default class Header {
 		let dupe = new Header();
 		dupe._raw = this._raw;
 		if (this._parsed) {
-			dupe._parsed = {}
+			dupe._parsed = {};
 			// shallow copy of all header fields
 			for (var key in this._parsed) {
 				dupe._parsed[key] = this._parsed[key];
@@ -107,7 +107,7 @@ export default class Header {
 		let parsedFields = 0;
 		let fieldRe = /^[\t ]*(.*?)[\t ]*:[\t ]*(.*?)[\t \r]*$/mg;
 		let match = null;
-		while (match = fieldRe.exec(rawH)) {
+		while ((match = fieldRe.exec(rawH))) {
 			Must(match.length === 3);
 			this._addParsedField(match[1], match[2]);
 			++parsedFields;

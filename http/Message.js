@@ -1,7 +1,6 @@
 /* Manages an HTTP request or response message, including headers and body */
 
 import Header from "./Header";
-import Body from "./Body";
 import RequestLine from "./RequestLine";
 
 export default class Message {

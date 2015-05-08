@@ -8,10 +8,8 @@
 
 import Server from "./Agent";
 
-if (process.argv.length != 3) {
-	console.log(`usage: ${process.argv[1]} <test_case.js5>`);
-	process.exit(-1);
-}
+if (process.argv.length !== 3)
+	throw `usage: ${process.argv[1]} <test_case.js5>`;
 
 let fname = process.argv[2];
 console.log("Test case:", fname);
@@ -21,7 +19,7 @@ fs.readFile(fname, function (err, data) {
 	if (err)
 		throw err;
 
-	eval(data.toString());
+	eval(data.toString()); // eslint-disable-line no-eval
 
 	let server = new Server();
 	server.start();

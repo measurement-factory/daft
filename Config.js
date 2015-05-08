@@ -2,8 +2,6 @@
 
 /* all other globals are in Global.js */
 
-import Body from "./http/Body";
-
 export const ListeningAddress = { // TODO: Make configurable
 	host: undefined,
 	port: 3128

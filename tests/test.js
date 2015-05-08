@@ -17,7 +17,7 @@ function checkForwarded(sent, received, kind) {
 			continue;
 		assert(received.header.has(key), `forwarded ${kind} has ${key}`);
 		assert.equal(sent.header.values(key), received.header.values(key));
-	};
+	}
 
 	assert.equal(!sent.body, !received.body);
 	if (sent.body)
@@ -84,8 +84,10 @@ describe('Daft Proxy', function() {
 		assert(done);
 		caseDone = done;
 
-		client.request = new Message;
-		server.response = new Message;
+		if (createRequest)
+			client.request = new Message();
+		if (createResponse)
+			server.response = new Message();
 	}
 
 	// makes sure both client and server transactions have finished

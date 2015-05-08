@@ -18,7 +18,9 @@ export default class Agent {
 			++this.xCount;
 			let xactType = Global.Types.getNumberedOrMatched(
 				Transaction, this.xCount, userSocket);
-			new xactType(userSocket);
+			let xact = new xactType(userSocket);
+			xact.start();
+
 		});
 
 		this.server.on("listening", () => {

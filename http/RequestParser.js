@@ -2,7 +2,7 @@
 
 import Message from "./Message";
 import Body from "./Body";
-import { Must, PrettyMime } from "../Gadgets";
+import { Must } from "../Gadgets";
 
 export default class RequestParser {
 
@@ -45,14 +45,14 @@ export default class RequestParser {
 		// XXX: do not disclaim body presence when there is one
 		let len = this.message.header.contentLength();
 		if (len === null) {
-			 // do nothing: requests do not have bodies by default
-			 console.log("assuming no message body");
+			// do nothing: requests do not have bodies by default
+			console.log("assuming no message body");
 		} else if (len !== undefined) {
-			this.message.body = new Body;
+			this.message.body = new Body();
 			this.message.body.setLength(len);
-			 console.log("expecting %d message body bytes", len);
+			console.log("expecting %d message body bytes", len);
 		} else {
-			this.message.body = new Body;
+			this.message.body = new Body();
 			console.log("Warning: Cannot determine message length");
 		}
 	}

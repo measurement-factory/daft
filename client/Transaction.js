@@ -1,9 +1,5 @@
-import net from "net";
 import ResponseParser from "../http/RequestParser"; // XXX
 import Message from "../http/Message";
-import Body from "../http/Body";
-import * as Config from "../Config";
-import * as Global from "../Global";
 import { Must, PrettyMime } from "../Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
@@ -22,8 +18,6 @@ export default class Transaction {
 
 		this.doneReceiving = false; // incoming message
 		this.doneSending = false; // outgoing message
-
-		this.start(); // TODO: move to Agent
 	}
 
 	start() {
@@ -156,7 +150,7 @@ export default class Transaction {
 	}
 
 	generateDefaultRequest() {
-		let request = new Message;
+		let request = new Message();
 		return request; // not finalized!
 	}
 

@@ -1,6 +1,5 @@
 /* Manages HTTP URI. */
 
-import * as Config from "../Config";
 import * as Global from "../Global";
 
 import { Must } from "../Gadgets";

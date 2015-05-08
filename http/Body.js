@@ -15,7 +15,7 @@ export default class Body {
 	}
 
 	clone() {
-		let dupe = new Body;
+		let dupe = new Body();
 		// shallow copy of POD attributes
 		for (var key in this) {
 			dupe[key] = this[key];
@@ -68,7 +68,7 @@ export default class Body {
 		// cut extras, if any
 		if (this._length !== null && this._out > this._length) {
 			let extraLen = Math.max( // cannot undo what was outed
-				this._out - this._length, piece.length)
+				this._out - this._length, piece.length);
 			piece = piece.substring(0, piece.length - extraLen);
 			this._out -= extraLen;
 		}

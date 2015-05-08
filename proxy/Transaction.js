@@ -3,7 +3,6 @@
 import net from "net";
 import RequestParser from "../http//RequestParser";
 import * as Config from "../Config";
-import * as Global from "../Global";
 import { Must, PrettyMime } from "../Gadgets";
 
 export default class Transaction {
@@ -12,7 +11,7 @@ export default class Transaction {
 		let myType = Object.getPrototypeOf(this).constructor.name;
 		console.log(`starting ${myType} transaction`);
 
-		this.userSocket = null;
+		this.userSocket = userSocket;
 		this.originSocket = null;
 
 		this.requestParser = null;
@@ -22,9 +21,6 @@ export default class Transaction {
 		this.adaptedRequest = null;
 
 		this.ignoreUserData = null;
-
-		this.startServingUser(userSocket);
-		this.sendRequest();
 	}
 
 	destructor() {
@@ -32,25 +28,28 @@ export default class Transaction {
 		console.log(`ending ${myType} transaction`);
 	}
 
-	startServingUser(userSocket) {
-		this.userSocket = userSocket;
+	start() {
+		this.startServingUser(this.userSocket);
+		this.sendRequest();
+	}
 
+	startServingUser() {
 		/* setup event listeners for the user agent socket */
 
-		userSocket.on('data', data => {
+		this.userSocket.on('data', data => {
 			this.onUserReceive(data);
 		});
 
-		userSocket.on('end', () => {
+		this.userSocket.on('end', () => {
 			console.log("user disconnected");
 			this.userSocket = null;
 			if (!this.originSocket)
 				this.destructor();
 		});
 
-		userSocket.on('drain', () => {
+		this.userSocket.on('drain', () => {
 			if(!this.userSocket.writeable && this.ignoreUserData !== null)
-				destroyUserSocket();
+				this.destroyUserSocket();
 		});
 
 	}
@@ -63,7 +62,7 @@ export default class Transaction {
 		return {
 			host: this.requestParser.message.requestLine.uri.host,
 			port: this.requestParser.message.requestLine.uri.port
-		}
+		};
 	}
 
 	startConnectingToOrigin() {

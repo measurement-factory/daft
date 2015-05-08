@@ -1,9 +1,7 @@
-import net from "net";
 import RequestParser from "../http/RequestParser";
 import Message from "../http/Message";
 import Body from "../http/Body";
 import * as Config from "../Config";
-import * as Global from "../Global";
 import { Must, PrettyMime } from "../Gadgets";
 
 // Transaction is a single (user agent request, origin response) tuple.
@@ -13,7 +11,7 @@ export default class Transaction {
 		let myType = Object.getPrototypeOf(this).constructor.name;
 		console.log(`starting ${myType} transaction`);
 
-		this.socket = null;
+		this.socket = userSocket;
 
 		this.requestParser = null;
 		this.request = null;
@@ -21,20 +19,16 @@ export default class Transaction {
 
 		this.doneReceiving = false; // incoming message
 		this.doneSending = false; // outgoing message
-
-		this.start(userSocket);
 	}
 
-	start(userSocket) {
-		this.socket = userSocket;
-
+	start() {
 		/* setup event listeners */
 
-		userSocket.on('data', data => {
+		this.socket.on('data', data => {
 			this.onReceive(data);
 		});
 
-		userSocket.on('end', () => {
+		this.socket.on('end', () => {
 			console.log("user disconnected");
 			// assume all 'data' events always arrive before 'end'
 			this.doneReceiving = true;
@@ -154,7 +148,7 @@ export default class Transaction {
 	}
 
 	generateDefaultResponse() {
-		let response = new Message;
+		let response = new Message();
 		// XXX: Do not overwrite already set properties
 		if (Config.DefaultMessageBodyContent !== null) {
 			response.body = new Body(Config.DefaultMessageBodyContent);
