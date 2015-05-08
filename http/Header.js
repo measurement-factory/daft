@@ -1,13 +1,13 @@
 /* Manages HTTP message header. */
 
-import {Must} from "./Gadgets";
+import {Must} from "../Gadgets";
 
 
 export default class Header {
 
 	constructor() {
 		this._raw = null; // as it was received or as it will be sent
-		this._parsed = null; // parsed values
+		this._parsed = {}; // parsed or manually added values; TODO: rename and remove null checks
 	}
 
 	clone() {
@@ -71,6 +71,10 @@ export default class Header {
 		return name.toLowerCase() in this._parsed;
 	}
 
+	fields() {
+		return this._parsed;
+	}
+
 	values(name) {
 		if (!this.has(name))
 			return null;
@@ -100,16 +104,16 @@ export default class Header {
 		this._rawUnfolded = rawH;
 
 		// isolate individual fields
-		let fieldRe = /^\s*(.*?)\s*:\s*(.*?)\s*$/mg;
+		let parsedFields = 0;
+		let fieldRe = /^[\t ]*(.*?)[\t ]*:[\t ]*(.*?)[\t \r]*$/mg;
 		let match = null;
 		while (match = fieldRe.exec(rawH)) {
 			Must(match.length === 3);
-			if (!this._parsed)
-				this._parsed = {};
 			this._addParsedField(match[1], match[2]);
+			++parsedFields;
 		}
 
-		if (this._parsed === null) {
+		if (!parsedFields) {
 			console.log("Warning: Cannot parse raw headers!");
 		}
 	}

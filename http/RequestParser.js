@@ -1,7 +1,8 @@
 /* Incrementally parses HTTP request messages, including headers and body */
 
 import Message from "./Message";
-import * as Config from './Config';
+import Body from "./Body";
+import { Must, PrettyMime } from "../Gadgets";
 
 export default class RequestParser {
 
@@ -18,8 +19,10 @@ export default class RequestParser {
 		if (this.message === null)
 			this.parsePrefix();
 
-		if (this.message !== null)
+		if (this.message.body !== null)
 			this.parseBody();
+
+		// TODO: complain about leftovers
 	}
 
 	parsePrefix() {
@@ -37,18 +40,25 @@ export default class RequestParser {
 	}
 
 	determineBodyLength() {
+		Must(!this.message.body);
 		// TODO: set true body length when possible
 		// XXX: do not disclaim body presence when there is one
 		let len = this.message.header.contentLength();
-		if (len === null) // requests do not have bodies by default
-			this.message.body.setLength(0);
-		else if (len !== undefined)
+		if (len === null) {
+			 // do nothing: requests do not have bodies by default
+			 console.log("assuming no message body");
+		} else if (len !== undefined) {
+			this.message.body = new Body;
 			this.message.body.setLength(len);
-		else
+			 console.log("expecting %d message body bytes", len);
+		} else {
+			this.message.body = new Body;
 			console.log("Warning: Cannot determine message length");
+		}
 	}
 
 	parseBody() {
+		Must(this.message.body);
 		// TODO: dechunk (and set final length) as needed
 		this.message.body.in(this._raw);
 		this._raw = "";

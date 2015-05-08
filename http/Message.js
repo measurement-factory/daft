@@ -18,7 +18,10 @@ export default class Message {
 
 		this.headerDelimiter = headerDelimiter !== undefined ? headerDelimiter : "\r\n";
 
-		this.body = new Body();
+		this.body = null; // no body by default
+
+		// called when the message transaction is finished
+		this.callback = null;
 	}
 
 	clone() {
@@ -26,7 +29,8 @@ export default class Message {
 		dupe.requestLine = this.requestLine.clone();
 		dupe.header = this.header.clone();
 		dupe.headerDelimiter = this.headerDelimiter;
-		dupe.body = this.body.clone();
+		dupe.body = this.body ? this.body.clone() : null;
+		dupe.callback = this.callback;
 		return dupe;
 	}
 

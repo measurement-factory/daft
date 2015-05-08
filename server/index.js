@@ -1,0 +1,28 @@
+#!/usr/bin/env babel-node
+
+
+/*
+ * A driver script for the do-as-you-are-told HTTP server.
+ * Runs a server configured with a test case specified on the command line.
+ */
+
+import Server from "./Agent";
+
+if (process.argv.length != 3) {
+	console.log(`usage: ${process.argv[1]} <test_case.js5>`);
+	process.exit(-1);
+}
+
+let fname = process.argv[2];
+console.log("Test case:", fname);
+
+import fs from "fs";
+fs.readFile(fname, function (err, data) {
+	if (err)
+		throw err;
+
+	eval(data.toString());
+
+	let server = new Server();
+	server.start();
+});

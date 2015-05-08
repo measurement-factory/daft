@@ -2,10 +2,16 @@
 
 /* all other globals are in Global.js */
 
-export const ListeningAddress = 3128; // TODO: Make configurable
+import Body from "./http/Body";
+
+export const ListeningAddress = { // TODO: Make configurable
+	host: undefined,
+	port: 3128
+};
+
 export const OriginAddress = { // TODO: Make configurable
-	host: 'localhost',
-	port: 80,
+	host: 'localhost', // required for default request URLs (XXX?)
+	port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
 };
 
 export const ProxyingForward = "forward";
@@ -21,3 +27,5 @@ export function isForwardProxy() {
 export function isReverseProxy() {
 	return ProxyingMode === ProxyingInReverse;
 }
+
+export const DefaultMessageBodyContent = "THIS.is.BODY";

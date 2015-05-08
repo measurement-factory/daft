@@ -1,10 +1,10 @@
 /* Transaction is a single (user agent request, origin response) tuple. */
 
-import net from 'net';
-import RequestParser from "./RequestParser";
-import * as Config from './Config';
-import * as Global from "./Global";
-import { Must, PrettyMime } from "./Gadgets";
+import net from "net";
+import RequestParser from "../http//RequestParser";
+import * as Config from "../Config";
+import * as Global from "../Global";
+import { Must, PrettyMime } from "../Gadgets";
 
 export default class Transaction {
 
@@ -35,7 +35,7 @@ export default class Transaction {
 	startServingUser(userSocket) {
 		this.userSocket = userSocket;
 
-		/ * setup event listeners for the user agent socket */
+		/* setup event listeners for the user agent socket */
 
 		userSocket.on('data', data => {
 			this.onUserReceive(data);
@@ -69,7 +69,7 @@ export default class Transaction {
 	startConnectingToOrigin() {
 		this.originSocket = net.connect(this.originAddress());
 
-		/ * setup event listeners for the origin socket */
+		/* setup event listeners for the origin socket */
 
 		this.originSocket.on('connection', () => {
 			let addr = `${this.originSocket.remoteAddress}:${this.originSocket.remotePort}`;
@@ -142,10 +142,12 @@ export default class Transaction {
 				PrettyMime(">s ", out));
 		}
 
-		// now or when finished connecting
-		let out = this.adaptedRequest.body.out();
-		this.originSocket.write(out);
-		console.log(`sending ${out.length} request body bytes`);
+		if (this.adaptedRequest.body) {
+			// now or when finished connecting
+			let out = this.adaptedRequest.body.out();
+			this.originSocket.write(out);
+			console.log(`sending ${out.length} request body bytes`);
+		}
 	}
 
 	adaptRequest() {
@@ -156,7 +158,7 @@ export default class Transaction {
 				this.generateRequest();
 		}
 
-		if (this.adaptedRequest)
+		if (this.adaptedRequest && this.adaptedRequest.body)
 			this.adaptRequestBody();
 	}
 
@@ -170,7 +172,8 @@ export default class Transaction {
 		// this.virginRequest may contain a body, and we just cloned it
 		// consume virgin body here so that adaptRequestBody() does not get a
 		// second copy of it
-		this.virginRequest.body.out();
+		if (this.virginRequest.body)
+			this.virginRequest.body.out();
 	}
 
 	// to customize adaptations, use adaptRequestHeader() if possible

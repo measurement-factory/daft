@@ -2,11 +2,16 @@
 
 export default class Body {
 
-	constructor() {
+	constructor(content) {
 		this._buf = ''; // the entire body (for now)
 		this._length = null; // unknown until setLength()
 		this._in = 0;
 		this._out = 0;
+
+		if (content !== undefined) {
+			this.setLength(content.length);
+			this.in(content);
+		}
 	}
 
 	clone() {
@@ -18,8 +23,25 @@ export default class Body {
 		return dupe;
 	}
 
+	whole() {
+		return this._buf;
+	}
+
+	// TODO: expose .length instead of providing setter and getter?
+	length() {
+		return this._length; // may be null
+	}
+
 	setLength(size) {
 		this._length = size;
+	}
+
+	innedSize() {
+		return this._in;
+	}
+
+	innedAll() {
+		return this._length !== null && this._in >= this._length;
 	}
 
 	in(data) {
