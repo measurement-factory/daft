@@ -6,14 +6,14 @@ import { Must } from "./Gadgets";
 export let Types = new TypeMap();
 
 export function DefaultSchemePort(scheme) {
-	Must(scheme !== null);
-	let defaultPorts = {
-		http: 80,
-		https: 443,
-		icap: 1344,
-		ftp: 21
-	};
-	const port = defaultPorts[scheme.toLowerCase()];
-	Must(port !== undefined);
-	return port;
+    Must(scheme !== null);
+    let defaultPorts = {
+        http: 80,
+        https: 443,
+        icap: 1344,
+        ftp: 21
+    };
+    const port = defaultPorts[scheme.toLowerCase()];
+    Must(port !== undefined);
+    return port;
 }
