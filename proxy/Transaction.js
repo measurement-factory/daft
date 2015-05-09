@@ -48,7 +48,7 @@ export default class Transaction {
         });
 
         this.userSocket.on('drain', () => {
-            if(!this.userSocket.writeable && this.ignoreUserData !== null)
+            if (!this.userSocket.writeable && this.ignoreUserData !== null)
                 this.destroyUserSocket();
         });
 
@@ -88,7 +88,7 @@ export default class Transaction {
     }
 
     onUserReceive(virginData) {
-        if(this.ignoreUserData !== null) {
+        if (this.ignoreUserData !== null) {
             console.log(`ignoring ${virginData.length} received request bytes; reason: ${this.ignoreUserData}`);
             return;
         }
@@ -210,11 +210,11 @@ export default class Transaction {
     }
 
     destroyUserSocket() {
-        if(this.userSocket) {
+        if (this.userSocket) {
             this.userSocket.destroy();
             this.userSocket = null;
         }
-        if(!this.originSocket)
+        if (!this.originSocket)
             this.destructor();
     }
 

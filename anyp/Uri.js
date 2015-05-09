@@ -91,14 +91,14 @@ export default class Uri {
         // Assume it is an absolute-URI
         let urlRe = /^(\S+?:\/\/)([^\/\?:#]+)(:\d*)?(\S*)$/;
         let urlMatch = urlRe.exec(rawBytes);
-        if(!urlMatch)
+        if (!urlMatch)
             throw new Error("Unsupported or malformed URI: " + rawBytes);
 
         this.scheme = urlMatch[1].substring(0, urlMatch[1].length - 3);
         this.host = urlMatch[2];
-        if(urlMatch[3] !== undefined)
+        if (urlMatch[3] !== undefined)
             this._port = urlMatch[3].substring(1);
-        if(urlMatch[4] !== undefined)
+        if (urlMatch[4] !== undefined)
             this._rest = urlMatch[4];
     }
 }

@@ -86,9 +86,9 @@ export default class Transaction {
                 console.log(`parsed first ${this.response.body.innedSize()} response body bytes so far`);
             }
         } else {
-                console.log("parsed the entire bodyless response");
-                this.doneReceiving = true;
-                this.checkpoint();
+            console.log("parsed the entire bodyless response");
+            this.doneReceiving = true;
+            this.checkpoint();
         }
     }
 

@@ -72,7 +72,7 @@ export default class RequestLine {
 
         let reqRe = /^(\S+)(\s+)([\s\S]*\S)(\s+)(\S+)(\r*\n)$/;
         let match = reqRe.exec(raw);
-        if(!match)
+        if (!match)
             throw new Error("Unable to parse request-line: " + raw);
         this.method = match[1];
         this.methodDelimiter = match[2];

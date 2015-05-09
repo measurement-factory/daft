@@ -8,7 +8,7 @@ export default class Message {
     // it is OK to omit parameters
     constructor(requestLine, header, headerDelimiter) {
         this.requestLine = new RequestLine();
-        if(requestLine !== undefined)
+        if (requestLine !== undefined)
             this.requestLine.noteReceived(requestLine);
 
         this.header = new Header();
