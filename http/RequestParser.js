@@ -16,10 +16,10 @@ export default class RequestParser {
     parse(data) {
         this._raw += data;
 
-        if (this.message === null)
+        if (!this.message)
             this.parsePrefix();
 
-        if (this.message.body !== null)
+        if (this.message && this.message.body)
             this.parseBody();
 
         // TODO: complain about leftovers
