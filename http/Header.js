@@ -88,6 +88,12 @@ export default class Header {
         } // else raw() will assemble
     }
 
+    deleteNamed(name) {
+        delete this._parsed[name.toLowerCase()];
+        this._raw = null;
+        // raw() will assemble
+     }
+
     noteReceived(raw) {
         Must(this._raw === null);
         this._raw = raw;
