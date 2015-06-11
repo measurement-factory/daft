@@ -52,14 +52,14 @@ export default class MessageParser {
 
     determineBodyLength() {
         Must(!this.message.body);
-        if(!this.expectBody)
+        if (!this.expectBody)
             return;
         // TODO: set true body length when possible
         // XXX: do not disclaim body presence when there is one
         let len = this.message.header.contentLength();
-        if(len === null)
+        if (len === null)
             this.determineDefaultBody();
-        else if(len === undefined) {
+        else if (len === undefined) {
             this.message.body = new Body();
             console.log("Warning: Cannot determine message length");
         } else {

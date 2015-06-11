@@ -1,6 +1,6 @@
 /* Manages HTTP message header. */
 
-import {Must} from "../misc/Gadgets";
+import { Must } from "../misc/Gadgets";
 
 
 export default class Header {
@@ -92,7 +92,7 @@ export default class Header {
         delete this._parsed[name.toLowerCase()];
         this._raw = null;
         // raw() will assemble
-     }
+    }
 
     noteReceived(raw) {
         Must(this._raw === null);
