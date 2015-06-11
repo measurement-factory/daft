@@ -1,0 +1,21 @@
+{
+    "parser": "babel-eslint",
+    "env": {
+        "node": true,
+    },
+    "rules": {
+        "esnext": true,
+
+        "curly": false,
+        "eol-last": true,
+        "no-trailing-spaces": true,
+
+        "no-use-before-define": true,
+        "no-underscore-dangle": false,
+        "new-cap": false,
+        "yoda": [2, "never", { "exceptRange": true }],
+        "quotes": false,
+        "comma-dangle": false,
+        "strict": false
+    }
+}
