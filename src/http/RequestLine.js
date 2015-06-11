@@ -63,7 +63,7 @@ export default class RequestLine {
     }
 
     _parse(raw) {
-        let reqRe = /^(\S+)(\s+)([\s\S]*\S)(\s+)(\S+)(\r*\n)$/;
+        let reqRe = /^(\S+)(\s+)(.*\S)(\s+)(\S+)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)
             throw new Error("Unable to parse request-line: " + raw);

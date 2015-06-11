@@ -27,7 +27,7 @@ export default class MessageParser {
     }
 
     parsePrefix() {
-        let messageRe = /^([\s\S]*?\r*\n)([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
+        let messageRe = /^(.*\r*\n)([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
         let match = messageRe.exec(this._raw.toString());
         if (match === null) {
             console.log("no end of headers yet");

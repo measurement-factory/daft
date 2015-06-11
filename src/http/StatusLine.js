@@ -59,7 +59,7 @@ export default class StatusLine {
     }
 
     _parse(raw) {
-        let reqRe = /^(\S+)(\s+)(\d+)(\s+)([\s\S]*?)(\r*\n)$/;
+        let reqRe = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)
             throw new Error("Unable to parse status-line: " + raw);
