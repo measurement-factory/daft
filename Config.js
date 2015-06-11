@@ -12,6 +12,12 @@ export const OriginAddress = { // TODO: Make configurable
     port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
 };
 
+export const HttpStatusCodes = {
+    400: 'Bad Request',
+    502: 'Bad Gateway',
+    503: 'Service Unavailable',
+};
+
 export const ProxyingForward = "forward";
 export const ProxyingInReverse = "reverse";
 export const ProxyingMode = ProxyingForward; // TODO: Make configurable

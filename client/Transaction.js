@@ -1,5 +1,6 @@
-import ResponseParser from "../http/RequestParser"; // XXX
-import Message from "../http/Message";
+import ResponseParser from "../http/ResponseParser";
+import Request from "../http/Request";
+import Response from "../http/Response";
 import { Must, PrettyMime } from "../Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
@@ -60,13 +61,22 @@ export default class Transaction {
     }
 
     onReceive(virginData) {
-        this.parseResponse(virginData);
+        try
+        {
+            this.parseResponse(virginData);
+        }
+        catch (error)
+        {
+            console.log("response parsing error:", error.message);
+            finish();
+            return;
+        }
         this.sendRequest();
     }
 
     parseResponse(virginData) {
         if (!this.responseParser)
-            this.responseParser = new ResponseParser(this);
+            this.responseParser = new ResponseParser(this, this.request);
 
         this.responseParser.parse(virginData);
 
@@ -77,7 +87,7 @@ export default class Transaction {
                 PrettyMime("c< ", parsed));
         }
 
-        if (this.response && this.response.body) {
+        if (this.response && this.response.body && this.response.body.length()) {
             if (this.response.body.innedAll()) {
                 console.log(`parsed all ${this.response.body.innedSize()} response body bytes`);
                 this.doneReceiving = true;
@@ -150,14 +160,14 @@ export default class Transaction {
     }
 
     generateDefaultRequest() {
-        let request = new Message();
+        let request = new Request();
         return request; // not finalized!
     }
 
     finalizeRequest() {
         Must(this.request);
         // XXX: Do not overwrite already set properties
-        this.request.requestLine.finalize();
+        this.request.startLine.finalize();
         this.request.header.add("User-Agent", "DaftClient/1.0");
         this.request.header.add("Connection", "close");
         // no request body by default

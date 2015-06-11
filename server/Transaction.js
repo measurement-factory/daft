@@ -1,5 +1,6 @@
 import RequestParser from "../http/RequestParser";
-import Message from "../http/Message";
+import Request from "../http/Request";
+import Response from "../http/Response";
 import Body from "../http/Body";
 import * as Config from "../Config";
 import { Must, PrettyMime } from "../Gadgets";
@@ -148,7 +149,7 @@ export default class Transaction {
     }
 
     generateDefaultResponse() {
-        let response = new Message();
+        let response = new Response();
         // XXX: Do not overwrite already set properties
         if (Config.DefaultMessageBodyContent !== null) {
             response.body = new Body(Config.DefaultMessageBodyContent);
@@ -165,7 +166,7 @@ export default class Transaction {
         Must(this.response);
         // XXX: Do not overwrite already set properties
         // XXX: support status-line and call .finalize() here
-        this.response.requestLine._rest = "HTTP/1.1 200 OK\r\n";
+        this.response.startLine.finalize();
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
 

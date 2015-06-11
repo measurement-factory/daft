@@ -1,4 +1,4 @@
-/* Manages an HTTP request or response message, including headers and body */
+/* Base class for HTTP request or response message, including headers and body */
 
 import Header from "./Header";
 import RequestLine from "./RequestLine";
@@ -6,11 +6,8 @@ import RequestLine from "./RequestLine";
 export default class Message {
 
     // it is OK to omit parameters
-    constructor(requestLine, header, headerDelimiter) {
-        this.requestLine = new RequestLine();
-        if (requestLine !== undefined)
-            this.requestLine.noteReceived(requestLine);
-
+    constructor(header, headerDelimiter) {
+        this.startLine = null;
         this.header = new Header();
         if (header !== undefined)
             this.header.noteReceived(header);
@@ -25,7 +22,7 @@ export default class Message {
 
     clone() {
         let dupe = new Message();
-        dupe.requestLine = this.requestLine.clone();
+        dupe.startLine = this.startLine.clone();
         dupe.header = this.header.clone();
         dupe.headerDelimiter = this.headerDelimiter;
         dupe.body = this.body ? this.body.clone() : null;
@@ -34,7 +31,7 @@ export default class Message {
     }
 
     rawPrefix() {
-        return this.requestLine.raw() +
+        return this.startLine.raw() +
             this.header.raw() +
             this.headerDelimiter;
     }

@@ -1,7 +1,8 @@
 import Client from "../client/Agent";
 import Server from "../server/Agent";
 import Proxy from "../proxy/Agent";
-import Message from "../http/Message";
+import Request from "../http/Request";
+import Response from "../http/Response";
 import Body from "../http/Body";
 import * as Http from "../http/Gadgets";
 import * as Config from "../Config";
@@ -85,9 +86,12 @@ describe('Daft Proxy', function() {
         caseDone = done;
 
         if (createRequest)
-            client.request = new Message();
-        if (createResponse)
-            server.response = new Message();
+            client.request = new Request();
+        if (createResponse) {
+            server.response = new Response();
+            server.response.body = new Body(Config.DefaultMessageBodyContent);
+            server.response.header.add("Content-Length", Config.DefaultMessageBodyContent.length);
+        }
     }
 
     // makes sure both client and server transactions have finished

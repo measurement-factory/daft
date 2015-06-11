@@ -63,13 +63,6 @@ export default class RequestLine {
     }
 
     _parse(raw) {
-        // XXX: temporary hack to accept responses as requests w/o request-line
-        if (raw.match(/^HTTP/)) {
-            console.log("XXX: assuming this is a response start-line");
-            this._rest = raw;
-            return;
-        }
-
         let reqRe = /^(\S+)(\s+)([\s\S]*\S)(\s+)(\S+)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)
