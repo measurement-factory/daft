@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "mocha": "~2.2.5",
+    "eslint": "~0.22.1",
+    "babel": "~5.5.6",
+    "babel-eslint": "~3.1.15"
+  }
+}
