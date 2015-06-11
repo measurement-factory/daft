@@ -61,16 +61,7 @@ export default class Transaction {
     }
 
     onReceive(virginData) {
-        try
-        {
-            this.parseResponse(virginData);
-        }
-        catch (error)
-        {
-            console.log("response parsing error:", error.message);
-            finish();
-            return;
-        }
+        this.parseResponse(virginData);
         this.sendRequest();
     }
 
