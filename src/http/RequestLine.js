@@ -1,7 +1,7 @@
 /* Manages HTTP request-line. */
 
 import Uri from "../anyp/Uri";
-import * as Config from "../Config";
+import * as Config from "../misc/Config";
 
 export default class RequestLine {
 

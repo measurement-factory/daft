@@ -1,7 +1,7 @@
 import Response from "./Response";
 import Body from "./Body";
 import MessageParser from "./MessageParser";
-import { Must } from "../Gadgets";
+import { Must } from "../misc/Gadgets";
 
 export default class ResponseParser extends MessageParser {
 

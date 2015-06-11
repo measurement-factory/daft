@@ -2,8 +2,8 @@ import RequestParser from "../http/RequestParser";
 import Request from "../http/Request";
 import Response from "../http/Response";
 import Body from "../http/Body";
-import * as Config from "../Config";
-import { Must, PrettyMime } from "../Gadgets";
+import * as Config from "../misc/Config";
+import { Must, PrettyMime } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, origin response) tuple.
 export default class Transaction {

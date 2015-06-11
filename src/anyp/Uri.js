@@ -1,8 +1,8 @@
 /* Manages HTTP URI. */
 
-import * as Global from "../Global";
+import * as Global from "../misc/Global";
 
-import { Must } from "../Gadgets";
+import { Must } from "../misc/Gadgets";
 
 export default class Uri {
 

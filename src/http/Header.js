@@ -1,6 +1,6 @@
 /* Manages HTTP message header. */
 
-import {Must} from "../Gadgets";
+import {Must} from "../misc/Gadgets";
 
 
 export default class Header {

@@ -2,7 +2,7 @@
 
 import Message from "./Message";
 import Body from "./Body";
-import { Must } from "../Gadgets";
+import { Must } from "../misc/Gadgets";
 
 export default class MessageParser {
 

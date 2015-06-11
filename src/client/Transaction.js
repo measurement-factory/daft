@@ -1,7 +1,7 @@
 import ResponseParser from "../http/ResponseParser";
 import Request from "../http/Request";
 import Response from "../http/Response";
-import { Must, PrettyMime } from "../Gadgets";
+import { Must, PrettyMime } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
 export default class Transaction {

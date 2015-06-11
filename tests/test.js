@@ -1,11 +1,11 @@
-import Client from "../client/Agent";
-import Server from "../server/Agent";
-import Proxy from "../proxy/Agent";
-import Request from "../http/Request";
-import Response from "../http/Response";
-import Body from "../http/Body";
-import * as Http from "../http/Gadgets";
-import * as Config from "../Config";
+import Client from "../src/client/Agent";
+import Server from "../src/server/Agent";
+import Proxy from "../src/proxy/Agent";
+import Request from "../src/http/Request";
+import Response from "../src/http/Response";
+import Body from "../src/http/Body";
+import * as Http from "../src/http/Gadgets";
+import * as Config from "../src/misc/Config";
 import assert from "assert";
 
 // throw if the received message differs from the sent one too much

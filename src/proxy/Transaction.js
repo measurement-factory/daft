@@ -3,8 +3,8 @@
 import net from "net";
 import RequestParser from "../http//RequestParser";
 import ResponseParser from "../http//ResponseParser";
-import * as Config from "../Config";
-import { Must, PrettyMime } from "../Gadgets";
+import * as Config from "../misc/Config";
+import { Must, PrettyMime } from "../misc/Gadgets";
 
 export default class Transaction {
 

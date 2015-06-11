@@ -1,4 +1,4 @@
-import * as Global from "../Global";
+import * as Global from "../misc/Global";
 import Transaction from "./Transaction";
 
 class MyTransaction extends Transaction {

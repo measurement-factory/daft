@@ -3,7 +3,7 @@
 import Request from "./Request";
 import Body from "./Body";
 import MessageParser from "./MessageParser";
-import { Must } from "../Gadgets";
+import { Must } from "../misc/Gadgets";
 
 export default class RequestParser extends MessageParser {
 

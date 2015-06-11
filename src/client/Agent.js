@@ -1,6 +1,6 @@
 import net from "net";
-import * as Config from "../Config";
-import * as Global from "../Global";
+import * as Config from "../misc/Config";
+import * as Global from "../misc/Global";
 import Transaction from "./Transaction";
 
 export default class Agent {

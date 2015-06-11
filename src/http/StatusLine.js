@@ -1,6 +1,6 @@
 /* Manages HTTP status-line. */
 
-import {Must} from "../Gadgets";
+import {Must} from "../misc/Gadgets";
 
 export default class StatusLine {
 
