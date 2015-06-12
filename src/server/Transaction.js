@@ -1,5 +1,4 @@
 import RequestParser from "../http/RequestParser";
-import Request from "../http/Request";
 import Response from "../http/Response";
 import Body from "../http/Body";
 import * as Config from "../misc/Config";

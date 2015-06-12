@@ -1,9 +1,7 @@
 /* Incrementally parses HTTP request messages, including headers and body */
 
 import Request from "./Request";
-import Body from "./Body";
 import MessageParser from "./MessageParser";
-import { Must } from "../misc/Gadgets";
 
 export default class RequestParser extends MessageParser {
 

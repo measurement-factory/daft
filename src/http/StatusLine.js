@@ -1,7 +1,5 @@
 /* Manages HTTP status-line. */
 
-import {Must} from "../misc/Gadgets";
-
 export default class StatusLine {
 
     constructor() {

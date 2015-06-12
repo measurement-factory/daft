@@ -1,6 +1,5 @@
 /* Incrementally parses an HTTP message, including first-line, headers, and body */
 
-import Message from "./Message";
 import Body from "./Body";
 import { Must } from "../misc/Gadgets";
 
@@ -40,7 +39,7 @@ export default class MessageParser {
         this.determineBodyLength();
     }
 
-    parseMessage(startLine, header, headerDelimiter) {
+    parseMessage(startLine, header, headerDelimiter) { // eslint-disable-line no-unused-vars
         Must(false); // pure virtual: kids must override
     }
 
