@@ -6,9 +6,9 @@ Daft proxy requires JavaScript 6 (i.e., ECMAScript 6).
 
 * Daft Proxy
 
-The proxy does what the configuration files (so called test cases)
-tell it to do. Each test case is a piece of JavaScript code that
-overwrites default proxy methods or types. A test case may modify
+The proxy does what the configuration files (so called "test plots")
+tell it to do. Each test plot is a piece of JavaScript code that
+overwrites default proxy methods or types. A test plot may modify
 messages while they are forwarded or even prevent their forwarding
 (e.g., to simulate caching or mimic a broken proxy). This behavior
 is handy for testing software that has to work with HTTP proxies.
@@ -21,19 +21,19 @@ localhost:80. To customize, modify Config.js.
 
 Usage:
 
-    babel src/proxy/test1.js > src/proxy/test1.js5 && \
-        ./src/proxy/index.js src/proxy/test1.js5
+    babel src/proxy/plot1.js > src/proxy/plot1.js5 && \
+        ./src/proxy/index.js src/proxy/plot1.js5
 
 
 * Daft Client
 
-Like Daft Proxy, the client tool is driven by test cases.
-The client requires a test case to run.
+Like Daft Proxy, the client tool is driven by "test plots".
+The client requires a test plot to run.
 
 Usage:
 
-    babel src/client/test-raw.js > src/client/test-raw.js5 && \
-        ./src/client/index.js src/client/test-raw.js5
+    babel src/client/plot-raw.js > src/client/plot-raw.js5 && \
+        ./src/client/index.js src/client/plot-raw.js5
 
 
 * Daft Server
