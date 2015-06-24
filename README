@@ -1,7 +1,13 @@
-Daft Proxy is a simple "Do as told" HTTP proxy.
+There are currently three tools in the Daft toolbox:
+an HTTP Proxy, an HTTP Client, and an HTTP Server.
+
+Daft proxy requires JavaScript 6 (i.e., ECMAScript 6).
+
+
+* Daft Proxy
 
 The proxy does what the configuration files (so called test cases)
-tell it to do. Each test case is a piece of Javascript code that
+tell it to do. Each test case is a piece of JavaScript code that
 overwrites default proxy methods or types. A test case may modify
 messages while they are forwarded or even prevent their forwarding
 (e.g., to simulate caching or mimic a broken proxy). This behavior
@@ -13,10 +19,24 @@ except for adding the required Via header field.
 Daft Proxy listens on IPv4 port 3128 and forwards all messages to
 localhost:80. To customize, modify Config.js.
 
-
-Daft proxy requires Javascript 6 (i.e., ECMAScript 6).
-
 Usage:
 
     babel src/proxy/test1.js > src/proxy/test1.js5 && \
         ./src/proxy/index.js src/proxy/test1.js5
+
+
+* Daft Client
+
+Like Daft Proxy, the client tool is driven by test cases.
+The client requires a test case to run.
+
+Usage:
+
+    babel src/client/test-raw.js > src/client/test-raw.js5 && \
+        ./src/client/index.js src/client/test-raw.js5
+
+
+* Daft Server
+
+The server tool has not been documented yet. It is currently used
+in built-in test cases that test Daft Proxy.
