@@ -1,7 +1,6 @@
 /* Manages HTTP request-line. */
 
 import Uri from "../anyp/Uri";
-import * as Config from "../misc/Config";
 
 export default class RequestLine {
 
@@ -30,16 +29,17 @@ export default class RequestLine {
     }
 
     finalize() {
-        // XXX: Do not overwrite already set properties
-        this.method = "GET";
-        this.methodDelimiter = " ";
-
-        const url = `http://${Config.OriginAddress.host}:${Config.OriginAddress.port}/`;
-        this.uri = Uri.Parse(url); // XXX: call uri.finalize() instead
-
-        this.uriDelimiter = " ";
-        this._rest = "HTTP/1.1";
-        this.terminator = "\r\n";
+        if(this.method === null)
+            this.method = "GET";
+        if(this.methodDelimiter === null)
+            this.methodDelimiter = " ";
+        this.uri.finalize();
+        if(this.uriDelimiter === null)
+            this.uriDelimiter = " ";
+        if(this._rest === null)
+            this._rest = "HTTP/1.1";
+        if(this.terminator === null)
+            this.terminator = "\r\n";
     }
 
     raw() {

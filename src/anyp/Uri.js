@@ -1,6 +1,7 @@
 /* Manages HTTP URI. */
 
 import * as Global from "../misc/Global";
+import * as Config from "../misc/Config";
 
 import { Must } from "../misc/Gadgets";
 
@@ -100,5 +101,16 @@ export default class Uri {
             this._port = urlMatch[3].substring(1);
         if (urlMatch[4] !== undefined)
             this._rest = urlMatch[4];
+    }
+
+    finalize() {
+        if (this.scheme === null)
+            this.scheme = "http";
+        if (this.host === null)
+            this.host = Config.OriginAddress.host;
+        if (this._port === null)
+            this._port = Config.OriginAddress.port; // TODO: Omit default.
+        if (this._rest === null)
+            this._rest = "/";
     }
 }
