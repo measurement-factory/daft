@@ -20,6 +20,7 @@ export default class Agent {
                 this.socket.address(), this.socket.remoteAddress);
 
             ++this.xCount;
+            this.socket.setEncoding('binary');
             let xactType = Global.Types.getNumberedOrMatched(
                 Transaction, this.xCount, this.socket);
             let xact = new xactType(this.socket, this.request);

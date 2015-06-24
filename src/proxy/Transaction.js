@@ -4,7 +4,7 @@ import net from "net";
 import RequestParser from "../http//RequestParser";
 import ResponseParser from "../http//ResponseParser";
 import * as Config from "../misc/Config";
-import { Must, PrettyMime } from "../misc/Gadgets";
+import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 
 export default class Transaction {
 
@@ -80,6 +80,7 @@ export default class Transaction {
         /* setup event listeners for the origin socket */
 
         this.originSocket.on('connection', () => {
+            this.originSocket.setEncoding('binary');
             let addr = `${this.originSocket.remoteAddress}:${this.originSocket.remotePort}`;
             console.log(`connected to ${addr}`);
         });
@@ -110,7 +111,7 @@ export default class Transaction {
         {
             console.log("request parsing error:", error.message);
             this.ignoreUserData = "request parsing error";
-            this.userSocket.write(this.generateErrorResponse(400));
+            SendBytes(this.userSocket, this.generateErrorResponse(400), "error response", "c< ");
             this.userSocket.end();
             return;
         }
@@ -144,17 +145,12 @@ export default class Transaction {
             this.startConnectingToOrigin();
 
             // when finished connecting
-            let out = this.adaptedRequest.rawPrefix();
-            this.originSocket.write(out);
-            console.log(`sending ${out.length} request header bytes:\n` +
-                PrettyMime(">s ", out));
+            SendBytes(this.originSocket, this.adaptedRequest.rawPrefix(), "request header", ">s ");
         }
 
         if (this.adaptedRequest.body) {
             // now or when finished connecting
-            let out = this.adaptedRequest.body.out();
-            this.originSocket.write(out);
-            console.log(`sending ${out.length} request body bytes`);
+            SendBytes(this.originSocket, this.adaptedRequest.body.out(), "request body");
         }
     }
 
@@ -215,7 +211,7 @@ export default class Transaction {
             console.log("response parsing error:", error.message);
             this.ignoreOriginData = "response parsing error";
             // XXX: We might be writing or have written another adapted response already
-            this.userSocket.write(this.generateErrorResponse(502));
+            SendBytes(this.userSocket, this.generateErrorResponse(502), "error response", "c< ");
             this.userSocket.end();
             return;
         }
@@ -246,17 +242,11 @@ export default class Transaction {
 
         if(!this.responseHeadersSent) {
             this.responseHeadersSent = true;
-            let out = this.adaptedResponse.rawPrefix();
-            this.userSocket.write(out);
-            console.log(`sending ${out.length} response header bytes:\n` +
-                    PrettyMime("c< ", out));
+            SendBytes(this.userSocket, this.adaptedResponse.rawPrefix(), "response header", "c< ");
         }
 
-        if (this.adaptedResponse.body) {
-            let out = this.adaptedResponse.body.out();
-            this.userSocket.write(out);
-            console.log(`sending ${out.length} response body bytes`);
-        }
+        if (this.adaptedResponse.body)
+            SendBytes(this.userSocket, this.adaptedResponse.body.out(), "response body");
     }
 
     adaptResponse() {

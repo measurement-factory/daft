@@ -1,6 +1,6 @@
 import ResponseParser from "../http/ResponseParser";
 import Request from "../http/Request";
-import { Must, PrettyMime } from "../misc/Gadgets";
+import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
 export default class Transaction {
@@ -110,10 +110,7 @@ export default class Transaction {
 
         if (!hadRequest) {
             // send request headers once we got them
-            let out = this.request.rawPrefix();
-            this.socket.write(out);
-            console.log(`sending ${out.length} request header bytes:\n` +
-                PrettyMime("c> ", out));
+            SendBytes(this.socket, this.request.rawPrefix(), "request header", "c> ");
 
             if (!this.request.body) {
                 console.log("sent a bodyless request");
@@ -125,10 +122,9 @@ export default class Transaction {
 
         Must(this.request.body);
         let chunk = this.request.body.out();
-        if (chunk.length) {
-            this.socket.write(chunk);
-            console.log(`sending ${chunk.length} request body bytes`);
-        }
+        if (chunk.length)
+            SendBytes(this.socket, chunk, "request body");
+
         if (this.request.body.outedAll()) {
             console.log("sent the entire request body");
             this.doneSending = true;

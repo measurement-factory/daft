@@ -17,6 +17,7 @@ export default class Agent {
 
         this.server.on('connection', userSocket => {
             ++this.xCount;
+            userSocket.setEncoding('binary');
             let xactType = Global.Types.getNumberedOrMatched(
                 Transaction, this.xCount, userSocket);
             let xact = new xactType(userSocket, this.response);

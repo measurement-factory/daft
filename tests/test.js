@@ -131,10 +131,18 @@ describe('Daft Proxy', function() {
     it('should forward POST', function(done) {
         prepStart(done);
 
+        client.request.startLine.method = 'POST';
         client.request.body = new Body(Config.DefaultMessageBodyContent);
         client.request.header.add("Content-Length", Config.DefaultMessageBodyContent.length);
         client.request.callback = onClientResponse;
 
+        doStart();
+    });
+
+    it('should not misinterpret HTTP header bytes as utf8 sequences', function(done) {
+        prepStart(done);
+
+        client.request.startLine.method = Buffer("G\u2028T").toString("binary");
         doStart();
     });
 });
