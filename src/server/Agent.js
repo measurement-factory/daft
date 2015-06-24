@@ -25,7 +25,7 @@ export default class Agent {
         });
 
         this.server.listen(Config.OriginAddress.port, Config.OriginAddress.host,
-            () => function() {
+            () => function () {
                 console.log("Server listening on %j", this.server.address());
             });
     }

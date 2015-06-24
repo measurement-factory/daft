@@ -10,19 +10,18 @@ import { Must } from "../misc/Gadgets";
 // cut-and-paste a real request from some log and be done with it.
 class MyTransaction extends Transaction {
     constructor(userSocket, request) {
-		Must(!request);
+        Must(!request);
 
-		let raw =
-`GET http://localhost/path|with|unwise|characters HTTP/1.1
+        let raw = `GET http://localhost/path|with|unwise|characters HTTP/1.1
 Host: localhost
 
 `;
 
-		let parser = new RequestParser();
-		parser.parse(raw);
+        let parser = new RequestParser();
+        parser.parse(raw);
 
-		Must(parser.message);
-		super(userSocket, parser.message);
+        Must(parser.message);
+        super(userSocket, parser.message);
     }
 }
 

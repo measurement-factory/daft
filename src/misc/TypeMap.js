@@ -1,7 +1,6 @@
 /* TypeMap: A registry for classes (types), with filter-driven search */
 
-export default
-class TypeMap {
+export default class TypeMap {
     constructor() {
         this._map = new Map();
     }

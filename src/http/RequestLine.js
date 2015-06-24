@@ -29,16 +29,16 @@ export default class RequestLine {
     }
 
     finalize() {
-        if(this.method === null)
+        if (this.method === null)
             this.method = "GET";
-        if(this.methodDelimiter === null)
+        if (this.methodDelimiter === null)
             this.methodDelimiter = " ";
         this.uri.finalize();
-        if(this.uriDelimiter === null)
+        if (this.uriDelimiter === null)
             this.uriDelimiter = " ";
-        if(this._rest === null)
+        if (this._rest === null)
             this._rest = "HTTP/1.1";
-        if(this.terminator === null)
+        if (this.terminator === null)
             this.terminator = "\r\n";
     }
 

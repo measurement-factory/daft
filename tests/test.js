@@ -27,7 +27,7 @@ function checkForwarded(sent, received, kind) {
         assert.equal(null, received.body);
 }
 
-describe('Daft Proxy', function() {
+describe('Daft Proxy', function () {
 
     let proxy = null;
     let server = null;
@@ -39,7 +39,7 @@ describe('Daft Proxy', function() {
     let caseDone = null; // the done callback of the current test case
 
     // TODO: call done when server and proxy actually start
-    beforeEach(function() {
+    beforeEach(function () {
         assert(!caseDone);
 
         assert(!proxy && !server && !client);
@@ -55,10 +55,13 @@ describe('Daft Proxy', function() {
     });
 
     // TODO: call done when server and proxy actually stop
-    afterEach(function() {
-        if (client) client.stop();
-        if (proxy) proxy.stop();
-        if (server) server.stop();
+    afterEach(function () {
+        if (client)
+            client.stop();
+        if (proxy)
+            proxy.stop();
+        if (server)
+            server.stop();
 
         proxy = null;
         server = null;
@@ -123,12 +126,12 @@ describe('Daft Proxy', function() {
         // now wait for onServerResponse and onClientResponse calls
     }
 
-    it('should forward GET', function(done) {
+    it('should forward GET', function (done) {
         prepStart(done);
         doStart();
     });
 
-    it('should forward POST', function(done) {
+    it('should forward POST', function (done) {
         prepStart(done);
 
         client.request.startLine.method = 'POST';
@@ -139,7 +142,7 @@ describe('Daft Proxy', function() {
         doStart();
     });
 
-    it('should not misinterpret HTTP header bytes as utf8 sequences', function(done) {
+    it('should not misinterpret HTTP header bytes as utf8 sequences', function (done) {
         prepStart(done);
 
         client.request.startLine.method = Buffer("G\u2028T").toString("binary");

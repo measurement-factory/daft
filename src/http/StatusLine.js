@@ -37,17 +37,17 @@ export default class StatusLine {
 
     raw() {
         let image = "";
-        if(this.httpVersion !== null)
+        if (this.httpVersion !== null)
             image += this.httpVersion;
-        if(this.versionDelimiter !== null)
+        if (this.versionDelimiter !== null)
             image += this.versionDelimiter;
-        if(this.statusCode !== null)
+        if (this.statusCode !== null)
             image += this.statusCode;
-        if(this.statusDelimiter !== null)
+        if (this.statusDelimiter !== null)
             image += this.statusDelimiter;
-        if(this.reasonPhrase !== null)
+        if (this.reasonPhrase !== null)
             image += this.reasonPhrase;
-        if(this.terminator !== null)
+        if (this.terminator !== null)
             image += this.terminator;
         return image;
     }
@@ -65,7 +65,7 @@ export default class StatusLine {
         this.versionDelimiter = match[2];
         this.statusCode = match[3];
         this.statusDelimiter = match[4];
-        if(match[5] !== undefined)
+        if (match[5] !== undefined)
             this.reasonPhrase = match[5];
         this.terminator = match[6];
     }

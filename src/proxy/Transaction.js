@@ -103,12 +103,9 @@ export default class Transaction {
             return;
         }
 
-        try
-        {
+        try {
             this.parseRequest(virginData);
-        }
-        catch (error)
-        {
+        } catch (error) {
             console.log("request parsing error:", error.message);
             this.ignoreUserData = "request parsing error";
             SendBytes(this.userSocket, this.generateErrorResponse(400), "error response", "c< ");
@@ -201,12 +198,9 @@ export default class Transaction {
             return;
         }
 
-        try
-        {
+        try {
             this.parseResponse(virginData);
-        }
-        catch (error)
-        {
+        } catch (error) {
             // XXX: Keep in sync with request parsing code in onUserReceive()
             console.log("response parsing error:", error.message);
             this.ignoreOriginData = "response parsing error";
@@ -240,7 +234,7 @@ export default class Transaction {
             return;
         }
 
-        if(!this.responseHeadersSent) {
+        if (!this.responseHeadersSent) {
             this.responseHeadersSent = true;
             SendBytes(this.userSocket, this.adaptedResponse.rawPrefix(), "response header", "c< ");
         }
