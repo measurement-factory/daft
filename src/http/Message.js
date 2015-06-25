@@ -19,14 +19,21 @@ export default class Message {
         this.callback = null;
     }
 
+    // creates and returns an exact replica of this message
     clone() {
-        let dupe = new Message();
-        dupe.startLine = this.startLine.clone();
-        dupe.header = this.header.clone();
-        dupe.headerDelimiter = this.headerDelimiter;
-        dupe.body = this.body ? this.body.clone() : null;
-        dupe.callback = this.callback;
+        let dupe = new this.constructor();
+        dupe.reset(this);
         return dupe;
+    }
+
+    // makes us an exact replica of them
+    reset(them) {
+        this.startLine = them.startLine.clone();
+        this.header = them.header.clone();
+        this.headerDelimiter = them.headerDelimiter;
+        this.body = them.body ? them.body.clone() : null;
+        this.callback = them.callback;
+        return this;
     }
 
     rawPrefix() {
