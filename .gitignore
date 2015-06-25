@@ -1,4 +1,5 @@
 # Sorted with: LC_ALL=C sort --stable --unique --output=.gitignore .gitignore
 *.js5
-a
-b
+/a
+/b
+/node_modules/
