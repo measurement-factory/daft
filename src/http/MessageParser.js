@@ -8,6 +8,7 @@ export default class MessageParser {
     constructor(transaction) {
         this.transaction = transaction;
         this.message = null;
+        this._messageType = null; // kids must set this in their constructors
 
         this._raw = ""; // unparsed data
         this.expectBody = true;
@@ -33,14 +34,13 @@ export default class MessageParser {
             return;
         }
 
-        this.parseMessage(match[1], match[2], match[3]);
+        this.message = new this._messageType();
+        this.message.startLine.noteReceived(match[1]);
+        this.message.header.noteReceived(match[2]);
+        this.message.headerDelimiter = match[3];
         this._raw = match[4]; // body [prefix] or an empty string
 
         this.determineBodyLength();
-    }
-
-    parseMessage(startLine, header, headerDelimiter) { // eslint-disable-line no-unused-vars
-        Must(false); // pure virtual: kids must override
     }
 
     // called for messages with neither Content-Length nor chunked encoding

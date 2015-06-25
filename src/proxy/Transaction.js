@@ -139,6 +139,7 @@ export default class Transaction {
         }
 
         if (!this.originSocket) {
+            this.adaptedRequest.finalize();
             this.startConnectingToOrigin();
 
             // when finished connecting
@@ -235,6 +236,7 @@ export default class Transaction {
         }
 
         if (!this.responseHeadersSent) {
+            this.adaptedResponse.finalize();
             this.responseHeadersSent = true;
             SendBytes(this.userSocket, this.adaptedResponse.rawPrefix(), "response header", "c< ");
         }

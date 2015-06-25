@@ -7,10 +7,7 @@ export default class RequestParser extends MessageParser {
 
     constructor(transaction) {
         super(transaction);
-    }
-
-    parseMessage(startLine, header, headerDelimiter) {
-        this.message = new Request(startLine, header, headerDelimiter);
+        this._messageType = Request;
     }
 
     determineDefaultBody() {

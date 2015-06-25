@@ -1,17 +1,18 @@
 /* Base class for HTTP request or response message, including headers and body */
 
 import Header from "./Header";
+import { Must } from "../misc/Gadgets";
 
 export default class Message {
 
-    // it is OK to omit parameters
-    constructor(header, headerDelimiter) {
-        this.startLine = null;
-        this.header = new Header();
-        if (header !== undefined)
-            this.header.noteReceived(header);
+    constructor(startLine, ...args) {
+        Must(startLine);
+        Must(!args.length);
 
-        this.headerDelimiter = headerDelimiter !== undefined ? headerDelimiter : "\r\n";
+        this.startLine = startLine;
+
+        this.header = new Header();
+        this.headerDelimiter = null;
 
         this.body = null; // no body by default
 
@@ -34,6 +35,14 @@ export default class Message {
         this.body = them.body ? them.body.clone() : null;
         this.callback = them.callback;
         return this;
+    }
+
+    finalize() {
+        this.startLine.finalize();
+        this.header.finalize();
+        if (this.headerDelimiter === null)
+            this.headerDelimiter = "\r\n";
+        // do not finalize this.message.body; it may be dynamic
     }
 
     rawPrefix() {

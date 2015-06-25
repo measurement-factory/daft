@@ -23,6 +23,10 @@ export default class Header {
         return dupe;
     }
 
+    finalize() {
+        // no header fields by default
+    }
+
     raw() {
         if (this._raw !== null)
             return this._raw;

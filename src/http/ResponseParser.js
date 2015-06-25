@@ -7,13 +7,11 @@ export default class ResponseParser extends MessageParser {
 
     constructor(transaction, request) {
         super(transaction);
+        this._messageType = Response;
+
         Must(request !== undefined);
         this.request = request;
         this.expectBody = this.request.startLine.method !== "HEAD";
-    }
-
-    parseMessage(startLine, header, headerDelimiter) {
-        this.message = new Response(startLine, header, headerDelimiter);
     }
 
     determineDefaultBody() {

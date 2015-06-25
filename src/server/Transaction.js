@@ -160,8 +160,7 @@ export default class Transaction {
 
         Must(this.response);
         // XXX: Do not overwrite already set properties
-        // XXX: support status-line and call .finalize() here
-        this.response.startLine.finalize();
+        this.response.finalize();
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
 
