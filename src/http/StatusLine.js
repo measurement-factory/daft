@@ -52,11 +52,7 @@ export default class StatusLine {
         return image;
     }
 
-    noteReceived(rawBytes) {
-        this._parse(rawBytes);
-    }
-
-    _parse(raw) {
+    parse(raw) {
         let reqRe = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)

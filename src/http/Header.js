@@ -98,15 +98,10 @@ export default class Header {
         // raw() will assemble
     }
 
-    noteReceived(raw) {
+    parse(raw) {
         Must(this._raw === null);
+        Must(raw !== null && raw !== undefined);
         this._raw = raw;
-
-        this._parse();
-    }
-
-    _parse() {
-        Must(this._raw !== null);
 
         // replace obs-fold with a single space
         let rawH = this._raw;

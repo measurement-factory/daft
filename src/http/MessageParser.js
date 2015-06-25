@@ -35,8 +35,8 @@ export default class MessageParser {
         }
 
         this.message = new this._messageType();
-        this.message.startLine.noteReceived(match[1]);
-        this.message.header.noteReceived(match[2]);
+        this.message.startLine.parse(match[1]);
+        this.message.header.parse(match[2]);
         this.message.headerDelimiter = match[3];
         this._raw = match[4]; // body [prefix] or an empty string
 

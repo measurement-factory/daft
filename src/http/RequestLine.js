@@ -58,11 +58,7 @@ export default class RequestLine {
         return image;
     }
 
-    noteReceived(rawBytes) {
-        this._parse(rawBytes);
-    }
-
-    _parse(raw) {
+    parse(raw) {
         let reqRe = /^(\S+)(\s+)(.*\S)(\s+)(\S+)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)
