@@ -28,9 +28,13 @@ export default class Agent {
         });
     }
 
-    stop() {
-        if (this.socket)
+    stop(doneCallback) {
+        if (this.socket) {
             this.socket.destroy(); // XXX: what if a transaction does it too?
+            this.socket = null;
+        }
         // TODO: and kill all pending transactions?
+        if (doneCallback)
+            doneCallback();
     }
 }
