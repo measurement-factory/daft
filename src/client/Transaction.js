@@ -1,6 +1,6 @@
 import ResponseParser from "../http/ResponseParser";
 import Request from "../http/Request";
-import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
+import { Must, PrettyMime, SendBytes, UniqueId } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
 export default class Transaction {
@@ -156,6 +156,7 @@ export default class Transaction {
         this.request.finalize();
         this.request.header.add("User-Agent", "DaftClient/1.0");
         this.request.header.add("Connection", "close");
+        this.request.header.add("X-Daft-Request-ID", UniqueId("req"));
         // no request body by default
 
         this.finalizedRequest = true;
