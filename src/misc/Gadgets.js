@@ -35,3 +35,7 @@ export function SendBytes(socket, bytes, description, mimePrefix) {
         toLog += ":\n" + PrettyMime(mimePrefix, bytes);
     console.log(toLog);
 }
+
+export function UniqueId(prefix) {
+    return prefix + Math.floor(1.0 + 0xFFFFFFFF * Math.random()).toString(16);
+}
