@@ -73,9 +73,12 @@ export default class StatusLine {
 
     ReasonPhrase(statusCode) {
         switch (statusCode) {
-            case 200: return "OK";
-            case 304: return "Not Modified";
-            default: return "Other";
+            case 200:
+                return "OK";
+            case 304:
+                return "Not Modified";
+            default:
+                return "Other";
         }
     }
 }
