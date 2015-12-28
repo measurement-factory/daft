@@ -13,7 +13,7 @@ export default class Agent {
 
     start() {
         // open a TCP connection to the proxy
-        this.socket = net.connect(Config.ListeningAddress);
+        this.socket = net.connect(Config.ProxyListeningAddress);
 
         this.socket.on('connect', () => {
             console.log("Client at %j connected to %j",

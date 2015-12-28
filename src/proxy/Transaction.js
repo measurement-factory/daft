@@ -64,7 +64,7 @@ export default class Transaction {
     }
 
     originAddress() {
-        return Config.isReverseProxy() ? Config.OriginAddress : this.forwardingAddress();
+        return Config.isReverseProxy() ? Config.OriginListeningAddress : this.forwardingAddress();
     }
 
     forwardingAddress() {

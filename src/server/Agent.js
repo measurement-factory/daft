@@ -26,7 +26,8 @@ export default class Agent {
             xact.start();
         });
 
-        this.server.listen(Config.OriginAddress.port, Config.OriginAddress.host, (error) => {
+        this.server.listen(Config.OriginListeningAddress.port,
+            Config.OriginListeningAddress.host, (error) => {
             Must(!error);
             console.log("Server listening on %j", this.server.address());
             if (listensCallback !== null)

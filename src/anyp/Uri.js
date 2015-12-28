@@ -107,9 +107,9 @@ export default class Uri {
         if (this.scheme === null)
             this.scheme = "http";
         if (this.host === null)
-            this.host = Config.OriginAddress.host;
+            this.host = Config.OriginAuthority.host;
         if (this._port === null)
-            this._port = Config.OriginAddress.port; // TODO: Omit default.
+            this._port = Config.OriginAuthority.port; // TODO: Omit default.
         if (this._rest === null)
             this._rest = "/";
     }

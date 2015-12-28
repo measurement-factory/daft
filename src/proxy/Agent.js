@@ -28,7 +28,7 @@ export default class Agent {
             console.log("Proxy listening on %j", this.server.address());
         });
 
-        this.server.listen(Config.ListeningAddress.port, Config.ListeningAddress.host);
+        this.server.listen(Config.ProxyListeningAddress.port, Config.ProxyListeningAddress.host);
     }
 
     stop() {

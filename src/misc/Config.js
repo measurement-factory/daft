@@ -2,14 +2,33 @@
 
 /* all other globals are in Global.js */
 
-export const ListeningAddress = { // TODO: Make configurable
-    host: undefined,
+/*
+ * *ListeningAddresses below are used for both listening and connecting.
+ * Nodejs default listening behavior is version-specific. We use an
+ * explicit '::' address in hope to force the latest "undefined" behavior:
+ * - When listening, "undefined" host means all local addresses
+ *   (IPv6 if possible or IPv4 otherwise).
+ * - When connecting, "undefined" host means "localhost".
+ */
+
+// Used to listen for proxy requests and open connections to the proxy. See
+// also: OriginListeningAddress.
+export const ProxyListeningAddress = { // TODO: Make configurable
+    host: '::',
     port: 3128
 };
 
-export const OriginAddress = { // TODO: Make configurable
-    host: 'localhost', // required for default request URLs (XXX?)
+// Used to listen for origin server requests and open connections to the origin
+// server. See also: OriginAuthority and ProxyListeningAddress.
+export const OriginListeningAddress = { // TODO: Make configurable
+    host: '::',
     port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
+};
+
+// Used to form request URLs. See also: OriginListeningAddress.
+export const OriginAuthority = { // TODO: Make configurable
+    host: 'localhost',
+    port: OriginListeningAddress.port
 };
 
 export const HttpStatusCodes = {
