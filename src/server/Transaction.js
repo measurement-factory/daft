@@ -2,7 +2,7 @@ import RequestParser from "../http/RequestParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
 import * as Config from "../misc/Config";
-import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
+import { Must, PrettyMime, SendBytes, UniqueId } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, origin response) tuple.
 export default class Transaction {
@@ -144,14 +144,7 @@ export default class Transaction {
     }
 
     generateDefaultResponse() {
-        let response = new Response();
-        // XXX: Do not overwrite already set properties
-        if (Config.DefaultMessageBodyContent !== null) {
-            response.body = new Body(Config.DefaultMessageBodyContent);
-            if (response.body.length() !== null)
-                response.header.add("Content-Length", response.body.length());
-        }
-        return response; // not finalized
+        return new Response(); // not finalized; see finalizeResponse()
     }
 
     finalizeResponse() {
@@ -163,6 +156,15 @@ export default class Transaction {
         this.response.finalize();
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
+        this.response.header.add("Date", new Date().toUTCString());
+        this.response.header.add("X-Daft-Response-ID", UniqueId("rep"));
+
+        // XXX: do not add body to HEAD responses
+        // XXX: add other bodyless status codes
+        if (!this.response.body && this.response.startLine.statusCode != 304) {
+            if (Config.DefaultMessageBodyContent !== null)
+                this.response.addBody(new Body(Config.DefaultMessageBodyContent));
+        }
 
         this._finalizedResponse = true;
     }
