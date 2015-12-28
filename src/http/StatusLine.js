@@ -26,13 +26,18 @@ export default class StatusLine {
     }
 
     finalize() {
-        // XXX: Do not overwrite already set properties
-        this.httpVersion = "HTTP/1.1";
-        this.versionDelimiter = " ";
-        this.statusCode = "200";
-        this.statusDelimiter = " ";
-        this.reasonPhrase = "OK";
-        this.terminator = "\r\n";
+        if (this.httpVersion === null)
+            this.httpVersion = "HTTP/1.1";
+        if (this.versionDelimiter === null)
+            this.versionDelimiter = " ";
+        if (this.statusCode === null)
+            this.statusCode = "200";
+        if (this.statusDelimiter === null)
+            this.statusDelimiter = " ";
+        if (this.reasonPhrase === null)
+            this.reasonPhrase = this.ReasonPhrase(this.statusCode);
+        if (this.terminator === null)
+            this.terminator = "\r\n";
     }
 
     raw() {
@@ -64,5 +69,13 @@ export default class StatusLine {
         if (match[5] !== undefined)
             this.reasonPhrase = match[5];
         this.terminator = match[6];
+    }
+
+    ReasonPhrase(statusCode) {
+        switch (statusCode) {
+            case 200: return "OK";
+            case 304: return "Not Modified";
+            default: return "Other";
+        }
     }
 }
