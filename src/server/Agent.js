@@ -2,6 +2,7 @@ import net from "net";
 import * as Config from "../misc/Config";
 import * as Global from "../misc/Global";
 import Transaction from "./Transaction";
+import { Must } from "../misc/Gadgets";
 
 export default class Agent {
     constructor() {
@@ -11,7 +12,8 @@ export default class Agent {
         this.server = null; // TCP server to be created in start()
     }
 
-    start() {
+    start(listensCallback) {
+
         // start a TCP server
         this.server = net.createServer();
 
@@ -24,15 +26,27 @@ export default class Agent {
             xact.start();
         });
 
-        this.server.listen(Config.OriginAddress.port, Config.OriginAddress.host,
-            () => function () {
-                console.log("Server listening on %j", this.server.address());
-            });
+        this.server.listen(Config.OriginAddress.port, Config.OriginAddress.host, (error) => {
+            Must(!error);
+            console.log("Server listening on %j", this.server.address());
+            if (listensCallback !== null)
+                listensCallback();
+        });
     }
 
-    stop() {
+    stop(closedCallback) {
         // TODO: kill all pending transactions first?
-        if (this.server)
-            this.server.close();
+        if (this.server && this.server.address()) {
+            let savedAddress = this.server.address();
+            this.server.close((error) => {
+                Must(!error);
+                console.log("Server stopped listening on %j", savedAddress);
+                if (closedCallback !== null)
+                    closedCallback();
+            });
+        } else {
+            if (closedCallback !== null)
+                closedCallback();
+        }
     }
 }
