@@ -42,12 +42,24 @@ export default class Message {
         this.header.finalize();
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
-        // do not finalize this.message.body; it may be dynamic
+        this.syncContentLength();
+        // do not finalize this.body; it may be dynamic
     }
 
     rawPrefix() {
         return this.startLine.raw() +
             this.header.raw() +
             this.headerDelimiter;
+    }
+
+    addBody(body) {
+        Must(!this.body); // not a reset; we do not remove old Content-Length
+        this.body = body;
+        this.syncContentLength();
+    }
+
+    syncContentLength() {
+        if (this.body !== null && this.body.length() !== null && !this.header.has("Content-Length"))
+            this.header.add("Content-Length", this.body.length());
     }
 }
