@@ -30,7 +30,7 @@ export default class Agent {
             Config.OriginListeningAddress.host, (error) => {
             Must(!error);
             console.log("Server listening on %j", this.server.address());
-            if (listensCallback !== null)
+            if (listensCallback)
                 listensCallback();
         });
     }
@@ -42,11 +42,11 @@ export default class Agent {
             this.server.close((error) => {
                 Must(!error);
                 console.log("Server stopped listening on %j", savedAddress);
-                if (closedCallback !== null)
+                if (closedCallback)
                     closedCallback();
             });
         } else {
-            if (closedCallback !== null)
+            if (closedCallback)
                 closedCallback();
         }
     }
