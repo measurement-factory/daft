@@ -9,6 +9,8 @@ export default class Agent {
         this.request = null; // optional default for all transactions
 
         this.socket = null; // connection to be established in start()
+        this.localAddress = null;
+        this.remoteAddress = null;
     }
 
     start() {
@@ -16,8 +18,10 @@ export default class Agent {
         this.socket = net.connect(Config.ProxyListeningAddress);
 
         this.socket.on('connect', () => {
+            this.localAddress = this.socket.address();
+            this.remoteAddress = this.socket.remoteAddress;
             console.log("Client at %j connected to %j",
-                this.socket.address(), this.socket.remoteAddress);
+                this.localAddress, this.remoteAddress);
 
             ++this.xCount;
             this.socket.setEncoding('binary');
@@ -32,6 +36,8 @@ export default class Agent {
         if (this.socket) {
             this.socket.destroy(); // XXX: what if a transaction does it too?
             this.socket = null;
+            console.log("Client at %j disconnected from %j",
+                this.localAddress, this.remoteAddress);
         }
         // TODO: and kill all pending transactions?
         if (doneCallback)
