@@ -28,11 +28,15 @@ export default class Transaction {
         this.ignoreOriginData = null;
 
         this.responseHeadersSent = null;
+
+        this.doneCallback = null; // set by the initiator if needed
     }
 
     destructor() {
         let myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`ending ${myType} transaction`);
+        if (this.doneCallback)
+            this.doneCallback(this);
     }
 
     start() {

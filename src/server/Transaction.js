@@ -19,6 +19,7 @@ export default class Transaction {
 
         this.doneReceiving = false; // incoming message
         this.doneSending = false; // outgoing message
+        this.doneCallback = null; // set by the initiator if needed
     }
 
     start() {
@@ -47,8 +48,8 @@ export default class Transaction {
             this.socket = null;
         }
 
-        if (this.response && this.response.callback)
-            this.response.callback(this);
+        if (this.doneCallback)
+            this.doneCallback(this);
     }
 
     checkpoint() {
@@ -161,7 +162,7 @@ export default class Transaction {
 
         // XXX: do not add body to HEAD responses
         // XXX: add other bodyless status codes
-        if (!this.response.body && this.response.startLine.statusCode != 304) {
+        if (!this.response.body && this.response.startLine.statusCode !== 304) {
             if (Config.DefaultMessageBodyContent !== null)
                 this.response.addBody(new Body(Config.DefaultMessageBodyContent));
         }

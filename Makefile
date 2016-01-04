@@ -1,5 +1,5 @@
 test:
-	mocha --compilers js:babel/register tests/*.js
+	mocha --require tests/mocha-config tests/test.js
 
 check-lint:
 	eslint `git ls-files . | grep '[.]js$$'`

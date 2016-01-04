@@ -1,39 +1,40 @@
-import net from "net";
+import syncNet from "net";
+import Promise from 'bluebird';
 import * as Config from "../misc/Config";
-import * as Global from "../misc/Global";
 import Transaction from "./Transaction";
+import SideAgent from "../side/Agent";
 
-export default class Agent {
+let asyncNet = Promise.promisifyAll(syncNet);
+
+export default class Agent extends SideAgent {
     constructor() {
-        this.xCount = 0;
-
+        super(arguments);
         this.server = null; // TCP server to be created in start()
     }
 
     start() {
-        // start a TCP server
-        this.server = net.createServer();
+        return Promise.try(() => {
+            // start a TCP server
+            this.server = asyncNet.createServer();
 
-        this.server.on('connection', userSocket => {
-            ++this.xCount;
-            userSocket.setEncoding('binary');
-            let xactType = Global.Types.getNumberedOrMatched(
-                Transaction, this.xCount, userSocket);
-            let xact = new xactType(userSocket);
-            xact.start();
+            this.server.on('connection', userSocket => {
+                this.startTransaction_(Transaction, userSocket);
+            });
 
+            return this.server.listenAsync(Config.ProxyListeningAddress.port,
+                Config.ProxyListeningAddress.host).tap(() => {
+                    console.log("Proxy listening on", this.server.address());
+                });
         });
-
-        this.server.on("listening", () => {
-            console.log("Proxy listening on %j", this.server.address());
-        });
-
-        this.server.listen(Config.ProxyListeningAddress.port, Config.ProxyListeningAddress.host);
     }
 
-    stop() {
-        // TODO: kill all pending transactions first?
-        if (this.server)
-            this.server.close();
+    stop_() {
+        if (this.server && this.server.address()) {
+            let savedAddress = this.server.address();
+            return this.server.closeAsync().tap(() => {
+                console.log("Proxy stopped listening on %j", savedAddress);
+            }).then(super.stop_);
+        }
+        return super.stop_();
     }
 }

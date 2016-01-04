@@ -1,8 +1,4 @@
-import Client from "../src/client/Agent";
-import Server from "../src/server/Agent";
-import Proxy from "../src/proxy/Agent";
-import Request from "../src/http/Request";
-import Response from "../src/http/Response";
+import ProxyCase from "./ProxyCase";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
 import * as Config from "../src/misc/Config";
@@ -21,131 +17,44 @@ function checkForwarded(sent, received, kind) {
     }
 
     assert.equal(!sent.body, !received.body);
-    if (sent.body)
+    if (sent.body) {
         assert.equal(sent.body.length(), received.body.length());
-    else
+        assert.equal(sent.body.whole(), received.body.whole());
+    } else {
         assert.equal(null, received.body);
+    }
 }
 
 describe('Daft Proxy', function () {
 
-    let proxy = null;
-    let server = null;
-    let client = null;
+    let testCase = null;
 
-    let serverTransaction = null;
-    let clientTransaction = null;
-
-    let caseDone = null; // the done callback of the current test case
-
-    // TODO: call done when server and proxy actually start
     beforeEach(function () {
-        assert(!caseDone);
+        testCase = new ProxyCase(this.currentTest.title);
 
-        assert(!proxy && !server && !client);
-        proxy = new Proxy();
-        server = new Server();
-        client = new Client();
+        /* force creation of all agents, even those we do not customize later */
+        testCase.client();
+        testCase.server();
+        testCase.proxy();
 
-        serverTransaction = null;
-        clientTransaction = null;
-
-        server.start();
-        proxy.start();
+        testCase.check(() => {
+            checkForwarded(testCase.client().transaction().request, testCase.server().transaction().request, "request");
+            checkForwarded(testCase.server().transaction().response, testCase.client().transaction().response, "response");
+        });
     });
 
-    // TODO: call done when server and proxy actually stop
-    afterEach(function () {
-        if (client)
-            client.stop();
-        if (proxy)
-            proxy.stop();
-        if (server)
-            server.stop();
-
-        proxy = null;
-        server = null;
-        client = null;
-
-        caseDone = null;
+    it('should forward GET', async function() {
+        await testCase.run();
     });
 
-    // callback for when the server sends a response
-    function onServerResponse(transaction) {
-        serverTransaction = transaction;
-        checkpoint();
-    }
-
-    // callback for when the client receives a response
-    function onClientResponse(transaction) {
-        clientTransaction = transaction;
-        checkpoint();
-    }
-
-    // usually called at the very beginning of an async test case function
-    function prepStart(done, createRequest = true, createResponse = true) {
-        assert(!caseDone);
-        assert(done);
-        caseDone = done;
-
-        if (createRequest)
-            client.request = new Request();
-        if (createResponse) {
-            server.response = new Response();
-            server.response.body = new Body(Config.DefaultMessageBodyContent);
-            server.response.header.add("Content-Length", Config.DefaultMessageBodyContent.length);
-        }
-    }
-
-    // makes sure both client and server transactions have finished
-    function checkpoint() {
-        if (!serverTransaction) {
-            console.log("waiting for origin transaction to finish");
-            return;
-        }
-
-        if (!clientTransaction) {
-            console.log("waiting for user transaction to finish");
-            return;
-        }
-
-        checkForwarded(clientTransaction.request, serverTransaction.request, "request");
-        checkForwarded(serverTransaction.response, clientTransaction.response, "response");
-
-        caseDone();
-    }
-
-    // usually called at the very end of an async test case function
-    function doStart() {
-        if (!client.request.callback)
-            client.request.callback = onClientResponse;
-        if (!server.response.callback)
-            server.response.callback = onServerResponse;
-
-        client.start();
-        // now wait for onServerResponse and onClientResponse calls
-    }
-
-    it('should forward GET', function (done) {
-        prepStart(done);
-        doStart();
+    it('should forward POST', async function() {
+        testCase.client().request.startLine.method = 'POST';
+        testCase.client().request.addBody(new Body(Config.DefaultMessageBodyContent));
+        await testCase.run();
     });
 
-    it('should forward POST', function (done) {
-        prepStart(done);
-
-        client.request.startLine.method = 'POST';
-        client.request.body = new Body(Config.DefaultMessageBodyContent);
-        client.request.header.add("Content-Length", Config.DefaultMessageBodyContent.length);
-        client.request.callback = onClientResponse;
-
-        doStart();
-    });
-
-    it('should not misinterpret HTTP header bytes as utf8 sequences', function (done) {
-        prepStart(done);
-
-        client.request.startLine.method = Buffer("G\u2028T").toString("binary");
-        doStart();
+    it('should not misinterpret HTTP header bytes as utf8 sequences', async function() {
+        testCase.client().request.startLine.method = Buffer("G\u2028T").toString("binary");
+        await testCase.run();
     });
 });

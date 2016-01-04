@@ -1,8 +1,7 @@
 There are currently three tools in the Daft toolbox:
 an HTTP Proxy, an HTTP Client, and an HTTP Server.
 
-Daft proxy requires JavaScript 6 (i.e., ECMAScript 6).
-
+Daft tools use ECMAScript 2016 and bluebird Promises (bluebirdjs.com).
 
 * Daft Proxy
 

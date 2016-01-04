@@ -18,6 +18,7 @@ export default class Transaction {
 
         this.doneReceiving = false; // incoming message
         this.doneSending = false; // outgoing message
+        this.doneCallback = null; // set by the initiator if needed
     }
 
     start() {
@@ -49,8 +50,8 @@ export default class Transaction {
             this.socket = null;
         }
 
-        if (this.request && this.request.callback)
-            this.request.callback(this);
+        if (this.doneCallback)
+            this.doneCallback(this);
     }
 
     checkpoint() {

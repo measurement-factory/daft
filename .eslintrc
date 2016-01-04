@@ -16,6 +16,7 @@
         "yoda": [2, "never", { "exceptRange": true }],
         "quotes": false,
         "comma-dangle": false,
+        "space-infix-ops": false,
         "strict": false
     }
 }

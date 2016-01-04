@@ -15,9 +15,6 @@ export default class Message {
         this.headerDelimiter = null;
 
         this.body = null; // no body by default
-
-        // called when the message transaction is finished
-        this.callback = null;
     }
 
     // creates and returns an exact replica of this message
@@ -33,7 +30,6 @@ export default class Message {
         this.header = them.header.clone();
         this.headerDelimiter = them.headerDelimiter;
         this.body = them.body ? them.body.clone() : null;
-        this.callback = them.callback;
         return this;
     }
 
