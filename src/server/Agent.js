@@ -24,7 +24,7 @@ export default class Agent extends SideAgent {
 
             return this.server.listenAsync(Config.OriginListeningAddress.port,
                 Config.OriginListeningAddress.host).tap(() => {
-                    console.log("Server listening on", this.server.address());
+                    console.log("Server is listening on %j", this.server.address());
                 });
         });
     }
