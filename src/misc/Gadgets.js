@@ -39,3 +39,11 @@ export function SendBytes(socket, bytes, description, mimePrefix) {
 export function UniqueId(prefix) {
     return prefix + Math.floor(1.0 + 0xFFFFFFFF * Math.random()).toString(16);
 }
+
+export function DateSum(d1, d2) {
+    return new Date(d1.valueOf() + d2.valueOf());
+}
+
+export function DateDiff(d1, d2) {
+    return new Date(d1.valueOf() - d2.valueOf());
+}
