@@ -49,6 +49,16 @@ export default class Uri {
         return this.scheme !== null;
     }
 
+    address() {
+        if (this._host === null)
+            return null;
+
+        return {
+            host: this.host,
+            port: this.port
+        };
+    }
+
     raw() {
         let image = "";
         if (this.scheme !== null)
