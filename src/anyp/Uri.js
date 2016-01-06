@@ -2,8 +2,7 @@
 
 import * as Global from "../misc/Global";
 import * as Config from "../misc/Config";
-
-import { Must } from "../misc/Gadgets";
+import { Must, UniqueId } from "../misc/Gadgets";
 
 export default class Uri {
 
@@ -123,4 +122,12 @@ export default class Uri {
         if (this._rest === null)
             this._rest = "/";
     }
+}
+
+export function Unique() {
+    let uri = new Uri();
+    uri._rest = UniqueId("/path");
+    uri.host = Config.OriginAuthority.host;
+    uri.port = Config.OriginAuthority.port;
+    return uri;
 }
