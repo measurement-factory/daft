@@ -54,20 +54,20 @@ export default class ProxyCase {
 
     run() {
         return Promise.try(() => {
-        if (this.runPromise_)
+            if (this.runPromise_)
+                return this.runPromise_;
+
+            // Relying on .finally() to wait for the asynchronous cleanup!
+            // And checking expectations only if that cleanup was successful.
+            this.runPromise_ =
+                this.beginPromise_().
+                    tap(this.startAgents).
+                    then(this.promiseTransactions_).
+                    finally(this.stopAgents).
+                    tap(this.doCheck_).
+                    finally(this.end_);
+
             return this.runPromise_;
-
-        // Relying on .finally() to wait for the asynchronous cleanup!
-        // And checking expectations only if that cleanup was successful.
-        this.runPromise_ =
-            this.beginPromise_().
-            tap(this.startAgents).
-            then(this.promiseTransactions_).
-            finally(this.stopAgents).
-            tap(this.doCheck_).
-            finally(this.end_);
-
-        return this.runPromise_;
         });
     }
 

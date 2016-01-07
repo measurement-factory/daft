@@ -43,17 +43,17 @@ describe('Daft Proxy', function () {
         });
     });
 
-    it('should forward GET', async function() {
+    it('should forward GET', async function () {
         await testCase.run();
     });
 
-    it('should forward POST', async function() {
+    it('should forward POST', async function () {
         testCase.client().request.startLine.method = 'POST';
         testCase.client().request.addBody(new Body(Config.DefaultMessageBodyContent));
         await testCase.run();
     });
 
-    it('should not misinterpret HTTP header bytes as utf8 sequences', async function() {
+    it('should not misinterpret HTTP header bytes as utf8 sequences', async function () {
         testCase.client().request.startLine.method = Buffer("G\u2028T").toString("binary");
         await testCase.run();
     });
