@@ -157,7 +157,6 @@ export default class Transaction {
         this.request.finalize();
         this.request.header.add("User-Agent", "DaftClient/1.0");
         this.request.header.add("Connection", "close");
-        this.request.header.add("X-Daft-Request-ID", UniqueId("req"));
         // no request body by default
 
         this.finalizedRequest = true;

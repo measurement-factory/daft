@@ -1,6 +1,7 @@
 import syncNet from "net";
 import Promise from 'bluebird';
 import * as Config from "../misc/Config";
+import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
 import SideAgent from "../side/Agent";
 
@@ -11,6 +12,8 @@ export default class Agent extends SideAgent {
         super(arguments);
         this.response = null; // optional default for all transactions
         this.server = null; // TCP server to be created in start()
+        // where to listen for requests (may contain wildcards like '::')
+        this.listeningAddress = null;
     }
 
     start() {
@@ -22,10 +25,12 @@ export default class Agent extends SideAgent {
                 this.startTransaction_(Transaction, userSocket, this.response);
             });
 
-            return this.server.listenAsync(Config.OriginListeningAddress.port,
-                Config.OriginListeningAddress.host).tap(() => {
-                    console.log("Server is listening on %j", this.server.address());
-                });
+            if (!this.listeningAddress)
+                this.listeningAddress = Config.OriginAuthority;
+            let addr = Gadgets.ListeningAddress(this.listeningAddress);
+            return this.server.listenAsync(addr.port, addr.host).tap(() => {
+                console.log("Server is listening on %j", this.server.address());
+            });
         });
     }
 
@@ -37,5 +42,11 @@ export default class Agent extends SideAgent {
             }).then(super.stop_);
         }
         return super.stop_();
+    }
+
+    serve(resource) {
+        if (!this.listeningAddress && resource.uri && resource.uri.address())
+            this.listeningAddress = resource.uri.address();
+        this.response.from(resource);
     }
 }

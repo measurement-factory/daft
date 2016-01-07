@@ -2,6 +2,7 @@
 
 import Header from "./Header";
 import { Must } from "../misc/Gadgets";
+import * as Gadgets from "../misc/Gadgets";
 
 export default class Message {
 
@@ -33,11 +34,33 @@ export default class Message {
         return this;
     }
 
+    // unique ID of a _finalized_ message
+    id(...args) {
+        Must(!args.length); // cannot set message ID
+        return this.header.values(this._daftFieldName("ID"));
+    }
+
+    // an optional human-friendly message label
+    tag(...args) {
+        let fieldName = this._daftFieldName('Tag');
+        if (!args.length)
+            return this.header.values(fieldName);
+        Must(args.length === 1);
+        Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
+        this.header.add(fieldName, args[0]);
+    }
+
     finalize() {
         this.startLine.finalize();
+
+        let idFieldName = this._daftFieldName("ID");
+        if (!this.header.has(idFieldName))
+            this.header.add(idFieldName, Gadgets.UniqueId("mid"));
         this.header.finalize();
+
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
+
         this.syncContentLength();
         // do not finalize this.body; it may be dynamic
     }
@@ -57,5 +80,10 @@ export default class Message {
     syncContentLength() {
         if (this.body !== null && this.body.length() !== null && !this.header.has("Content-Length"))
             this.header.add("Content-Length", this.body.length());
+    }
+
+    _daftFieldName(suffix) {
+        let kind = Object.getPrototypeOf(this).constructor.name;
+        return `X-Daft-${kind}-${suffix}`;
     }
 }

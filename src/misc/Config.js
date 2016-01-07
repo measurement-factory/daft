@@ -11,24 +11,16 @@
  * - When connecting, "undefined" host means "localhost".
  */
 
-// Used to listen for proxy requests and open connections to the proxy. See
-// also: OriginListeningAddress.
+// Used to listen for proxy requests and open connections to the proxy.
 export const ProxyListeningAddress = { // TODO: Make configurable
     host: '::',
     port: 3128
 };
 
-// Used to listen for origin server requests and open connections to the origin
-// server. See also: OriginAuthority and ProxyListeningAddress.
-export const OriginListeningAddress = { // TODO: Make configurable
-    host: '::',
-    port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
-};
-
-// Used to form request URLs. See also: OriginListeningAddress.
+// Used to form request URLs.
 export const OriginAuthority = { // TODO: Make configurable
     host: 'localhost',
-    port: OriginListeningAddress.port
+    port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
 };
 
 export const HttpStatusCodes = {

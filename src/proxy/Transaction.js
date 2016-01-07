@@ -5,6 +5,7 @@ import RequestParser from "../http//RequestParser";
 import ResponseParser from "../http//ResponseParser";
 import * as Config from "../misc/Config";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
+import * as Gadgets from "../misc/Gadgets";
 
 export default class Transaction {
 
@@ -68,7 +69,8 @@ export default class Transaction {
     }
 
     originAddress() {
-        return Config.isReverseProxy() ? Config.OriginListeningAddress : this.forwardingAddress();
+        let addr = Config.isReverseProxy() ? Config.OriginAuthority : this.forwardingAddress();
+        return Gadgets.ListeningAddress(addr);
     }
 
     forwardingAddress() {

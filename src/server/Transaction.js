@@ -158,7 +158,6 @@ export default class Transaction {
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
         this.response.header.add("Date", new Date().toUTCString());
-        this.response.header.add("X-Daft-Response-ID", UniqueId("rep"));
 
         // XXX: do not add body to HEAD responses
         // XXX: add other bodyless status codes

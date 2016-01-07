@@ -47,3 +47,12 @@ export function DateSum(d1, d2) {
 export function DateDiff(d1, d2) {
     return new Date(d1.valueOf() - d2.valueOf());
 }
+
+// Converts "public" host:port address to something we can listen on.
+// Needs more work to detect IP addresses so that we can assume that everything
+// else is domain name that we can serve by listening on all IPs.
+export function ListeningAddress(addr) {
+    return (addr.host === 'localhost') ?
+        { host: '::', port: addr.port } : // listen on all available IPs
+        { host: addr.host, port: addr.port };
+}
