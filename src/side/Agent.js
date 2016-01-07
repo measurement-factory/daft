@@ -6,13 +6,13 @@ export default class Agent {
         this.xCount = 0;
 
         this.transactionPromise = new Promise((resolve) => {
-            this.transactionPromiseResolver_ = resolve;
+            this._transactionPromiseResolver = resolve;
         });
     }
 
     stop() {
         return Promise.try(() => {
-            return this.stop_();
+            return this._stop();
         });
     }
 
@@ -20,18 +20,18 @@ export default class Agent {
         return this.transactionPromise.value(); // throws if unresolved
     }
 
-    stop_() {
+    _stop() {
         // TODO: and kill all pending transactions?
         return Promise.resolve(this);
     }
 
-    startTransaction_(defaultTransactionClass, socket, ...other) {
+    _startTransaction(defaultTransactionClass, socket, ...other) {
         ++this.xCount;
         socket.setEncoding('binary');
         let xactType = Global.Types.getNumberedOrMatched(
             defaultTransactionClass, this.xCount, socket);
         let xact = new xactType(socket, ...other);
-        xact.doneCallback = this.transactionPromiseResolver_;
+        xact.doneCallback = this._transactionPromiseResolver;
         xact.start();
     }
 }

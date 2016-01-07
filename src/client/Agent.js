@@ -27,17 +27,17 @@ export default class Agent extends SideAgent {
             console.log("Client at %j connected to %j",
                 this.localAddress, this.remoteAddress);
         }).tap(() => {
-            this.startTransaction_(Transaction, this.socket, this.request);
+            this._startTransaction(Transaction, this.socket, this.request);
         });
     }
 
-    stop_() {
+    _stop() {
         if (this.socket) {
             this.socket.destroy(); // XXX: what if a transaction does it too?
             this.socket = null;
             console.log("Client at %j disconnected from %j",
                 this.localAddress, this.remoteAddress);
         }
-        return super.stop_();
+        return super._stop();
     }
 }

@@ -22,7 +22,7 @@ export default class Agent extends SideAgent {
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
-                this.startTransaction_(Transaction, userSocket, this.response);
+                this._startTransaction(Transaction, userSocket, this.response);
             });
 
             if (!this.listeningAddress)
@@ -34,14 +34,14 @@ export default class Agent extends SideAgent {
         });
     }
 
-    stop_() {
+    _stop() {
         if (this.server && this.server.address()) {
             let savedAddress = this.server.address();
             return this.server.closeAsync().tap(() => {
                 console.log("Server stopped listening on %j", savedAddress);
-            }).then(super.stop_);
+            }).then(super._stop);
         }
-        return super.stop_();
+        return super._stop();
     }
 
     serve(resource) {

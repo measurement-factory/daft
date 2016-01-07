@@ -18,7 +18,7 @@ export default class Agent extends SideAgent {
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
-                this.startTransaction_(Transaction, userSocket);
+                this._startTransaction(Transaction, userSocket);
             });
 
             return this.server.listenAsync(Config.ProxyListeningAddress.port,
@@ -28,13 +28,13 @@ export default class Agent extends SideAgent {
         });
     }
 
-    stop_() {
+    _stop() {
         if (this.server && this.server.address()) {
             let savedAddress = this.server.address();
             return this.server.closeAsync().tap(() => {
                 console.log("Proxy stopped listening on %j", savedAddress);
-            }).then(super.stop_);
+            }).then(super._stop);
         }
-        return super.stop_();
+        return super._stop();
     }
 }
