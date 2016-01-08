@@ -1,6 +1,6 @@
 /* Assorted HTTP functions. */
 
-export function IsHopByHop(name, header) {
+export function IsHopByHop(name /*, header */) {
     const hopByHops = [ "connection", "keep-alive",
         "proxy-authenticate", "proxy-authorization", "te", "trailer",
         "transfer-encoding", "upgrade" ];
