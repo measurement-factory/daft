@@ -1,49 +1,5 @@
 /* TypeMap: A registry for classes (types), with filter-driven search */
 
-export default class TypeMap {
-    constructor() {
-        this._map = new Map();
-    }
-
-    setBase(key, base) {
-        this._getItem(key).setBase(base);
-    }
-
-    setNumbered(key, customBase, filterNum) {
-        this._getItem(key).addNumbered(customBase, filterNum);
-    }
-
-    setMatched(key, customBase, matcher) {
-        this._getItem(key).addMatcher(customBase, matcher);
-    }
-
-
-    getBase(key) {
-        return this._getItem(key).getBase();
-    }
-
-    getNumbered(key, filterNum) {
-        return this._getItem(key).getNumbered(filterNum);
-    }
-
-    getMatched(key, ...matcherArgs) {
-        return this._getItem(key).getMatched(matcherArgs);
-    }
-
-    getNumberedOrMatched(key, number, ...matcherArgs) {
-        return this._getItem(key).getNumberedOrMatched(number, matcherArgs);
-    }
-
-    _getItem(key) {
-        if (key === undefined || key === null)
-            throw new Error("invalid TypeMap key: " + key);
-        if (!this._map.has(key)) {
-            this._map.set(key, new MapItem(key));
-        }
-        return this._map.get(key);
-    }
-}
-
 class MapItem {
     constructor(key) {
         this.key = key;
@@ -97,5 +53,49 @@ class MapItem {
         return this.numbered.has(filterNum) ?
             this.getNumbered(filterNum) :
             this.getMatched(matcherArgs);
+    }
+}
+
+export default class TypeMap {
+    constructor() {
+        this._map = new Map();
+    }
+
+    setBase(key, base) {
+        this._getItem(key).setBase(base);
+    }
+
+    setNumbered(key, customBase, filterNum) {
+        this._getItem(key).addNumbered(customBase, filterNum);
+    }
+
+    setMatched(key, customBase, matcher) {
+        this._getItem(key).addMatcher(customBase, matcher);
+    }
+
+
+    getBase(key) {
+        return this._getItem(key).getBase();
+    }
+
+    getNumbered(key, filterNum) {
+        return this._getItem(key).getNumbered(filterNum);
+    }
+
+    getMatched(key, ...matcherArgs) {
+        return this._getItem(key).getMatched(matcherArgs);
+    }
+
+    getNumberedOrMatched(key, number, ...matcherArgs) {
+        return this._getItem(key).getNumberedOrMatched(number, matcherArgs);
+    }
+
+    _getItem(key) {
+        if (key === undefined || key === null)
+            throw new Error("invalid TypeMap key: " + key);
+        if (!this._map.has(key)) {
+            this._map.set(key, new MapItem(key));
+        }
+        return this._map.get(key);
     }
 }
