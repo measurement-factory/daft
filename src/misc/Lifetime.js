@@ -9,7 +9,7 @@ export function Limit(delay /* ms */) {
         clearTimeout(_GlobalTimeout);
     }
     console.log(`Observing ${delay}ms global timeout.`);
-    _GlobalTimeout = setTimeout(function() {
+    _GlobalTimeout = setTimeout(function () {
         throw new Error(`Global ${delay}ms timeout.`);
     }, delay);
     _GlobalTimeout.unref(); // ignore if there are no other events left
