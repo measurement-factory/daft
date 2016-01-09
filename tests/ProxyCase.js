@@ -6,8 +6,6 @@ import Server from "../src/server/Agent";
 import Proxy from "../src/proxy/Agent";
 import Request from "../src/http/Request";
 import Response from "../src/http/Response";
-import Body from "../src/http/Body";
-import * as Config from "../src/misc/Config";
 import "../src/misc/Lifetime";
 import assert from "assert";
 
@@ -39,8 +37,6 @@ export default class ProxyCase {
             assert(!this._runPromise); // do not create agents after run()
             this._server = new Server();
             this._server.response = new Response();
-            this._server.response.body = new Body(Config.DefaultMessageBodyContent);
-            this._server.response.header.add("Content-Length", Config.DefaultMessageBodyContent.length);
         }
         return this._server;
     }
