@@ -10,11 +10,14 @@ export default class Response extends Message {
     }
 
     from(resource) {
+        this.relatedResource(resource, "From");
+
         if (resource.lastModificationTime)
             this.header.add("Last-Modified", resource.lastModificationTime.toUTCString());
         if (resource.nextModificationTime)
             this.header.add("Expires", resource.nextModificationTime.toUTCString());
 
-        this.header.add("X-Daft-From-Resource-ID", resource.id);
+        if (resource.body)
+            this.addBody(resource.body);
     }
 }

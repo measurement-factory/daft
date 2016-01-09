@@ -10,8 +10,14 @@ export default class Request extends Message {
     }
 
     for(resource) {
+        this.relatedResource(resource, "For");
         this.startLine.uri = resource.uri.clone();
-        this.header.add("X-Daft-For-Resource-ID", resource.id);
+    }
+
+    with(resource) {
+        this.relatedResource(resource, "With");
+        if (resource.body)
+            this.addBody(resource.body);
     }
 
     conditions(ifs) {

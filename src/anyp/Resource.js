@@ -11,6 +11,7 @@ export default class Resource {
         this.id = Gadgets.UniqueId("rid");
         this.lastModificationTime = null;
         this.nextModificationTime = null;
+        this.body = null;
     }
 
     modifiedAt(when) {

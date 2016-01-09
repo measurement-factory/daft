@@ -82,6 +82,10 @@ export default class Message {
             this.header.add("Content-Length", this.body.length());
     }
 
+    relatedResource(resource, relationship) {
+        this.header.add(this._daftFieldName(relationship + "-Resource"), resource.id);
+    }
+
     _daftFieldName(suffix) {
         let kind = Object.getPrototypeOf(this).constructor.name;
         return `X-Daft-${kind}-${suffix}`;
