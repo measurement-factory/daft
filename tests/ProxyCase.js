@@ -8,6 +8,7 @@ import Request from "../src/http/Request";
 import Response from "../src/http/Response";
 import Body from "../src/http/Body";
 import * as Config from "../src/misc/Config";
+import "../src/misc/Lifetime";
 import assert from "assert";
 
 
