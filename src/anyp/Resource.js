@@ -34,15 +34,12 @@ export default class Resource {
     }
 
     // return an IMS date suitable for triggering a 304 response
-    notModifiedSince(confidence) {
-        if (confidence === undefined)
-            confidence = new Date();
-        return Gadgets.DateSum(this.lastModificationTime, confidence);
+    notModifiedSince(delta = new Date(0)) {
+        return Gadgets.DateSum(this.lastModificationTime, delta);
     }
 
     // return an IMS date suitable for triggering a 200 response
-    modifiedSince(confidence) {
-        Must(confidence !== undefined);
-        return Gadgets.DateDiff(this.lastModificationTime, confidence);
+    modifiedSince(delta = new Date(24*60*60*1000) /* one day */) {
+        return Gadgets.DateDiff(this.lastModificationTime, delta);
     }
 }
