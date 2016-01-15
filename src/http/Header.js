@@ -1,5 +1,6 @@
 /* Manages HTTP message header. */
 
+import Field from "./Field";
 import { Must } from "../misc/Gadgets";
 
 
@@ -7,37 +8,29 @@ export default class Header {
 
     constructor() {
         this._raw = null; // as it was received or as it will be sent
-        this._parsed = {}; // parsed or manually added values; TODO: rename and remove null checks
+        this.fields = []; // parsed or manually added Fields, in appearance/addition order
     }
 
     clone() {
         let dupe = new Header();
         dupe._raw = this._raw;
-        if (this._parsed) {
-            dupe._parsed = {};
-            // shallow copy of all header fields
-            for (var key in this._parsed) {
-                dupe._parsed[key] = this._parsed[key];
-            }
-        }
+        for (let field of this.fields)
+            dupe.fields.push(field.clone());
         return dupe;
     }
 
     finalize() {
-        // no header fields by default
+        for (let field of this.fields)
+            field.finalize();
     }
 
     raw() {
         if (this._raw !== null)
             return this._raw;
 
-        if (this._parsed === null)
-            return null;
-
         let raw = "";
-        for (var key in this._parsed) {
-            raw += key + ": " + this._parsed[key] + "\r\n";
-        }
+        for (let field of this.fields)
+            raw += field.raw();
         return raw;
     }
 
@@ -71,34 +64,51 @@ export default class Header {
     }
 
     has(name) {
-        Must(this._parsed);
-        return name.toLowerCase() in this._parsed;
-    }
-
-    fields() {
-        return this._parsed;
+        let id = Field.Id(name);
+        for (let field of this.fields) {
+            if (field.id() === id)
+                return field;
+        }
+        return null;
     }
 
     values(name) {
-        if (!this.has(name))
-            return null;
-        return this._parsed[name.toLowerCase()];
+        let result = [];
+        let id = Field.Id(name);
+        for (let field of this.fields) {
+            if (field.id() === id)
+                result.push(field.value);
+        }
+        return result;
     }
 
-    add(name, value) {
-        this._parsed[name.toLowerCase()] = value;
+    add(...args) {
+        let field = null;
+        if (args.length === 1) { // add(field)
+            Must(args[0] instanceof Field);
+            field = args[0].clone();
+        } else {
+            Must(args.length === 2); // add(name, value)
+            field = new Field(...args);
+        }
+        Must(field);
+        this.fields.push(field);
         if (this._raw !== null) {
-            this._raw += name + ": " + value + "\r\n";
+            this._raw += field.raw();
         } // else raw() will assemble
     }
 
-    deleteNamed(name) {
-        delete this._parsed[name.toLowerCase()];
+    deleteAllNamed(name) {
+        let id = Field.Id(name);
+        this.fields.filter((field) => {
+            return field.id() !== id; // true result keeps the field
+        });
         this._raw = null;
         // raw() will assemble
     }
 
     parse(raw) {
+        Must(!this.fields.length);
         Must(this._raw === null);
         Must(raw !== null && raw !== undefined);
         this._raw = raw;
@@ -106,25 +116,17 @@ export default class Header {
         // replace obs-fold with a single space
         let rawH = this._raw;
         rawH.replace(/\r*\n\s+/, ' ');
-        this._rawUnfolded = rawH;
 
-        // isolate individual fields
-        let parsedFields = 0;
-        let fieldRe = /^[\t ]*(.*?)[\t ]*:[\t ]*(.*?)[\t \r]*$/mg;
-        let match = null;
-        while ((match = fieldRe.exec(rawH))) {
-            Must(match.length === 3);
-            this._addParsedField(match[1], match[2]);
-            ++parsedFields;
+        let rawFields = rawH.split('\n');
+        Must(rawFields.length); // our caller requires CRLF at the headers end
+        Must(!rawFields.pop().length); // the non-field after the last CRLF
+        for (let rawField of rawFields) {
+            let field = Field.Parse(rawField + "\n");
+            Must(field);
+            this.fields.push(Field.Parse(rawField + "\n"));
         }
 
-        if (!parsedFields) {
-            console.log("Warning: Cannot parse raw headers!");
-        }
-    }
-
-    _addParsedField(name, value) {
-        // XXX: store same-name values in an array
-        this._parsed[name.toLowerCase()] = value;
+        if (!this.fields.length)
+            console.log(`Warning: Found no headers in ${rawH}`);
     }
 }

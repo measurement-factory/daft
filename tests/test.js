@@ -2,28 +2,7 @@ import ProxyCase from "./ProxyCase";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
 import * as Config from "../src/misc/Config";
-import assert from "assert";
 
-// throw if the received message differs from the sent one too much
-function checkForwarded(sent, received, kind) {
-    assert(sent && received);
-
-    assert(sent.header && received.header);
-    for (let key in sent.header.fields()) {
-        if (!Http.IsEndToEnd(key, sent))
-            continue;
-        assert(received.header.has(key), `forwarded ${kind} has ${key}`);
-        assert.equal(sent.header.values(key), received.header.values(key));
-    }
-
-    assert.equal(!sent.body, !received.body);
-    if (sent.body) {
-        assert.equal(sent.body.length(), received.body.length());
-        assert.equal(sent.body.whole(), received.body.whole());
-    } else {
-        assert.equal(null, received.body);
-    }
-}
 
 describe('Daft Proxy', function () {
 
@@ -38,8 +17,8 @@ describe('Daft Proxy', function () {
         testCase.proxy();
 
         testCase.check(() => {
-            checkForwarded(testCase.client().transaction().request, testCase.server().transaction().request, "request");
-            checkForwarded(testCase.server().transaction().response, testCase.client().transaction().response, "response");
+            Http.AssertForwardedMessage(testCase.client().transaction().request, testCase.server().transaction().request, "request");
+            Http.AssertForwardedMessage(testCase.server().transaction().response, testCase.client().transaction().response, "response");
         });
     });
 
