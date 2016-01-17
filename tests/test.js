@@ -1,3 +1,7 @@
+/* Daft Toolkit                         http://www.measurement-factory.com/
+ * Copyright (C) 2015,2016 The Measurement Factory.
+ * Licensed under the Apache License, Version 2.0.                       */
+
 import ProxyCase from "./ProxyCase";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";

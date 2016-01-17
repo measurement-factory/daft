@@ -1,3 +1,7 @@
+/* Daft Toolkit                         http://www.measurement-factory.com/
+ * Copyright (C) 2015,2016 The Measurement Factory.
+ * Licensed under the Apache License, Version 2.0.                       */
+
 /* Base class for HTTP request or response message, including headers and body */
 
 import Header from "./Header";

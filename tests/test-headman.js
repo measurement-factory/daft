@@ -1,3 +1,7 @@
+/* Daft Toolkit                         http://www.measurement-factory.com/
+ * Copyright (C) 2015,2016 The Measurement Factory.
+ * Licensed under the Apache License, Version 2.0.                       */
+
 /* Tests an HTTP proxy with a Headman eCAP adapter
  * configured to hide and reveal empty Content-Type headers. */
 

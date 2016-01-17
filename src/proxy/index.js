@@ -1,5 +1,9 @@
 #!/usr/bin/env babel-node
 
+/* Daft Toolkit                         http://www.measurement-factory.com/
+ * Copyright (C) 2015,2016 The Measurement Factory.
+ * Licensed under the Apache License, Version 2.0.                       */
+
 /*
  * A driver script for the do-as-you-are-told HTTP proxy.
  * Runs a proxy configured with a test plot specified on the command line.
