@@ -80,7 +80,10 @@ export default class Transaction {
                 PrettyMime(">s ", parsed));
         }
 
-        if (this.request && this.request.body) {
+        if (!this.request)
+            return;
+
+        if (this.request.body) {
             if (this.request.body.innedAll()) {
                 console.log(`parsed all ${this.request.body.innedSize()} request body bytes`);
                 this.doneReceiving = true;
