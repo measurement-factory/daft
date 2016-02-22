@@ -41,14 +41,14 @@ export default class Message {
     // unique ID of a _finalized_ message
     id(...args) {
         Must(!args.length); // cannot set message ID
-        return this.header.values(this._daftFieldName("ID"));
+        return this.header.value(this._daftFieldName("ID"));
     }
 
     // an optional human-friendly message label
     tag(...args) {
         let fieldName = this._daftFieldName('Tag');
         if (!args.length)
-            return this.header.values(fieldName);
+            return this.header.value(fieldName);
         Must(args.length === 1);
         Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
         this.header.add(fieldName, args[0]);

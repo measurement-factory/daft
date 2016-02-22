@@ -43,18 +43,29 @@ export default class Header {
     // returns the well-formed/supported Content-Length value otherwise
     contentLength() {
         let name = 'Content-Length';
+
         if (!this.has(name)) // not specified at all
             return null;
 
-        let value = this.values(name);
+        let values = this.values(name);
+        let value = values.pop();
+
+        if (values.length > 1) { // multiple values
+            // TODO: We should compare _parsed_ items.
+            if (!value.every(function(item) { return item === value; }))
+                return undefined; // multiple different values
+        }
+
         if (!/^\d*$/.test(value)) // not an integer
             return undefined;
+
         if (/^0./.test(value)) // starts with 0 but not a "0"
             return undefined;
 
         let len = Number.parseInt(value, 10);
         if (!Number.isSafeInteger(len)) // too big
             return undefined;
+
         return len;
     }
 
@@ -84,6 +95,13 @@ export default class Header {
                 result.push(field.value);
         }
         return result;
+    }
+
+    // throws if a single value was requested but 0 or 2+ were present
+    value(name) {
+        let values = this.values(name);
+        Must(values.length === 1);
+        return values[0];
     }
 
     add(...args) {

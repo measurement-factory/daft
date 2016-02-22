@@ -16,7 +16,7 @@ export function IsHopByHop(name /*, header */) {
     if (name.match(/^\w+ +http:/))
         return true;
 
-    // TODO: or is listed in header.value("Connection")
+    // TODO: or is listed in header.values("Connection")
     return hopByHops.indexOf(name.toLowerCase()) >= 0;
 }
 
