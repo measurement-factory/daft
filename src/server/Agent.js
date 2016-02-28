@@ -50,7 +50,12 @@ export default class Agent extends SideAgent {
 
     serve(resource) {
         if (!this.listeningAddress && resource.uri.address())
-            this.listeningAddress = resource.uri.address();
+            this.listenAt(resource.uri.address());
         this.response.from(resource);
+    }
+
+    listenAt(address) {
+        Gadgets.Must(address);
+        this.listeningAddress = address;
     }
 }
