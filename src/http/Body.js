@@ -4,18 +4,19 @@
 
 /* Manages raw (dechunked) HTTP message body buffer/pipeline. */
 
+import { Must } from "../misc/Gadgets";
+import * as Config from "../misc/Config";
+
 export default class Body {
 
     constructor(content) {
-        this._buf = ''; // the entire body (for now)
+        this._buf = null; // the entire body (for now)
         this._length = null; // unknown until setLength()
         this._in = 0;
         this._out = 0;
 
-        if (content !== undefined) {
-            this.setLength(content.length);
-            this.in(content);
-        }
+        if (content !== undefined)
+            this.whole(content);
     }
 
     clone() {
@@ -27,8 +28,19 @@ export default class Body {
         return dupe;
     }
 
-    whole() {
-        return this._buf;
+    finalize() {
+        if (this._buf === null)
+            this.whole(Config.DefaultMessageBodyContent);
+    }
+
+    whole(...args) {
+        if (!args.length)
+            return this._buf === null ? "" : this._buf;
+
+        Must(args.length === 1);
+        Must(this._in === 0); // do not overwrite to minimize confusion
+        this.in(args[0]);
+        this.setLength(this._buf.length);
     }
 
     // TODO: expose .length instead of providing setter and getter?
@@ -49,7 +61,10 @@ export default class Body {
     }
 
     in(data) {
-        this._buf += data;
+        if (this._buf === null)
+            this._buf = data;
+        else
+            this._buf += data;
         this._in += data.length;
     }
 
@@ -66,7 +81,7 @@ export default class Body {
         if (this.outedAll())
             return "";
 
-        let piece = this._buf.substring(this._out);
+        let piece = this.whole().substring(this._out);
         this._out += piece.length;
 
         // cut extras, if any

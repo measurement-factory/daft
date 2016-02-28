@@ -5,7 +5,6 @@
 import ProxyCase from "./ProxyCase";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
-import * as Config from "../src/misc/Config";
 
 
 describe('Daft Proxy', function () {
@@ -32,7 +31,7 @@ describe('Daft Proxy', function () {
 
     it('should forward POST', async function () {
         testCase.client().request.startLine.method = 'POST';
-        testCase.client().request.addBody(new Body(Config.DefaultMessageBodyContent));
+        testCase.client().request.addBody(new Body());
         await testCase.run();
     });
 

@@ -5,7 +5,6 @@
 import RequestParser from "../http/RequestParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
-import * as Config from "../misc/Config";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, origin response) tuple.
@@ -160,18 +159,17 @@ export default class Transaction {
             return; // no response without request by default
 
         Must(this.response);
+        // XXX: do not add body to HEAD responses
+        // XXX: add other bodyless status codes
+        if (!this.response.body && this.response.startLine.statusCode !== 304)
+            this.response.addBody(new Body());
+
         // XXX: Do not overwrite already set properties
         this.response.finalize();
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
         this.response.header.add("Date", new Date().toUTCString());
 
-        // XXX: do not add body to HEAD responses
-        // XXX: add other bodyless status codes
-        if (!this.response.body && this.response.startLine.statusCode !== 304) {
-            if (Config.DefaultMessageBodyContent !== null)
-                this.response.addBody(new Body(Config.DefaultMessageBodyContent));
-        }
 
         this._finalizedResponse = true;
     }

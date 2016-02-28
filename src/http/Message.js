@@ -65,8 +65,10 @@ export default class Message {
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
 
+        if (this.body)
+            this.body.finalize();
+
         this.syncContentLength();
-        // do not finalize this.body; it may be dynamic
     }
 
     rawPrefix() {
