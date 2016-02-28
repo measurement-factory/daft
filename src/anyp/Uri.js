@@ -81,6 +81,18 @@ export default class Uri {
         this.port = null;
     }
 
+    makeUnique(prefix = "/path-") {
+        let uid = UniqueId(prefix);
+        if (this.hasPath())
+            this._rest += uid;
+        else
+            this._rest = uid;
+    }
+
+    hasPath() {
+        return this._rest !== null;
+    }
+
     static Parse(rawBytes) {
         let uri = new Uri();
         uri._parse(rawBytes);
@@ -126,12 +138,4 @@ export default class Uri {
         if (this._rest === null)
             this._rest = "/";
     }
-}
-
-export function Unique() {
-    let uri = new Uri();
-    uri._rest = UniqueId("/path");
-    uri.host = Config.OriginAuthority.host;
-    uri.port = Config.OriginAuthority.port;
-    return uri;
 }
