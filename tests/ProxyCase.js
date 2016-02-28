@@ -130,6 +130,7 @@ export default class ProxyCase {
             return this._startAgentsPromise;
 
         let agents = this._agents();
+        assert(agents.length); // a test case cannot work without any agents
         this._startAgentsPromise = Promise.mapSeries(agents, agent => agent.start());
         return this._startAgentsPromise;
     }
