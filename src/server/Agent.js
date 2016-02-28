@@ -49,7 +49,7 @@ export default class Agent extends SideAgent {
     }
 
     serve(resource) {
-        if (!this.listeningAddress && resource.uri && resource.uri.address())
+        if (!this.listeningAddress && resource.uri.address())
             this.listeningAddress = resource.uri.address();
         this.response.from(resource);
     }

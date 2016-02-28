@@ -4,6 +4,7 @@
 
 /* Anything addressable by a fragmentless URI. */
 
+import Uri from "../anyp/Uri";
 import * as Gadgets from "../misc/Gadgets";
 import * as FuzzyTime from "../misc/FuzzyTime";
 import { Must } from "../misc/Gadgets";
@@ -11,7 +12,7 @@ import { Must } from "../misc/Gadgets";
 export default class Resource {
     constructor(description) {
         this.description = description;
-        this.uri = null;
+        this.uri = new Uri();
         this.id = Gadgets.UniqueId("rid");
         this.lastModificationTime = null;
         this.nextModificationTime = null;
