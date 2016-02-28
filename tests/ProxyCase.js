@@ -129,6 +129,10 @@ export default class ProxyCase {
         if (this._startAgentsPromise)
             return this._startAgentsPromise;
 
+        // most proxy tests are done with unique URLs to prevent caching
+        if (this._client && !this._client.request.startLine.uri.hasPath())
+            this._client.request.startLine.uri.makeUnique();
+
         let agents = this._agents();
         assert(agents.length); // a test case cannot work without any agents
         this._startAgentsPromise = Promise.mapSeries(agents, agent => agent.start());
