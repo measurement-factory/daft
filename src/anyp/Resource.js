@@ -19,6 +19,12 @@ export default class Resource {
         this.body = null;
     }
 
+    finalize() {
+        this.uri.finalize();
+        if (this.body)
+            this.body.finalize();
+    }
+
     modifiedAt(when) {
         Must(when !== undefined);
         this.lastModificationTime = when; // may be null
