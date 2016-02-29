@@ -39,7 +39,7 @@ export default class Uri {
 
         // A weak check that the value is usable as a network port.
         // Or should we do what Header::contentLength() does?
-        Must(0 <= this._port && this._port <= 65535);
+        Must(0 <= this._port && this._port <= 65535, `0 <= ${this._port} <= 65535`);
         return Number.parseInt(this._port, 10);
     }
 

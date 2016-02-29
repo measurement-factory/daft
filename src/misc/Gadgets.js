@@ -4,9 +4,10 @@
 
 /* Assorted small handy global functions. */
 
-export function Must(condition) {
+export function Must(condition, ...args) {
+    const extraInfo = args.length ? ' ' + args.join(' ') : "";
     if (!condition)
-        throw new Error(`assertion failure: ${condition}`);
+        throw new Error(`assertion failure: ${condition}${extraInfo}`);
 }
 
 export function PrettyMime(prefix, data) {
