@@ -1,8 +1,8 @@
 test:
-	mocha --require tests/mocha-config tests/test.js
+	./node_modules/.bin/mocha --require tests/mocha-config tests/test.js
 
 check-lint:
-	eslint `git ls-files . | grep '[.]js$$'`
+	./node_modules/.bin/eslint `git ls-files . | grep '[.]js$$'`
 
 check: check-lint test
 
