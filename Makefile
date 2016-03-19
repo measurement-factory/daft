@@ -1,8 +1,10 @@
+BIN=./node_modules/.bin
+
 test:
-	./node_modules/.bin/mocha --require tests/mocha-config tests/test.js
+	$(BIN)/mocha --require tests/mocha-config tests/test.js
 
 check-lint:
-	./node_modules/.bin/eslint `git ls-files . | grep '[.]js$$'`
+	$(BIN)/eslint `git ls-files . | grep '[.]js$$'`
 
 check: check-lint test
 
