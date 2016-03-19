@@ -4,3 +4,4 @@
 
 /* See http://derpturkey.com/testing-asyncawait-with-babel-and-mocha/ */
 require("babel-register");
+require("babel-polyfill");
