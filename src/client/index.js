@@ -10,6 +10,7 @@
  */
 
 import Client from "./Agent";
+import path from "path";
 
 if (process.argv.length !== 3) {
     throw `usage: ${process.argv[1]} <test_plot.js5>`;
@@ -18,13 +19,6 @@ if (process.argv.length !== 3) {
 let fname = process.argv[2];
 console.log("Test plot:", fname);
 
-import fs from "fs";
-fs.readFile(fname, function (err, data) {
-    if (err)
-        throw err;
-
-    eval(data.toString()); // eslint-disable-line no-eval
-
-    let client = new Client();
-    client.start();
-});
+require(path.resolve(fname));
+let client = new Client();
+client.start();
