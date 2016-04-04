@@ -40,7 +40,7 @@ to work with HTTP proxies.
 Here is an example of using Daft Proxy as a stand-alone program driven by a test
 plot (test mode #1):
 
-        ./src/proxy/index.js src/proxy/plot1.js
+    ./src/proxy/index.js src/proxy/plot1.js
 
 By default, the proxy forwards each message "as is", except for adding the
 required Via header field.
@@ -56,7 +56,7 @@ Daft Client is an HTTP client agent.
 Here is an example of using Daft Client as a stand-alone program driven by a
 test plot (test mode #1):
 
-        ./src/client/index.js src/client/plot-raw.js
+    ./src/client/index.js src/client/plot-raw.js
 
 Daft Client sends an HTTP request to either `localhost:80` or `localhost:8080`,
 depending on whether it is started as root. To customize these details for all
