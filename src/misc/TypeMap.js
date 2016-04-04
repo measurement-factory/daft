@@ -9,6 +9,7 @@ class MapItem {
         this.key = key;
         this.numbered = new Map();
         this.matchers = [];
+        this.base = undefined;
     }
 
     setBase(value) {

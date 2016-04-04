@@ -53,7 +53,7 @@ export default class Uri {
     }
 
     address() {
-        if (this._host === null)
+        if (this.host === null)
             return null;
 
         return {
