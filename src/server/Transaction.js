@@ -23,6 +23,7 @@ export default class Transaction {
         this.doneReceiving = false; // incoming message
         this.doneSending = false; // outgoing message
         this.doneCallback = null; // set by the initiator if needed
+        this._finalizedResponse = false;
     }
 
     start() {
