@@ -49,30 +49,6 @@ export default class Field {
         return this.name + this.separator + this.value + this.terminator;
     }
 
-    parse(raw) {
-        let fieldRe = /^(.*?)([\t ]*:[\t ]*)(.*?)([\t \r]*\n)$/;
-        const match = fieldRe.exec(raw);
-        if (match) {
-            Must(match.length === 5);
-            this.name = match[1]; // right-trimmed
-            this.separator = match[2];
-            this.value = match[3]; // trimmed
-            this.terminator = match[4];
-        } else {
-            console.log(`Warning: Cannot parse ${raw.length}-byte header field: ${raw}`);
-            this.name = raw;
-            this.separator = "";
-            this.value = "";
-            this.terminator = "";
-        }
-    }
-
-    static Parse(raw) {
-        let field = new Field();
-        field.parse(raw);
-        return field;
-    }
-
     static Id(name) {
         return name.toLowerCase();
     }

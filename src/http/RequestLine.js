@@ -61,17 +61,4 @@ export default class RequestLine {
             image += this.terminator;
         return image;
     }
-
-    parse(raw) {
-        let reqRe = /^(\S+)(\s+)(.*\S)(\s+)(\S+)(\r*\n)$/;
-        let match = reqRe.exec(raw);
-        if (!match)
-            throw new Error("Unable to parse request-line: " + raw);
-        this.method = match[1];
-        this.methodDelimiter = match[2];
-        this.uri = Uri.Parse(match[3]);
-        this.uriDelimiter = match[4];
-        this._rest = match[5];
-        this.terminator = match[6];
-    }
 }

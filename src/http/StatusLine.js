@@ -61,20 +61,6 @@ export default class StatusLine {
         return image;
     }
 
-    parse(raw) {
-        let reqRe = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/;
-        let match = reqRe.exec(raw);
-        if (!match)
-            throw new Error("Unable to parse status-line: " + raw);
-        this.httpVersion = match[1];
-        this.versionDelimiter = match[2];
-        this.statusCode = match[3];
-        this.statusDelimiter = match[4];
-        if (match[5] !== undefined)
-            this.reasonPhrase = match[5];
-        this.terminator = match[6];
-    }
-
     ReasonPhrase(statusCode) {
         switch (statusCode) {
             case 200:

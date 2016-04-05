@@ -128,27 +128,4 @@ export default class Header {
         this._raw = null;
         // raw() will assemble
     }
-
-    parse(raw) {
-        Must(!this.fields.length);
-        Must(this._raw === null);
-        Must(raw !== null && raw !== undefined);
-        this._raw = raw;
-
-        // replace obs-fold with a single space
-        let rawH = this._raw;
-        rawH.replace(/\r*\n\s+/, ' ');
-
-        let rawFields = rawH.split('\n');
-        Must(rawFields.length); // our caller requires CRLF at the headers end
-        Must(!rawFields.pop().length); // the non-field after the last CRLF
-        for (let rawField of rawFields) {
-            let field = Field.Parse(rawField + "\n");
-            Must(field);
-            this.fields.push(Field.Parse(rawField + "\n"));
-        }
-
-        if (!this.fields.length)
-            console.log(`Warning: Found no headers in ${rawH}`);
-    }
 }
