@@ -2,8 +2,8 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import { requestPrefix, responsePrefix } from "../http1/MessageWriter";
-import ResponseParser from "../http1/ResponseParser";
+import { requestPrefix, responsePrefix } from "../http/1/MessageWriter";
+import ResponseParser from "../http/1/ResponseParser";
 import Request from "../http/Request";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 
