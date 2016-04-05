@@ -81,16 +81,13 @@ export default class Body {
         if (this.outedAll())
             return "";
 
-        let piece = this.whole().substring(this._out);
-        this._out += piece.length;
+        let piece;
+        if (this._length !== null)
+            piece = this.whole().substring(this._out, this._length);
+        else
+            piece = this.whole().substring(this._out);
 
-        // cut extras, if any
-        if (this._length !== null && this._out > this._length) {
-            let extraLen = Math.max( // cannot undo what was outed
-                this._out - this._length, piece.length);
-            piece = piece.substring(0, piece.length - extraLen);
-            this._out -= extraLen;
-        }
+        this._out += piece.length;
 
         return piece;
     }
