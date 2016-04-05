@@ -11,8 +11,8 @@ import { Must } from "../misc/Gadgets";
 export default class Header {
 
     constructor() {
-        this._raw = null; // as it was received or as it will be sent
         this.fields = []; // parsed or manually added Fields, in appearance/addition order
+        this._raw = null; // as it was received, or null if we changed ourselves.
     }
 
     clone() {
@@ -26,16 +26,6 @@ export default class Header {
     finalize() {
         for (let field of this.fields)
             field.finalize();
-    }
-
-    raw() {
-        if (this._raw !== null)
-            return this._raw;
-
-        let raw = "";
-        for (let field of this.fields)
-            raw += field.raw();
-        return raw;
     }
 
     // returns null if the header does not have Content-Length field(s)
@@ -115,9 +105,7 @@ export default class Header {
         }
         Must(field);
         this.fields.push(field);
-        if (this._raw !== null) {
-            this._raw += field.raw();
-        } // else raw() will assemble
+        this._raw = null;
     }
 
     deleteAllNamed(name) {
@@ -126,6 +114,5 @@ export default class Header {
             return field.id() !== id; // true result keeps the field
         });
         this._raw = null;
-        // raw() will assemble
     }
 }

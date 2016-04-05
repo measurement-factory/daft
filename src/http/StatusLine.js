@@ -25,10 +25,6 @@ export default class StatusLine {
         return dupe;
     }
 
-    toString() {
-        return this.raw();
-    }
-
     finalize() {
         if (this.httpVersion === null)
             this.httpVersion = "HTTP/1.1";
@@ -42,23 +38,6 @@ export default class StatusLine {
             this.reasonPhrase = this.ReasonPhrase(this.statusCode);
         if (this.terminator === null)
             this.terminator = "\r\n";
-    }
-
-    raw() {
-        let image = "";
-        if (this.httpVersion !== null)
-            image += this.httpVersion;
-        if (this.versionDelimiter !== null)
-            image += this.versionDelimiter;
-        if (this.statusCode !== null)
-            image += this.statusCode;
-        if (this.statusDelimiter !== null)
-            image += this.statusDelimiter;
-        if (this.reasonPhrase !== null)
-            image += this.reasonPhrase;
-        if (this.terminator !== null)
-            image += this.terminator;
-        return image;
     }
 
     ReasonPhrase(statusCode) {

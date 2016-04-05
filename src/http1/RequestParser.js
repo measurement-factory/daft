@@ -21,13 +21,11 @@ export default class RequestParser extends MessageParser {
         console.log("no request body");
     }
 
-    parseStartLine(raw) {
+    parseStartLine(requestLine, raw) {
         let reqRe = /^(\S+)(\s+)(.*\S)(\s+)(\S+)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)
             throw new Error("Unable to parse request-line: " + raw);
-
-        let requestLine = new RequestLine();
 
         requestLine.method = match[1];
         requestLine.methodDelimiter = match[2];

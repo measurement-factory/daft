@@ -28,10 +28,6 @@ export default class RequestLine {
         return dupe;
     }
 
-    toString() {
-        return this.raw();
-    }
-
     finalize() {
         if (this.method === null)
             this.method = "GET";
@@ -44,21 +40,5 @@ export default class RequestLine {
             this._rest = "HTTP/1.1";
         if (this.terminator === null)
             this.terminator = "\r\n";
-    }
-
-    raw() {
-        let image = "";
-        if (this.method !== null)
-            image += this.method;
-        if (this.methodDelimiter !== null)
-            image += this.methodDelimiter;
-        image += this.uri.raw();
-        if (this.uriDelimiter !== null)
-            image += this.uriDelimiter;
-        if (this._rest !== null)
-            image += this._rest;
-        if (this.terminator !== null)
-            image += this.terminator;
-        return image;
     }
 }

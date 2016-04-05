@@ -2,6 +2,7 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import { requestPrefix, responsePrefix } from "../http1/MessageWriter";
 import RequestParser from "../http1/RequestParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
@@ -75,7 +76,7 @@ export default class Transaction {
 
         if (!this.request && this.requestParser.message) {
             this.request = this.requestParser.message;
-            let parsed = this.request.rawPrefix();
+            let parsed = requestPrefix(this.request);
             console.log(`parsed ${parsed.length} request header bytes:\n` +
                 PrettyMime(">s ", parsed));
         }
@@ -116,7 +117,7 @@ export default class Transaction {
 
         if (!hadResponse) {
             // send response headers once we got them
-            SendBytes(this.socket, this.response.rawPrefix(), "response header", "<s ");
+            SendBytes(this.socket, responsePrefix(this.response), "response header", "<s ");
 
             if (!this.response.body) {
                 console.log("sent a bodyless response");

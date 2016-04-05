@@ -24,12 +24,10 @@ export default class ResponseParser extends MessageParser {
         this.message.body = new Body();
     }
 
-    parseStartLine(raw) {
+    parseStartLine(statusLine, raw) {
         let match = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/.exec(raw);
         if (!match)
             throw new Error("Unable to parse status-line: " + raw);
-
-        let statusLine = new StatusLine();
 
         statusLine.httpVersion = match[1];
         statusLine.versionDelimiter = match[2];

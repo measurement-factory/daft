@@ -41,8 +41,8 @@ export default class MessageParser {
         }
 
         this.message = new this._messageType();
-        this.message.startLine = this.parseStartLine(match[1]);
-        this.message.header = this.parseHeader(match[2]);
+        this.parseStartLine(this.message.startLine, match[1]);
+        this.parseHeader(this.message.header, match[2]);
         this.message.headerDelimiter = match[3];
         this._raw = match[4]; // body [prefix] or an empty string
 
@@ -76,16 +76,15 @@ export default class MessageParser {
         return field;
     }
 
-    parseHeader(raw) {
-        let header = new Header();
-
+    parseHeader(header, raw) {
         Must(!header.fields.length);
         Must(header._raw === null);
         Must(raw !== null && raw !== undefined);
         header._raw = raw;
 
         // replace obs-fold with a single space
-        let rawH = header._raw;
+        let rawH = raw;
+        // XXX: This does nothing (replace does not change string in place).
         rawH.replace(/\r*\n\s+/, ' ');
 
         let rawFields = rawH.split('\n');
@@ -93,8 +92,9 @@ export default class MessageParser {
         Must(!rawFields.pop().length); // the non-field after the last CRLF
         for (let rawField of rawFields) {
             let field = this.parseField(rawField + "\n");
-            Must(field); // Assert no longer really makes sense... (see parseField)
-            header.fields.push(field);
+            Must(field);
+            // XXX: Use field instead. Do not parse twice.
+            header.fields.push(this.parseField(rawField + "\n"));
         }
 
         if (!header.fields.length)
