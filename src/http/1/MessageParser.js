@@ -4,10 +4,10 @@
 
 /* Incrementally parses an HTTP message, including first-line, headers, and body */
 
-import Field from "../http/Field";
-import Header from "../http/Header";
-import Body from "../http/Body";
-import { Must } from "../misc/Gadgets";
+import Field from "../Field";
+import Header from "../Header";
+import Body from "../Body";
+import { Must } from "../../misc/Gadgets";
 
 export default class MessageParser {
 

@@ -4,9 +4,9 @@
 
 /* Incrementally parses HTTP request messages, including headers and body */
 
-import Uri from "../anyp/Uri";
-import RequestLine from "../http/RequestLine";
-import Request from "../http/Request";
+import Uri from "../../anyp/Uri";
+import RequestLine from "../RequestLine";
+import Request from "../Request";
 import MessageParser from "./MessageParser";
 
 export default class RequestParser extends MessageParser {
@@ -33,7 +33,5 @@ export default class RequestParser extends MessageParser {
         requestLine.uriDelimiter = match[4];
         requestLine._rest = match[5];
         requestLine.terminator = match[6];
-
-        return requestLine;
     }
 }

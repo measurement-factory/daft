@@ -2,11 +2,11 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import Response from "../http/Response";
-import StatusLine from "../http/StatusLine";
-import Body from "../http/Body";
+import Response from "../Response";
+import StatusLine from "../StatusLine";
+import Body from "../Body";
 import MessageParser from "./MessageParser";
-import { Must } from "../misc/Gadgets";
+import { Must } from "../../misc/Gadgets";
 
 export default class ResponseParser extends MessageParser {
 
@@ -36,7 +36,5 @@ export default class ResponseParser extends MessageParser {
         if (match[5] !== undefined)
             statusLine.reasonPhrase = match[5];
         statusLine.terminator = match[6];
-
-        return statusLine;
     }
 }
