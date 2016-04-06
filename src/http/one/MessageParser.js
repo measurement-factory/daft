@@ -50,7 +50,7 @@ export default class MessageParser {
     }
 
     parseStartLine() {
-        Must(false, "parseStartLine must be implemented by children.");
+        Must(false, "pure virtual: kids must override");
     }
 
     parseField(raw) {
