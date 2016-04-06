@@ -21,7 +21,9 @@ export default class RequestParser extends MessageParser {
         console.log("no request body");
     }
 
-    parseStartLine(requestLine, raw) {
+    parseStartLine(raw) {
+        let requestLine = new RequestLine();
+
         let reqRe = /^(\S+)(\s+)(.*\S)(\s+)(\S+)(\r*\n)$/;
         let match = reqRe.exec(raw);
         if (!match)
@@ -33,5 +35,7 @@ export default class RequestParser extends MessageParser {
         requestLine.uriDelimiter = match[4];
         requestLine._rest = match[5];
         requestLine.terminator = match[6];
+
+        return requestLine;
     }
 }

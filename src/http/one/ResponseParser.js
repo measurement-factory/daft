@@ -24,7 +24,9 @@ export default class ResponseParser extends MessageParser {
         this.message.body = new Body();
     }
 
-    parseStartLine(statusLine, raw) {
+    parseStartLine(raw) {
+        let statusLine = new StatusLine();
+
         let match = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/.exec(raw);
         if (!match)
             throw new Error("Unable to parse status-line: " + raw);
@@ -36,5 +38,7 @@ export default class ResponseParser extends MessageParser {
         if (match[5] !== undefined)
             statusLine.reasonPhrase = match[5];
         statusLine.terminator = match[6];
+
+        return statusLine;
     }
 }

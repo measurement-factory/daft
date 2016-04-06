@@ -41,15 +41,15 @@ export default class MessageParser {
         }
 
         this.message = new this._messageType();
-        this.parseStartLine(this.message.startLine, match[1]);
-        this.parseHeader(this.message.header, match[2]);
+        this.message.startLine = this.parseStartLine(match[1]);
+        this.message.header = this.parseHeader(match[2]);
         this.message.headerDelimiter = match[3];
         this._raw = match[4]; // body [prefix] or an empty string
 
         this.determineBodyLength();
     }
 
-    parseStartLine() {
+    parseStartLine(/*raw*/) {
         Must(false, "pure virtual: kids must override");
     }
 
@@ -76,7 +76,9 @@ export default class MessageParser {
         return field;
     }
 
-    parseHeader(header, raw) {
+    parseHeader(raw) {
+        let header = new Header();
+
         Must(!header.fields.length);
         Must(header._raw === null);
         Must(raw !== null && raw !== undefined);
