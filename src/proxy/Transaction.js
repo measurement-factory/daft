@@ -5,9 +5,9 @@
 /* Transaction is a single (user agent request, origin response) tuple. */
 
 import net from "net";
-import RequestParser from "../http/1/RequestParser";
-import ResponseParser from "../http/1/ResponseParser";
-import { requestPrefix, responsePrefix } from "../http/1/MessageWriter";
+import RequestParser from "../http/one/RequestParser";
+import ResponseParser from "../http/one/ResponseParser";
+import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
 import * as Config from "../misc/Config";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 import * as Gadgets from "../misc/Gadgets";
