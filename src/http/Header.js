@@ -12,7 +12,7 @@ export default class Header {
 
     constructor() {
         this.fields = []; // parsed or manually added Fields, in appearance/addition order
-        this._raw = null; // as it was received, or null if we changed ourselves.
+        this._raw = null; // set to received bytes; reset to null on any change
     }
 
     clone() {
