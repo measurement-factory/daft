@@ -93,8 +93,7 @@ export default class MessageParser {
         for (let rawField of rawFields) {
             let field = this.parseField(rawField + "\n");
             Must(field);
-            // XXX: Use field instead. Do not parse twice.
-            header.fields.push(this.parseField(rawField + "\n"));
+            header.fields.push(field);
         }
 
         if (!header.fields.length)
