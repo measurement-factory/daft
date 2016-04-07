@@ -4,7 +4,7 @@
 
 import * as Global from "../misc/Global";
 import Transaction from "./Transaction";
-import RequestParser from "../http//RequestParser";
+import RequestParser from "../http/one/RequestParser";
 import { Must } from "../misc/Gadgets";
 
 

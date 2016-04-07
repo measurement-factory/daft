@@ -4,8 +4,10 @@
 
 /* Incrementally parses an HTTP message, including first-line, headers, and body */
 
-import Body from "./Body";
-import { Must } from "../misc/Gadgets";
+import Field from "../Field";
+import Header from "../Header";
+import Body from "../Body";
+import { Must } from "../../misc/Gadgets";
 
 export default class MessageParser {
 
@@ -39,12 +41,66 @@ export default class MessageParser {
         }
 
         this.message = new this._messageType();
-        this.message.startLine.parse(match[1]);
-        this.message.header.parse(match[2]);
+        this.message.startLine = this.parseStartLine(match[1]);
+        this.message.header = this.parseHeader(match[2]);
         this.message.headerDelimiter = match[3];
         this._raw = match[4]; // body [prefix] or an empty string
 
         this.determineBodyLength();
+    }
+
+    parseStartLine(/*raw*/) {
+        Must(false, "pure virtual: kids must override");
+    }
+
+    parseField(raw) {
+        let fieldRe = /^(.*?)([\t ]*:[\t ]*)(.*?)([\t \r]*\n)$/;
+        const match = fieldRe.exec(raw);
+
+        let field = new Field();
+
+        if (match) {
+            Must(match.length === 5);
+            field.name = match[1]; // right-trimmed
+            field.separator = match[2];
+            field.value = match[3]; // trimmed
+            field.terminator = match[4];
+        } else {
+            console.log(`Warning: Cannot parse ${raw.length}-byte header field: ${raw}`);
+            field.name = raw;
+            field.separator = "";
+            field.value = "";
+            field.terminator = "";
+        }
+
+        return field;
+    }
+
+    parseHeader(raw) {
+        let header = new Header();
+
+        Must(raw !== null && raw !== undefined);
+        header._raw = raw;
+
+        // replace obs-fold with a single space
+        let rawH = raw;
+        // XXX: This does nothing (replace does not change string in place).
+        rawH.replace(/\r*\n\s+/, ' ');
+
+        let rawFields = rawH.split('\n');
+        Must(rawFields.length); // our caller requires CRLF at the headers end
+        Must(!rawFields.pop().length); // the non-field after the last CRLF
+        for (let rawField of rawFields) {
+            let field = this.parseField(rawField + "\n");
+            Must(field);
+            // XXX: Use field instead. Do not parse twice.
+            header.fields.push(this.parseField(rawField + "\n"));
+        }
+
+        if (!header.fields.length)
+            console.log(`Warning: Found no headers in ${rawH}`);
+
+        return header;
     }
 
     // called for messages with neither Content-Length nor chunked encoding

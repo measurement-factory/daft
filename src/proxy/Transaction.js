@@ -5,8 +5,9 @@
 /* Transaction is a single (user agent request, origin response) tuple. */
 
 import net from "net";
-import RequestParser from "../http//RequestParser";
-import ResponseParser from "../http//ResponseParser";
+import RequestParser from "../http/one/RequestParser";
+import ResponseParser from "../http/one/ResponseParser";
+import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
 import * as Config from "../misc/Config";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 import * as Gadgets from "../misc/Gadgets";
@@ -134,7 +135,7 @@ export default class Transaction {
 
         if (!this.virginRequest && this.requestParser.message) {
             this.virginRequest = this.requestParser.message;
-            let parsed = this.virginRequest.rawPrefix();
+            let parsed = requestPrefix(this.virginRequest);
             console.log(`parsed ${parsed.length} request header bytes:\n` +
                 PrettyMime("c> ", parsed));
         }
@@ -153,7 +154,7 @@ export default class Transaction {
             this.startConnectingToOrigin();
 
             // when finished connecting
-            SendBytes(this.originSocket, this.adaptedRequest.rawPrefix(), "request header", ">s ");
+            SendBytes(this.originSocket, requestPrefix(this.adaptedRequest), "request header", ">s ");
         }
 
         if (this.adaptedRequest.body) {
@@ -231,7 +232,7 @@ export default class Transaction {
 
         if (!this.virginResponse && this.responseParser.message) {
             this.virginResponse = this.responseParser.message;
-            let parsed = this.virginResponse.rawPrefix();
+            let parsed = responsePrefix(this.virginResponse);
             console.log(`parsed ${parsed.length} response header bytes:\n` +
                 PrettyMime("<s ", parsed));
         }
@@ -248,7 +249,7 @@ export default class Transaction {
         if (!this.responseHeadersSent) {
             this.adaptedResponse.finalize();
             this.responseHeadersSent = true;
-            SendBytes(this.userSocket, this.adaptedResponse.rawPrefix(), "response header", "c< ");
+            SendBytes(this.userSocket, responsePrefix(this.adaptedResponse), "response header", "c< ");
         }
 
         if (this.adaptedResponse.body)

@@ -71,12 +71,6 @@ export default class Message {
         this.syncContentLength();
     }
 
-    rawPrefix() {
-        return this.startLine.raw() +
-            this.header.raw() +
-            this.headerDelimiter;
-    }
-
     addBody(body) {
         Must(!this.body); // not a reset; we do not remove old Content-Length
         this.body = body;
