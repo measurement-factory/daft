@@ -1,4 +1,4 @@
-function rawStatusLine(statusLine) {
+function packStatusLine(statusLine) {
     return [
         statusLine.httpVersion,
         statusLine.versionDelimiter,
@@ -9,7 +9,7 @@ function rawStatusLine(statusLine) {
     ].filter(item => item !== null).join("");
 }
 
-function rawRequestLine(requestLine) {
+function packRequestLine(requestLine) {
     return [
         requestLine.method,
         requestLine.methodDelimiter,
@@ -20,25 +20,25 @@ function rawRequestLine(requestLine) {
     ].filter(item => item !== null).join("");
 }
 
-function rawHeader(header) {
+function packHeader(header) {
     if (header._raw !== null) return header._raw;
 
-    function rawField(field) {
+    function packField(field) {
         return field.name + field.separator +
             field.value + field.terminator;
     }
 
-    return header.fields.map(rawField).join("");
+    return header.fields.map(packField).join("");
 }
 
 export function requestPrefix(message) {
-    return rawRequestLine(message.startLine) +
-        rawHeader(message.header) +
+    return packRequestLine(message.startLine) +
+        packHeader(message.header) +
         message.headerDelimiter;
 }
 
 export function responsePrefix(message) {
-    return rawStatusLine(message.startLine) +
-        rawHeader(message.header) +
+    return packStatusLine(message.startLine) +
+        packHeader(message.header) +
         message.headerDelimiter;
 }
