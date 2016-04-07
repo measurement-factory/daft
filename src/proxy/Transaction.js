@@ -7,7 +7,7 @@
 import net from "net";
 import RequestParser from "../http/one/RequestParser";
 import ResponseParser from "../http/one/ResponseParser";
-import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
+import { requestPrefix, responsePrefix } from "../http/one/MessagePacker";
 import * as Config from "../misc/Config";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
 import * as Gadgets from "../misc/Gadgets";
