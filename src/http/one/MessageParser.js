@@ -84,8 +84,7 @@ export default class MessageParser {
 
         // replace obs-fold with a single space
         let rawH = raw;
-        // XXX: This does nothing (replace does not change string in place).
-        rawH.replace(/\r*\n\s+/, ' ');
+        rawH = rawH.replace(/\r*\n\s+/, ' ');
 
         let rawFields = rawH.split('\n');
         Must(rawFields.length); // our caller requires CRLF at the headers end
