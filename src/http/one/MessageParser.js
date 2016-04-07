@@ -79,8 +79,6 @@ export default class MessageParser {
     parseHeader(raw) {
         let header = new Header();
 
-        Must(!header.fields.length);
-        Must(header._raw === null);
         Must(raw !== null && raw !== undefined);
         header._raw = raw;
 
