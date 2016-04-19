@@ -32,12 +32,18 @@ function rawHeader(header) {
 }
 
 export function requestPrefix(message) {
+    if (message.startLine.protocol === "HTTP/0.9")
+        return "";
+
     return rawRequestLine(message.startLine) +
         rawHeader(message.header) +
         message.headerDelimiter;
 }
 
 export function responsePrefix(message) {
+    if (message.startLine.protocol === "HTTP/0.9")
+        return "";
+
     return rawStatusLine(message.startLine) +
         rawHeader(message.header) +
         message.headerDelimiter;
