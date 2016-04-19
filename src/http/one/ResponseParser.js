@@ -31,8 +31,8 @@ export default class ResponseParser extends MessageParser {
         if (!match)
             throw new Error("Unable to parse status-line: " + raw);
 
-        statusLine.httpVersion = match[1];
-        statusLine.versionDelimiter = match[2];
+        statusLine.protocol = match[1];
+        statusLine.protocolDelimiter = match[2];
         statusLine.statusCode = match[3];
         statusLine.statusDelimiter = match[4];
         if (match[5] !== undefined)

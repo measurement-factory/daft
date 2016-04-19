@@ -1,7 +1,7 @@
 function rawStatusLine(statusLine) {
     return [
-        statusLine.httpVersion,
-        statusLine.versionDelimiter,
+        statusLine.protocol,
+        statusLine.protocolDelimiter,
         statusLine.statusCode,
         statusLine.statusDelimiter,
         statusLine.reasonPhrase,
@@ -15,7 +15,7 @@ function rawRequestLine(requestLine) {
         requestLine.methodDelimiter,
         requestLine.uri.raw(),
         requestLine.uriDelimiter,
-        requestLine._rest,
+        requestLine.protocol,
         requestLine.terminator
     ].filter(item => item !== null).join("");
 }

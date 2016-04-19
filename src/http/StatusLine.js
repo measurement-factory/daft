@@ -7,8 +7,8 @@
 export default class StatusLine {
 
     constructor() {
-        this.httpVersion = null;
-        this.versionDelimiter = null;
+        this.protocol = null;
+        this.protocolDelimiter = null;
         this.statusCode = null;
         this.statusDelimiter = null;
         this.reasonPhrase = null;
@@ -16,8 +16,8 @@ export default class StatusLine {
     }
     clone() {
         let dupe = new StatusLine();
-        dupe.httpVersion = this.httpVersion;
-        dupe.versionDelimiter = this.versionDelimiter;
+        dupe.protocol = this.protocol;
+        dupe.protocolDelimiter = this.protocolDelimiter;
         dupe.statusCode = this.statusCode;
         dupe.statusDelimiter = this.statusDelimiter;
         dupe.reasonPhrase = this.reasonPhrase;
@@ -26,10 +26,10 @@ export default class StatusLine {
     }
 
     finalize() {
-        if (this.httpVersion === null)
-            this.httpVersion = "HTTP/1.1";
-        if (this.versionDelimiter === null)
-            this.versionDelimiter = " ";
+        if (this.protocol === null)
+            this.protocol = "HTTP/1.1";
+        if (this.protocolDelimiter === null)
+            this.protocolDelimiter = " ";
         if (this.statusCode === null)
             this.statusCode = "200";
         if (this.statusDelimiter === null)
