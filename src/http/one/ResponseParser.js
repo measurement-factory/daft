@@ -13,6 +13,7 @@ export default class ResponseParser extends MessageParser {
     constructor(transaction, request) {
         super(transaction);
         this._messageType = Response;
+        this._messageKind = "response";
 
         Must(request !== undefined);
         this.request = request;

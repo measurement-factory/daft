@@ -2,10 +2,10 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
+import { requestPrefix } from "../http/one/MessageWriter";
 import ResponseParser from "../http/one/ResponseParser";
 import Request from "../http/Request";
-import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
+import { Must, SendBytes } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
 export default class Transaction {
@@ -71,31 +71,20 @@ export default class Transaction {
     }
 
     parseResponse(virginData) {
-        if (!this.responseParser)
+        if (!this.responseParser) {
             this.responseParser = new ResponseParser(this, this.request);
+            this.responseParser.logPrefix = "c< ";
+        }
 
         this.responseParser.parse(virginData);
 
-        if (!this.response && this.responseParser.message) {
-            this.response = this.responseParser.message;
-            let parsed = responsePrefix(this.response);
-            console.log(`parsed ${parsed.length} response header bytes:\n` +
-                PrettyMime("c< ", parsed));
-        }
+        if (!this.responseParser.message)
+            return; // have not found the end of headers yet
 
         if (!this.response)
-            return;
+            this.response = this.responseParser.message;
 
-        if (this.response.body) {
-            if (this.response.body.innedAll()) {
-                console.log(`parsed all ${this.response.body.innedSize()} response body bytes`);
-                this.doneReceiving = true;
-                this.checkpoint();
-            } else {
-                console.log(`parsed first ${this.response.body.innedSize()} response body bytes so far`);
-            }
-        } else {
-            console.log("parsed the entire bodyless response");
+        if (!this.response.body || this.response.body.innedAll()) {
             this.doneReceiving = true;
             this.checkpoint();
         }
@@ -132,10 +121,10 @@ export default class Transaction {
         Must(this.request.body);
         let chunk = this.request.body.out();
         if (chunk.length)
-            SendBytes(this.socket, chunk, "request body");
+            SendBytes(this.socket, chunk, "request body", "c> ");
 
         if (this.request.body.outedAll()) {
-            console.log("sent the entire request body");
+            console.log(`sent all ${this.request.body.outedSize()} request body bytes`);
             this.doneSending = true;
             this.checkpoint();
             return;

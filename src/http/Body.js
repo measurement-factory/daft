@@ -73,6 +73,10 @@ export default class Body {
     //        this._out < this._length;
     //}
 
+    outedSize() {
+        return this._out;
+    }
+
     outedAll() {
         return this._length !== null && this._out >= this._length;
     }

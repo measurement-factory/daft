@@ -7,17 +7,23 @@
 import Field from "../Field";
 import Header from "../Header";
 import Body from "../Body";
-import { Must } from "../../misc/Gadgets";
+import { Must, PrettyMime, PrettyBody } from "../../misc/Gadgets";
+import * as Config from "../../misc/Config";
 
 export default class MessageParser {
 
     constructor(transaction) {
         this.transaction = transaction;
         this.message = null;
-        this._messageType = null; // kids must set this in their constructors
+
+        /* kids must set these in their constructors */
+        this._messageType = null;
+        this._messageKind = null;
 
         this._raw = ""; // unparsed data
         this.expectBody = true;
+
+        this.logPrefix = null; // should be set by the user
     }
 
     parse(data) {
@@ -26,8 +32,12 @@ export default class MessageParser {
         if (!this.message)
             this.parsePrefix();
 
-        if (this.message && this.message.body)
-            this.parseBody();
+        if (this.message) {
+            if (this.message.body)
+                this.parseBody();
+            else
+                console.log(`parsed the entire bodyless ${this._messageKind}`);
+        }
 
         // TODO: complain about leftovers
     }
@@ -36,7 +46,7 @@ export default class MessageParser {
         let messageRe = /^(.*\r*\n)([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
         let match = messageRe.exec(this._raw.toString());
         if (match === null) {
-            console.log("no end of headers yet");
+            console.log(`no end of ${this._messageKind} headers yet`);
             return;
         }
 
@@ -45,6 +55,10 @@ export default class MessageParser {
         this.message.header = this.parseHeader(match[2]);
         this.message.headerDelimiter = match[3];
         this._raw = match[4]; // body [prefix] or an empty string
+
+        const parsed = match[1] + match[2] + match[3];
+        console.log(`parsed ${parsed.length} ${this._messageKind} header bytes:\n` +
+                PrettyMime(this.logPrefix, parsed));
 
         this.determineBodyLength();
     }
@@ -127,8 +141,20 @@ export default class MessageParser {
 
     parseBody() {
         Must(this.message.body);
+
         // TODO: dechunk (and set final length) as needed
         this.message.body.in(this._raw);
+
+        const parsedLength = this._raw.length;
+        if (parsedLength) {
+            const suffix = Config.LogBodies ?
+                ":\n" + PrettyBody(this.logPrefix, this._raw):
+                "";
+            console.log(`parsed ${parsedLength} ${this._messageKind} body bytes so far${suffix}`);
+        }
+        if (this.message.body.innedAll())
+            console.log(`parsed all ${this.message.body.innedSize()} expected ${this._messageKind} body bytes`);
+
         this._raw = "";
     }
 }

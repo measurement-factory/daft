@@ -128,17 +128,18 @@ export default class Transaction {
     }
 
     parseRequest(virginData) {
-        if (!this.requestParser)
+        if (!this.requestParser) {
             this.requestParser = new RequestParser(this);
+            this.requestParser.logPrefix = "c> ";
+        }
 
         this.requestParser.parse(virginData);
 
-        if (!this.virginRequest && this.requestParser.message) {
+        if (!this.requestParser.message)
+            return; // have not found the end of headers yet
+
+        if (!this.virginRequest)
             this.virginRequest = this.requestParser.message;
-            let parsed = requestPrefix(this.virginRequest);
-            console.log(`parsed ${parsed.length} request header bytes:\n` +
-                PrettyMime("c> ", parsed));
-        }
     }
 
     sendRequest() {
@@ -225,17 +226,18 @@ export default class Transaction {
     }
 
     parseResponse(virginData) {
-        if (!this.responseParser)
+        if (!this.responseParser) {
             this.responseParser = new ResponseParser(this, this.adaptedRequest);
+            this.responseParser.logPrefix = "<s ";
+        }
 
         this.responseParser.parse(virginData);
 
-        if (!this.virginResponse && this.responseParser.message) {
+        if (!this.responseParser.message)
+            return; // have not found the end of headers yet
+
+        if (!this.virginResponse)
             this.virginResponse = this.responseParser.message;
-            let parsed = responsePrefix(this.virginResponse);
-            console.log(`parsed ${parsed.length} response header bytes:\n` +
-                PrettyMime("<s ", parsed));
-        }
     }
 
     sendResponse() {

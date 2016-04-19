@@ -14,6 +14,7 @@ export default class RequestParser extends MessageParser {
     constructor(transaction) {
         super(transaction);
         this._messageType = Request;
+        this._messageKind = "request";
     }
 
     determineDefaultBody() {
