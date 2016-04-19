@@ -139,7 +139,7 @@ export default class Uri {
             if (Config.ProxyListeningAddress)
                 this.makeUnique();
             else
-                this._rest =  "/";
+                this._rest = "/";
         }
     }
 }
