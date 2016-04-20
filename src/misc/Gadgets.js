@@ -53,8 +53,7 @@ export function SendBytes(socket, bytes, description, logPrefix) {
         let detail = "";
         if (description.includes("header"))
             detail = PrettyMime(logPrefix, bytes);
-        else
-        if (Config.LogBodies && description.includes("body"))
+        else if (Config.LogBodies && description.includes("body"))
             detail = PrettyBody(logPrefix, bytes);
 
         if (detail.length)

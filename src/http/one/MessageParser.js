@@ -58,7 +58,7 @@ export default class MessageParser {
 
         const parsed = match[1] + match[2] + match[3];
         console.log(`parsed ${parsed.length} ${this._messageKind} header bytes:\n` +
-                PrettyMime(this.logPrefix, parsed));
+            PrettyMime(this.logPrefix, parsed));
 
         this.determineBodyLength();
     }
@@ -148,7 +148,7 @@ export default class MessageParser {
         const parsedLength = this._raw.length;
         if (parsedLength) {
             const suffix = Config.LogBodies ?
-                ":\n" + PrettyBody(this.logPrefix, this._raw):
+                ":\n" + PrettyBody(this.logPrefix, this._raw) :
                 "";
             console.log(`parsed ${parsedLength} ${this._messageKind} body bytes so far${suffix}`);
         }

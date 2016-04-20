@@ -21,7 +21,8 @@ function rawRequestLine(requestLine) {
 }
 
 function rawHeader(header) {
-    if (header._raw !== null) return header._raw;
+    if (header._raw !== null)
+        return header._raw;
 
     function rawField(field) {
         return field.name + field.separator +
