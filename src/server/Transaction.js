@@ -124,6 +124,9 @@ export default class Transaction {
         if (this.response.body.outedAll()) {
             console.log(`sent all ${this.response.body.outedSize()} response body bytes`);
             this.doneSending = true;
+            // if body length is unknown to the recipient, mark its end with EOF
+            if (this.response.body.length() === null && this.socket)
+                this.socket.end(); // half-close; we might still be reading
             this.checkpoint();
             return;
         }
