@@ -10,7 +10,7 @@ import Server from "../src/server/Agent";
 import Proxy from "../src/proxy/Agent";
 import Request from "../src/http/Request";
 import Response from "../src/http/Response";
-import "../src/misc/Lifetime";
+import * as Lifetime from "../src/misc/Lifetime";
 import assert from "assert";
 
 
@@ -60,23 +60,21 @@ export default class ProxyCase {
 
             // Relying on .finally() to wait for the asynchronous cleanup!
             // And checking expectations only if that cleanup was successful.
-            this._runPromise =
-                this._beginPromise().
-                    tap(this.startAgents).
-                    then(this._promiseTransactions).
-                    finally(this.stopAgents).
-                    tap(this._doCheck).
-                    finally(this._end);
+            this._runPromise = Promise.resolve(this).bind(this).
+                tap(this._begin).
+                tap(this.startAgents).
+                then(this._promiseTransactions).
+                finally(this.stopAgents).
+                tap(this._doCheck).
+                finally(this._end);
 
             return this._runPromise;
         });
     }
 
-    _beginPromise() {
-        return Promise.try(() => {
-            console.log("Starting test case:", this.gist);
-            return Promise.resolve(this).bind(this);
-        });
+    _begin() {
+        console.log("Starting test case:", this.gist);
+        Lifetime.Extend();
     }
 
     _end() {
