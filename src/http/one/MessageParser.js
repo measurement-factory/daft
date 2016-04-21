@@ -145,8 +145,11 @@ export default class MessageParser {
         // TODO: dechunk (and set final length) as needed
         this.message.body.in(this._raw);
 
+        // log body parsing progress, distinguishing Config.LogBodies
+        // default/undefined value (log overall progress but not body contents)
+        // from its zero value (do not log overall progress either).
         const parsedLength = this._raw.length;
-        if (parsedLength) {
+        if (parsedLength && Config.LogBodies !== 0) {
             const suffix = Config.LogBodies ?
                 ":\n" + PrettyBody(this.logPrefix, this._raw) :
                 "";
