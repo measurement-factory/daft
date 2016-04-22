@@ -2,6 +2,8 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import * as Config from "../misc/Config";
+
 /* Assorted small handy global functions. */
 
 export function Must(condition, ...args) {
@@ -11,7 +13,10 @@ export function Must(condition, ...args) {
 }
 
 export function PrettyMime(prefix, data) {
-    if (prefix === undefined)
+    if (!data.length)
+        return '';
+
+    if (prefix === undefined || prefix === null)
         prefix = "";
     let text = data;
     text = text.replace(/\t/g, "\\t");
@@ -25,9 +30,15 @@ export function PrettyMime(prefix, data) {
     return "\n" + text;
 }
 
-// to avoid dumping bytes on console as MIME headers, omit mimePrefix
-// TODO: Add our own socket wrapper to store mimePrefix and ensure binary output?
-export function SendBytes(socket, bytes, description, mimePrefix) {
+// currently abusing PrettyMime() to format bodies, but that may change
+export function PrettyBody(prefix, rawBody) {
+    Must(Config.LogBodies); // may be relaxed later
+    return rawBody.length ? PrettyMime(prefix, rawBody) : "";
+}
+
+// to avoid dumping "prettified" bytes on console, omit logPrefix
+// TODO: Add our own socket wrapper to store logPrefix and ensure binary output?
+export function SendBytes(socket, bytes, description, logPrefix) {
     // bytes must be a "binary" string for the binary conversion in write() to work;
     // for example, the following writes just one byte: write("\u2028", 'binary')
     Must(Buffer(bytes, "binary").toString("binary") === bytes);
@@ -36,8 +47,18 @@ export function SendBytes(socket, bytes, description, mimePrefix) {
     socket.write(bytes, 'binary');
 
     let toLog = `sending ${bytes.length} ${description} bytes`;
-    if (mimePrefix !== undefined && mimePrefix !== null)
-        toLog += ":\n" + PrettyMime(mimePrefix, bytes);
+
+    // add pretty bytes if needed
+    if (bytes.length && logPrefix !== undefined && logPrefix !== null) {
+        let detail = "";
+        if (description.includes("header"))
+            detail = PrettyMime(logPrefix, bytes);
+        else if (Config.LogBodies && description.includes("body"))
+            detail = PrettyBody(logPrefix, bytes);
+
+        if (detail.length)
+            toLog += ":\n" + detail;
+    }
     console.log(toLog);
 }
 

@@ -13,7 +13,7 @@ export default class RequestLine {
         this.methodDelimiter = null;
         this.uri = new Uri();
         this.uriDelimiter = null;
-        this._rest = null;
+        this.protocol = null;
         this.terminator = null;
     }
 
@@ -23,7 +23,7 @@ export default class RequestLine {
         dupe.methodDelimiter = this.methodDelimiter;
         dupe.uri = this.uri.clone();
         dupe.uriDelimiter = this.uriDelimiter;
-        dupe._rest = this._rest;
+        dupe.protocol = this.protocol;
         dupe.terminator = this.terminator;
         return dupe;
     }
@@ -36,8 +36,8 @@ export default class RequestLine {
         this.uri.finalize();
         if (this.uriDelimiter === null)
             this.uriDelimiter = " ";
-        if (this._rest === null)
-            this._rest = "HTTP/1.1";
+        if (this.protocol === null)
+            this.protocol = "HTTP/1.1";
         if (this.terminator === null)
             this.terminator = "\r\n";
     }
