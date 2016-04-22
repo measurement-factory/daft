@@ -14,7 +14,7 @@ export default class Uri {
         this.scheme = null;
         this.host = null;
         this._port = null;
-        this._rest = null;
+        this.path = null;
         this.relative = false; // whether raw() lacks scheme://authority prefix
     }
 
@@ -23,7 +23,7 @@ export default class Uri {
         dupe.scheme = this.scheme;
         dupe.host = this.host;
         dupe._port = this._port;
-        dupe._rest = this._rest;
+        dupe.path = this.path;
         dupe.relative = this.relative;
         return dupe;
     }
@@ -76,21 +76,21 @@ export default class Uri {
             if (this._port !== null)
                 image += ":" + this._port;
         }
-        if (this._rest !== null)
-            image += this._rest;
+        if (this.path !== null)
+            image += this.path;
         return image;
     }
 
     makeUnique(prefix = "/path-") {
         let uid = UniqueId(prefix);
         if (this.hasPath())
-            this._rest += uid;
+            this.path += uid;
         else
-            this._rest = uid;
+            this.path = uid;
     }
 
     hasPath() {
-        return this._rest !== null;
+        return this.path !== null;
     }
 
     static Parse(rawBytes) {
@@ -110,7 +110,7 @@ export default class Uri {
 
         // A relative URI (i.e., relative-ref that starts with path-absolute)?
         if (rawBytes[0] === "/") {
-            this._rest = rawBytes;
+            this.path = rawBytes;
             return;
         }
 
@@ -125,7 +125,7 @@ export default class Uri {
         if (urlMatch[3] !== undefined)
             this._port = urlMatch[3].substring(1);
         if (urlMatch[4] !== undefined)
-            this._rest = urlMatch[4];
+            this.path = urlMatch[4];
     }
 
     finalize() {
@@ -141,7 +141,7 @@ export default class Uri {
             if (Config.ProxyListeningAddress)
                 this.makeUnique();
             else
-                this._rest = "/";
+                this.path = "/";
         }
     }
 }
