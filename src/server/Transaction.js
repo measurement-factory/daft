@@ -2,8 +2,10 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
-import RequestParser from "../http/one/RequestParser";
+// import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
+import { requestPrefix, responsePrefix } from "../http/two/MessagePacker";
+// import RequestParser from "../http/one/RequestParser";
+import ConnectionParser from "../http/two/ConnectionParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
 import { Must, PrettyMime, SendBytes } from "../misc/Gadgets";
@@ -39,6 +41,7 @@ export default class Transaction {
             // assume all 'data' events always arrive before 'end'
             this.doneReceiving = true;
             this.checkpoint();
+            process.exit(0);
         });
 
         this.sendResponse();
@@ -70,7 +73,7 @@ export default class Transaction {
 
     parseRequest(virginData) {
         if (!this.requestParser)
-            this.requestParser = new RequestParser(this);
+            this.requestParser = new ConnectionParser(this);
 
         this.requestParser.parse(virginData);
 

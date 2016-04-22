@@ -5,9 +5,15 @@
 /* Assorted small handy global functions. */
 
 export function Must(condition, ...args) {
-    const extraInfo = args.length ? ' ' + args.join(' ') : "";
-    if (!condition)
+    let extraInfo = args.length ? args.join(' ') : "";
+    if (!condition) {
+        if (condition === false) {
+            condition = "";
+        } else {
+            extraInfo = " " + extraInfo;
+        }
         throw new Error(`assertion failure: ${condition}${extraInfo}`);
+    }
 }
 
 export function PrettyMime(prefix, data) {
@@ -17,6 +23,7 @@ export function PrettyMime(prefix, data) {
     text = text.replace(/\t/g, "\\t");
     text = text.replace(/\r/g, "\\r");
     text = text.replace(/\n/g, "\\n\n");
+    text = text.replace(/[^\x20-\x7E\n]/g, '.');
     // XXX: encode non-printable and confusing characters such as \u2028
     // a bare ^ also matches the end of the string ending with \n!
     text = text.replace(/^./mg, "\t" + prefix + "$&");
