@@ -10,6 +10,7 @@ import * as FuzzyTime from "../src/misc/FuzzyTime";
 import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as Config from "../src/misc/Config";
+import * as Http from "../src/http/Gadgets";
 import assert from "assert";
 
 /* ugly command-line arguments processing */
@@ -51,9 +52,10 @@ async function Test() {
     hitCase.client().request.for(resource);
     hitCase.check(() => {
         hitCase.expectStatusCode(200);
-        let virginResponse = missCase.server().transaction().response.body.whole();
-        let adaptedResponse = hitCase.client().transaction().response.body.whole();
-        assert.equal(adaptedResponse, virginResponse, "preserved hit response body");
+        //let virginResponse = missCase.server().transaction().response.body.whole();
+        //let adaptedResponse = hitCase.client().transaction().response.body.whole();
+        //assert.equal(adaptedResponse, virginResponse, "preserved hit response body");
+        Http.AssertForwardedMessage(missCase.server().transaction().response, hitCase.client().transaction().response, "preserved hit response");
     });
     await hitCase.run();
 }
