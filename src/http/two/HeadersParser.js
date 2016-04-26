@@ -1,7 +1,8 @@
 import BinaryTokenizer from "./BinaryTokenizer";
-import { Must } from "../../misc/Gadgets";
+import { Must, PrettyMime } from "../../misc/Gadgets";
 import bigInt from "big-integer";
 import parseHuffmanString from "./HuffmanStringParser";
+import { requestPrefix } from "../one/MessageWriter";
 
 export const HeaderFlagEnd = 0x4;
 export const HeaderFlagPadded = 0x8;
@@ -317,6 +318,3 @@ export default class HeadersParser {
         }
     }
 }
-
-import { requestPrefix, responsePrefix } from "../one/MessageWriter";
-import { PrettyMime } from "../../misc/Gadgets";

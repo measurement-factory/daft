@@ -1,3 +1,6 @@
+import HttpTwoFrame, { FrameTypeHeaders, FrameTypeData } from "./Frame";
+import BinaryPacker from "./BinaryPacker";
+
 // function rawStatusLine(statusLine) {
 //     return [
 //         statusLine.httpVersion,
@@ -31,7 +34,7 @@
 //     return header.fields.map(rawField).join("");
 // }
 
-export function requestPrefix(message) {
+export function requestPrefix(/*message*/) {
     return "";
 }
 
@@ -45,8 +48,6 @@ export function packFrame(frame) {
     return packer.raw();
 }
 
-import HttpTwoFrame, {FrameTypeHeaders, FrameTypeData, FrameTypeGoAway} from "./Frame";
-import BinaryPacker from "./BinaryPacker";
 export function responsePrefix(message) {
     message.body = null;
 
@@ -60,6 +61,6 @@ export function responsePrefix(message) {
     // let goAwayPayload = goAwayPacker.raw();
 
     let frame = new HttpTwoFrame({ type: FrameTypeHeaders, streamIdentifier: 1, flags: 0x4, payload });
-    let gaframe = new HttpTwoFrame({ type: FrameTypeData, streamIdentifier: 1, flags: 0x1, payload: "test data" })
+    let gaframe = new HttpTwoFrame({ type: FrameTypeData, streamIdentifier: 1, flags: 0x1, payload: "test data" });
     return packFrame(frame) + packFrame(gaframe);
 }
