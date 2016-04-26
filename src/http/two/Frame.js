@@ -1,5 +1,4 @@
 import { Must } from "../../misc/gadgets";
-import BinaryPacker from "./BinaryPacker";
 
 export const FrameTypeData = 0x0;
 export const FrameTypeHeaders = 0x1;

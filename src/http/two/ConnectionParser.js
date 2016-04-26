@@ -4,9 +4,6 @@ import HeaderParser from "./HeadersParser";
 import Request from "../Request";
 import { Must } from "../../misc/Gadgets";
 
-import HttpTwoFrame, {FrameTypeSettings} from "./Frame";
-import {packFrame} from "./MessagePacker";
-
 export default class ConnectionParser {
     constructor(transaction) {
         this.transaction = transaction; // XXX

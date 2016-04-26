@@ -11,11 +11,6 @@ function getBit(value, length, index) {
     return parseInt(binaryStr(value, length).charAt(index), 10);
 }
 
-// MSB = 0; LSB = 8
-function getBitFromByte(byte, bit) {
-    return getBit(byte, 8, bit);
-}
-
 function tree(table, char) {
     function partition(data, condition) {
         let a = [];
@@ -65,7 +60,7 @@ function tree(table, char) {
 
 let hTree = tree(table, 0);
 
-export default function parseString(data, length) {
+export default function parseString(data) {
     let tok = new BinaryTokenizer(data);
     let parsed = "";
 

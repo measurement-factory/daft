@@ -40,7 +40,6 @@ export default class Transaction {
             // assume all 'data' events always arrive before 'end'
             this.doneReceiving = true;
             this.checkpoint();
-            process.exit(0);
         });
 
         this.sendResponse();
