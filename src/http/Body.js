@@ -15,6 +15,8 @@ export default class Body {
         this._in = 0;
         this._out = 0;
 
+        this.forceInnedAll = false; // overwrites length-based checks
+
         if (content !== undefined)
             this.whole(content);
     }
@@ -41,6 +43,7 @@ export default class Body {
         Must(this._in === 0); // do not overwrite to minimize confusion
         this.in(args[0]);
         this.setLength(this._buf.length);
+        this.forceInnedAll = true;
     }
 
     // TODO: expose .length instead of providing setter and getter?
@@ -48,8 +51,8 @@ export default class Body {
         return this._length; // may be null
     }
 
-    setLength(size) {
-        this._length = size;
+    setLength(sizeOrNull) {
+        this._length = sizeOrNull;
     }
 
     innedSize() {
@@ -57,6 +60,8 @@ export default class Body {
     }
 
     innedAll() {
+        if (this.forceInnedAll)
+            return true;
         return this._length !== null && this._in >= this._length;
     }
 
@@ -73,8 +78,12 @@ export default class Body {
     //        this._out < this._length;
     //}
 
+    outedSize() {
+        return this._out;
+    }
+
     outedAll() {
-        return this._length !== null && this._out >= this._length;
+        return this.innedAll() && this._out >= this._in;
     }
 
     out() {

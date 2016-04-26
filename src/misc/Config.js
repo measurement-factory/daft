@@ -48,3 +48,5 @@ export function isReverseProxy() {
 }
 
 export const DefaultMessageBodyContent = "THIS.is.BODY";
+
+export const LogBodies = undefined; // whether to log bodies on console

@@ -135,7 +135,11 @@ export default class Uri {
             this.host = Config.OriginAuthority.host;
         if (this._port === null)
             this._port = Config.OriginAuthority.port; // TODO: Omit default.
-        if (this.path === null)
-            this.path = "/";
+        if (!this.hasPath()) {
+            if (Config.ProxyListeningAddress)
+                this.makeUnique();
+            else
+                this.path = "/";
+        }
     }
 }

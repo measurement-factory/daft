@@ -1,7 +1,7 @@
 function rawStatusLine(statusLine) {
     return [
-        statusLine.httpVersion,
-        statusLine.versionDelimiter,
+        statusLine.protocol,
+        statusLine.protocolDelimiter,
         statusLine.statusCode,
         statusLine.statusDelimiter,
         statusLine.reasonPhrase,
@@ -15,13 +15,14 @@ function rawRequestLine(requestLine) {
         requestLine.methodDelimiter,
         requestLine.uri.raw(),
         requestLine.uriDelimiter,
-        requestLine._rest,
+        requestLine.protocol,
         requestLine.terminator
     ].filter(item => item !== null).join("");
 }
 
 function rawHeader(header) {
-    if (header._raw !== null) return header._raw;
+    if (header._raw !== null)
+        return header._raw;
 
     function rawField(field) {
         return field.name + field.separator +
@@ -32,12 +33,18 @@ function rawHeader(header) {
 }
 
 export function requestPrefix(message) {
+    if (message.startLine.protocol === "HTTP/0.9")
+        return "";
+
     return rawRequestLine(message.startLine) +
         rawHeader(message.header) +
         message.headerDelimiter;
 }
 
 export function responsePrefix(message) {
+    if (message.startLine.protocol === "HTTP/0.9")
+        return "";
+
     return rawStatusLine(message.startLine) +
         rawHeader(message.header) +
         message.headerDelimiter;

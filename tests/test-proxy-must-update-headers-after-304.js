@@ -12,7 +12,6 @@ import Field from "../src/http/Field";
 import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as FuzzyTime from "../src/misc/FuzzyTime";
-import * as Lifetime from "../src/misc/Lifetime";
 import * as Gadgets from "../src/misc/Gadgets";
 import * as Config from "../src/misc/Config";
 import assert from "assert";
@@ -28,7 +27,6 @@ Promise.config({ warnings: true });
 async function Test(take, callback) {
 
     let resource = new Resource();
-    resource.uri.makeUnique();
     resource.modifiedAt(FuzzyTime.DistantPast());
     resource.expireAt(FuzzyTime.Soon());
     resource.body = new Body("x".repeat(64*1024));
@@ -135,9 +133,6 @@ async function TestThread(threadId) {
     // do not let test take IDs overlap across threads
     const spread = testsPerThread <= 1000 ? 1000 : testsPerThread;
     for (let i = 0; i < testsPerThread; ++i) {
-        if (i)
-            Lifetime.Extend();
-
         // XXX: We have to reset this global before each test start because starts are concurrent.
         if (listeningPort)
             Config.OriginAuthority.port = listeningPort + threadId;

@@ -14,6 +14,7 @@ export default class RequestParser extends MessageParser {
     constructor(transaction) {
         super(transaction);
         this._messageType = Request;
+        this._messageKind = "request";
     }
 
     determineDefaultBody() {
@@ -33,7 +34,7 @@ export default class RequestParser extends MessageParser {
         requestLine.methodDelimiter = match[2];
         requestLine.uri = Uri.Parse(match[3]);
         requestLine.uriDelimiter = match[4];
-        requestLine._rest = match[5];
+        requestLine.protocol = match[5];
         requestLine.terminator = match[6];
 
         return requestLine;
