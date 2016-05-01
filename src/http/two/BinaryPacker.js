@@ -68,17 +68,17 @@ export default class BinaryPacker {
     }
 
     HPackNumber(head, headLength, number) {
-        const maxPrefix = 0xFF >>> headLength - 1;
+        const maxPrefix = 0xFF >>> headLength;
         if (number < maxPrefix) {
             this.uint8(head << (8 - headLength) | number, `HPackNumber: ${head} + ${number}`);
         } else {
-            this.uint8(head << (8 - headLength) | 0xFF >>> headLength, `HPackNumber: ${head} + 1s`);
+            this.uint8(head << (8 - headLength) | maxPrefix, `HPackNumber: ${head} + ${8 - headLength} Ones`);
 
             number -= maxPrefix;
 
             while (number >= 128) {
-                this.uint1p7(number % 128, 128, "HPACK Head Bit", "HPACK Number Part");
-                number /= 128;
+                this.uint8((number % 128) + 128, `HPACK Head Bit + HPACK Number Part = ${number % 128} + ${128}`);
+                number = Math.floor(number / 128);
             }
 
             this.uint1p7(0, number, "HPACK Head Bit", "HPACK Number Part");
