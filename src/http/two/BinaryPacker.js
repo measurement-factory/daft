@@ -84,4 +84,37 @@ export default class BinaryPacker {
             this.uint1p7(0, number, "HPACK Head Bit", "HPACK Number Part");
         }
     }
+
+    // XXX: Maybe add a header packing function that will dynamically choose
+    //      the best representation given current dynamic [and static] table
+    //      state.
+
+    indexedHeaderField(index) {
+        this.HPackNumber(1, 1, index);
+    }
+
+    // XXX: Alter dynamic table
+    literalHeaderFieldIncrementalIndexing({ index = 0, name, value }) {
+        this.HPackNumber(0b01, 2, index);
+        if (index !== 0) this.HPackString(name);
+        this.HPackString(value);
+    }
+
+    literalHeaderFieldWithoutIndexing({ index = 0, name, value }) {
+        this.HPackNumber(0, 4, index);
+        if (index !== 0) this.HPackString(name);
+        this.HPackString(value);
+    }
+
+    literalHeaderFieldNeverIndexed({ index = 0, name, value }) {
+        this.HPackNumber(0b0001, 4, index);
+        if (index !== 0) this.HPackString(name);
+        this.HPackString(value);
+    }
+
+    // XXX: New size must be lower than or equal to the limit set by the
+    //      SETTINGS_HEADER_TABLE_SIZE parameter.
+    dynamicTableSizeUpdate(size) {
+        this.HPackNumber(0b001, size);
+    }
 }

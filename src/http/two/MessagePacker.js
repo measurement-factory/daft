@@ -19,7 +19,7 @@ export function responsePrefix(message) {
     message.body = null;
 
     let packer = new BinaryPacker();
-    packer.uint1p7(1, 8, "Indexed Header Field", "Index");
+    packer.indexedHeaderField(8);
     let payload = packer.raw();
 
     // let goAwayPacker = new BinaryPacker();
