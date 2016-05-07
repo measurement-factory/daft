@@ -20,7 +20,7 @@ export default class ProxyCase {
         this.gist = gist;
         this._client = null;
         this._server = null;
-        this._checker = null;
+        this._checkers = [];
 
         this._startAgentsPromise = null;
         this._stopAgentsPromise = null;
@@ -101,18 +101,16 @@ export default class ProxyCase {
     }
 
     check(checker) {
-        assert(!this._checker);
         // simplification: all automatic checks must be set before run()
         // so that we do not need to guess whether we have to perform the
         // new checks now or attach them to this._runPromise. The simple
         // approach may also help with TestCase reuse.
         assert(!this._runPromise);
-        this._checker = checker;
+        this._checkers.push(checker);
     }
 
     _doCheck() {
-        if (this._checker)
-            this._checker(this);
+        this._checkers.forEach(check => check(this));
     }
 
     expectStatusCode(expected) {
