@@ -6,7 +6,6 @@
  * Parameters: [drop-Content-Length] [body size] */
 
 import ProxyCase from "./ProxyCase";
-import * as FuzzyTime from "../src/misc/FuzzyTime";
 import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as Config from "../src/misc/Config";
@@ -30,8 +29,7 @@ if (Config.LogBodies === undefined && responseSize > 1*1024*1024)
 
 async function Test() {
     let resource = new Resource();
-    resource.modifiedAt(FuzzyTime.DistantPast());
-    resource.expireAt(FuzzyTime.DistantFuture());
+    resource.makeCachable();
     resource.body = new Body("x".repeat(responseSize));
     if (!withContentLength)
         resource.body.setLength(null); // unknown Content-Length

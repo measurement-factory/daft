@@ -5,6 +5,7 @@
 /* Anything addressable by a fragmentless URI. */
 
 import Uri from "../anyp/Uri";
+import Header from "../http/Header";
 import * as Gadgets from "../misc/Gadgets";
 import * as FuzzyTime from "../misc/FuzzyTime";
 import { Must } from "../misc/Gadgets";
@@ -16,11 +17,20 @@ export default class Resource {
         this.id = Gadgets.UniqueId("rid");
         this.lastModificationTime = null;
         this.nextModificationTime = null;
+        this.mime = new Header();
         this.body = null;
+    }
+
+    // do our best to persuade most caches to store this resource
+    makeCachable() {
+        this.modifiedAt(FuzzyTime.DistantPast());
+        this.expireAt(FuzzyTime.DistantFuture());
+        this.mime.add("Cache-Control", "public");
     }
 
     finalize() {
         this.uri.finalize();
+        this.mime.finalize();
         if (this.body)
             this.body.finalize();
     }

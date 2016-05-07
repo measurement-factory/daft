@@ -21,6 +21,8 @@ export default class Response extends Message {
         if (resource.nextModificationTime)
             this.header.add("Expires", resource.nextModificationTime.toUTCString());
 
+        resource.mime.fields.forEach(field => this.header.add(field));
+
         if (resource.body)
             this.addBody(resource.body);
     }
