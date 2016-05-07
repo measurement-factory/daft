@@ -159,11 +159,10 @@ export default class Transaction {
             this.response.addBody(new Body());
 
         // XXX: Do not overwrite already set properties
-        this.response.finalize();
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
         this.response.header.add("Date", new Date().toUTCString());
-
+        this.response.finalize();
 
         this._finalizedResponse = true;
     }

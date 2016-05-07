@@ -150,12 +150,13 @@ export default class Transaction {
 
     finalizeRequest() {
         Must(this.request);
+
         // XXX: Do not overwrite already set properties
-        this.request.finalize();
         this.request.header.add("User-Agent", "DaftClient/1.0");
         this.request.header.add("Connection", "close");
         // no request body by default
 
+        this.request.finalize();
         this.finalizedRequest = true;
     }
 
