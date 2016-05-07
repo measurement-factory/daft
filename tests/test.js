@@ -5,6 +5,7 @@
 import ProxyCase from "./ProxyCase";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
+import assert from "assert";
 
 
 describe('Daft Proxy', function () {
@@ -39,4 +40,13 @@ describe('Daft Proxy', function () {
         testCase.client().request.startLine.method = Buffer("G\u2028T").toString("binary");
         await testCase.run();
     });
+
+    it('should filter Date', async function () {
+        testCase.server().response.header.prohibitNamed("Date");
+        testCase.check(() => {
+            assert(!testCase.proxy().transaction().virginResponse.header.has("Date"));
+        });
+        await testCase.run();
+    });
+
 });

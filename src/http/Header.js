@@ -13,6 +13,7 @@ export default class Header {
     constructor() {
         this.fields = []; // parsed or manually added Fields, in appearance/addition order
         this._raw = null; // set to received bytes; reset to null on any change
+        this.filters = []; // functions that decide which fields are removed by finalize()
     }
 
     clone() {
@@ -20,12 +21,25 @@ export default class Header {
         dupe._raw = this._raw;
         for (let field of this.fields)
             dupe.fields.push(field.clone());
+        // we cannot clone a filter but can and should clone the array
+        dupe.filters = this.filters.slice(0);
         return dupe;
     }
 
     finalize() {
-        for (let field of this.fields)
-            field.finalize();
+        // remove each unwanted field
+        this.fields = this.fields.filter(field => this._wantedField(field));
+        // finalize each wanted field
+        this.fields.forEach(field => field.finalize());
+    }
+
+    // Is this field allowed by all the filters?
+    _wantedField(field) {
+        return this.filters.every(filter => filter(field));
+    }
+
+    prohibitNamed(name) {
+        this.filters.push(field => field.name !== name);
     }
 
     // returns null if the header does not have Content-Length field(s)
