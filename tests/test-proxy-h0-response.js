@@ -9,6 +9,7 @@ import Response from "../src/http/Response";
 import Body from "../src/http/Body";
 import * as Config from "../src/misc/Config";
 import { responsePrefix } from "../src/http/one/MessageWriter";
+import StartTests from "../src/misc/TestRunner";
 import assert from "assert";
 
 if (Config.LogBodies === undefined)
@@ -25,15 +26,24 @@ const zeroNineBody =
     responsePrefix(response) +
     response.body.whole();
 
-let testCase = new ProxyCase('forward an HTTP/0.9 response');
-testCase.client(); // defaults are fine
-testCase.server().response.startLine.protocol = "HTTP/0.9";
-testCase.server().response.body = new Body(zeroNineBody);
-testCase.check(() => {
-    testCase.expectStatusCode(200);
-    let virginResponse = testCase.server().transaction().response.body.whole();
-    let adaptedResponse = testCase.client().transaction().response.body.whole();
-    assert.equal(adaptedResponse, virginResponse, "preserved HTTP/0.9 response");
-});
 
-testCase.run();
+async function Test(testRun, callback) {
+
+    let testCase = new ProxyCase('forward an HTTP/0.9 response');
+    testCase.client(); // defaults are fine
+    testCase.server().response.startLine.protocol = "HTTP/0.9";
+    testCase.server().response.body = new Body(zeroNineBody);
+    testCase.check(() => {
+        testCase.expectStatusCode(200);
+        let virginResponse = testCase.server().transaction().response.body.whole();
+        let adaptedResponse = testCase.client().transaction().response.body.whole();
+        assert.equal(adaptedResponse, virginResponse, "preserved HTTP/0.9 response");
+    });
+    await testCase.run();
+
+    console.log("Test result: success");
+    if (callback)
+        callback();
+}
+
+StartTests(Test);

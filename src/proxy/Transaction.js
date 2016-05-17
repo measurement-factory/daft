@@ -74,8 +74,7 @@ export default class Transaction {
     }
 
     originAddress() {
-        let addr = Config.isReverseProxy() ? Config.OriginAuthority : this.forwardingAddress();
-        return Gadgets.ListeningAddress(addr);
+        return Config.isReverseProxy() ? Config.OriginAuthority : this.forwardingAddress();
     }
 
     forwardingAddress() {
@@ -193,7 +192,7 @@ export default class Transaction {
     // to customize adaptations, use adaptRequestHeader() if possible
     startAdaptingRequest() {
         this.cloneRequest();
-        this.adaptedRequest.startLine.uri.makeRelative();
+        this.adaptedRequest.startLine.uri.relative = true;
         this.adaptRequestHeader();
     }
 

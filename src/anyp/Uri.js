@@ -15,6 +15,7 @@ export default class Uri {
         this.host = null;
         this._port = null;
         this._rest = null;
+        this.relative = false; // whether raw() lacks scheme://authority prefix
     }
 
     clone() {
@@ -23,6 +24,7 @@ export default class Uri {
         dupe.host = this.host;
         dupe._port = this._port;
         dupe._rest = this._rest;
+        dupe.relative = this.relative;
         return dupe;
     }
 
@@ -48,11 +50,7 @@ export default class Uri {
         this._port = value; // may be null
     }
 
-    isAbsolute() {
-        return this.scheme !== null;
-    }
-
-    address() {
+    get address() {
         if (this.host === null)
             return null;
 
@@ -62,23 +60,25 @@ export default class Uri {
         };
     }
 
+    set address(value) {
+        Must(value);
+        this.host = value.host;
+        this.port = value.port;
+    }
+
     raw() {
         let image = "";
-        if (this.scheme !== null)
-            image += this.scheme + "://";
-        if (this.host !== null)
-            image += this.host;
-        if (this._port !== null)
-            image += ":" + this._port;
+        if (!this.relative) {
+            if (this.scheme !== null)
+                image += this.scheme + "://";
+            if (this.host !== null)
+                image += this.host;
+            if (this._port !== null)
+                image += ":" + this._port;
+        }
         if (this._rest !== null)
             image += this._rest;
         return image;
-    }
-
-    makeRelative() {
-        this.scheme = null;
-        this.host = null;
-        this.port = null;
     }
 
     makeUnique(prefix = "/path-") {
@@ -129,12 +129,14 @@ export default class Uri {
     }
 
     finalize() {
-        if (this.scheme === null)
-            this.scheme = "http";
-        if (this.host === null)
-            this.host = Config.OriginAuthority.host;
-        if (this._port === null)
-            this._port = Config.OriginAuthority.port; // TODO: Omit default.
+        if (!this.relative) {
+            if (this.scheme === null)
+                this.scheme = "http";
+            if (this.host === null)
+                this.host = Config.OriginAuthority.host;
+            if (this._port === null)
+                this._port = Config.OriginAuthority.port; // TODO: Omit default.
+        }
         if (!this.hasPath()) {
             if (Config.ProxyListeningAddress)
                 this.makeUnique();

@@ -50,3 +50,48 @@ export function isReverseProxy() {
 export const DefaultMessageBodyContent = "THIS.is.BODY";
 
 export const LogBodies = undefined; // whether to log bodies on console
+
+
+/* Command-line options handling */
+
+export let CliHelp; // set in Finalize()
+
+// accumulates recognized CLI options
+let _CliOptions = [{
+    option: "help",
+    type: "Boolean",
+    overrideRequired: true,
+    description: "show this help message"
+}];
+
+// accept supplied options as user-configurable via CLI
+export function Recognize(options) {
+    _CliOptions = _CliOptions.concat(options);
+}
+
+// Make each user-configurable option (explicitly set on the command
+// line and defaults) available as Config.Option
+function _Import(options) {
+    for (const key of Object.keys(options)) {
+        const uppedKey = key.charAt(0).toUpperCase() + key.slice(1);
+        module.exports[uppedKey] = options[key];
+    }
+}
+
+// parse all recognized CLI options
+export function Finalize() {
+    try {
+        var optionator = require('optionator')({
+            prepend: "$(BIN)/babel-node <test-script> [options]",
+            options: _CliOptions
+        });
+        CliHelp = optionator.generateHelp();
+        const options = optionator.parseArgv(process.argv);
+        _Import(options);
+    }
+    catch (error) {
+        if (CliHelp !== undefined)
+            console.log(CliHelp);
+        throw error;
+    }
+}

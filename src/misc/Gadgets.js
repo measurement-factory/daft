@@ -2,7 +2,8 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import * as Config from "../misc/Config";
+import * as Config from "./Config";
+import AddressPool from "./AddressPool";
 
 /* Assorted small handy global functions. */
 
@@ -77,8 +78,20 @@ export function DateDiff(d1, d2) {
 // Converts "public" host:port address to something we can listen on.
 // Needs more work to detect IP addresses so that we can assume that everything
 // else is domain name that we can serve by listening on all IPs.
-export function ListeningAddress(addr) {
+export function FinalizeListeningAddress(addr) {
     return (addr.host === 'localhost') ?
         { host: '::', port: addr.port } : // listen on all available IPs
         { host: addr.host, port: addr.port };
+}
+
+let _AddressPool = new AddressPool();
+
+export function ReserveListeningAddress(requestedAddr) {
+    return requestedAddr ?
+        _AddressPool.reserveGiven(requestedAddr) :
+        _AddressPool.reserveAny();
+}
+
+export function ReleaseListeningAddress(addr) {
+    _AddressPool.release(addr);
 }

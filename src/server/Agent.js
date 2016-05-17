@@ -4,7 +4,6 @@
 
 import syncNet from "net";
 import Promise from 'bluebird';
-import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
 import SideAgent from "../side/Agent";
@@ -16,8 +15,19 @@ export default class Agent extends SideAgent {
         super(arguments);
         this.response = null; // optional default for all transactions
         this.server = null; // TCP server to be created in start()
+
         // where to listen for requests (may contain wildcards like '::')
-        this.listeningAddress = null;
+        this._requestedListeningAddress = null; // caller-managed, if any
+        this._reservedListeningAddress = null; // doled from the pool for our use
+        this._actualListeningAddress = null; // used (and fully resolved)
+    }
+
+    address() {
+        if (this._requestedListeningAddress)
+            return this._requestedListeningAddress;
+        if (!this._reservedListeningAddress)
+            this._reserveListeningAddress();
+        return this._reservedListeningAddress;
     }
 
     start() {
@@ -29,33 +39,61 @@ export default class Agent extends SideAgent {
                 this._startTransaction(Transaction, userSocket, this.response);
             });
 
-            if (!this.listeningAddress)
-                this.listeningAddress = Config.OriginAuthority;
-            let addr = Gadgets.ListeningAddress(this.listeningAddress);
-            return this.server.listenAsync(addr.port, addr.host).tap(() => {
-                console.log("Server is listening on %j", this.server.address());
-            });
+            const addr = Gadgets.FinalizeListeningAddress(this.address());
+            return this.server.listenAsync(addr.port, addr.host).
+                    bind(this).
+                    tap(this._startedListening);
         });
     }
 
     _stop() {
         if (this.server && this.server.address()) {
-            let savedAddress = this.server.address();
-            return this.server.closeAsync().tap(() => {
-                console.log("Server stopped listening on %j", savedAddress);
-            }).then(super._stop);
+            return this.server.closeAsync().
+                bind(this).
+                finally(this._stoppedListening).
+                finally(super._stop);
         }
+        this._releaseListeningAddress();
         return super._stop();
     }
 
     serve(resource) {
-        if (!this.listeningAddress && resource.uri.address())
-            this.listenAt(resource.uri.address());
+        if (!this._requestedListeningAddress && resource.uri.address)
+            this.listenAt(resource.uri.address);
         this.response.from(resource);
     }
 
     listenAt(address) {
         Gadgets.Must(address);
-        this.listeningAddress = address;
+        this._requestedListeningAddress = address;
+    }
+
+    _reserveListeningAddress() {
+        Gadgets.Must(!this._requestedListeningAddress);
+        Gadgets.Must(!this._reservedListeningAddress);
+        this._reservedListeningAddress =
+            Gadgets.ReserveListeningAddress();
+        console.log("Server locks listening address %j", this._reservedListeningAddress);
+    }
+
+    _releaseListeningAddress() {
+        if (this._reservedListeningAddress) {
+            console.log("Server unlocks listening address %j", this._reservedListeningAddress);
+            Gadgets.ReleaseListeningAddress(this._reservedListeningAddress);
+            this._reservedListeningAddress = null;
+        }
+    }
+
+    _startedListening() {
+        Gadgets.Must(!this._actualListeningAddress);
+        this._actualListeningAddress = this.server.address();
+        console.log("Server is listening on %j", this._actualListeningAddress);
+    }
+
+    _stoppedListening() {
+        Gadgets.Must(this._actualListeningAddress);
+        console.log("Server stopped listening on %j", this._actualListeningAddress);
+        this._actualListeningAddress = null;
+        this._releaseListeningAddress();
     }
 }

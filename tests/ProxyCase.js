@@ -125,6 +125,10 @@ export default class ProxyCase {
         if (this._startAgentsPromise)
             return this._startAgentsPromise;
 
+        // the client (if any) probably wants to reach the server (if any)
+        if (this._client && this._server && !this._client.request.startLine.uri.address)
+            this._client.request.startLine.uri.address = this._server.address();
+
         // most proxy tests are done with unique URLs to prevent caching
         if (this._client && !this._client.request.startLine.uri.hasPath())
             this._client.request.startLine.uri.makeUnique();
