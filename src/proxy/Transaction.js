@@ -10,7 +10,6 @@ import ResponseParser from "../http/one/ResponseParser";
 import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
 import * as Config from "../misc/Config";
 import { Must, SendBytes } from "../misc/Gadgets";
-import * as Gadgets from "../misc/Gadgets";
 
 export default class Transaction {
 
