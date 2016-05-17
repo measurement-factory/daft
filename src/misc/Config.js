@@ -57,12 +57,14 @@ export const LogBodies = undefined; // whether to log bodies on console
 export let CliHelp; // set in Finalize()
 
 // accumulates recognized CLI options
-let _CliOptions = [{
-    option: "help",
-    type: "Boolean",
-    overrideRequired: true,
-    description: "show this help message"
-}];
+let _CliOptions = [
+    {
+        option: "help",
+        type: "Boolean",
+        overrideRequired: true,
+        description: "show this help message",
+    },
+];
 
 // accept supplied options as user-configurable via CLI
 export function Recognize(options) {
@@ -88,8 +90,7 @@ export function Finalize() {
         CliHelp = optionator.generateHelp();
         const options = optionator.parseArgv(process.argv);
         _Import(options);
-    }
-    catch (error) {
+    } catch (error) {
         if (CliHelp !== undefined)
             console.log(CliHelp);
         throw error;

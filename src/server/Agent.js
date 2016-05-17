@@ -41,8 +41,8 @@ export default class Agent extends SideAgent {
 
             const addr = Gadgets.FinalizeListeningAddress(this.address());
             return this.server.listenAsync(addr.port, addr.host).
-                    bind(this).
-                    tap(this._startedListening);
+                bind(this).
+                tap(this._startedListening);
         });
     }
 

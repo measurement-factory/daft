@@ -13,22 +13,21 @@ Config.Recognize([
         option: "concurrency-level",
         type: "Number",
         default: "1",
-        description: "number of tests to run at the same time"
+        description: "number of tests to run at the same time",
     },
     {
         option: "tests",
         type: "Number",
         default: "1",
-        description: "number of tests to run"
+        description: "number of tests to run",
     },
     {
         option: "origin-port",
         type: "Number",
         default: Config.OriginAuthority.port.toString(),
-        description: "where origin servers listen for requests"
-    }
+        description: "where origin servers listen for requests",
+    },
 ]);
-
 
 let TestsStarted = 0; // the number of tests started (or being started)
 let TestsRunning = 0; // number of concurrent tests running now

@@ -4,7 +4,7 @@
 
 // Manages a pool of unique host:port addresses.
 
-import { Must} from "./Gadgets";
+import { Must } from "./Gadgets";
 import * as Config from "./Config";
 
 // a member of the address pool

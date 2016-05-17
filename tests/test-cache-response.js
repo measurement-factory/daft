@@ -21,14 +21,14 @@ Config.Recognize([
         type: "[String]",
         concatRepeatedArrays: true,
         default: "[]",
-        description: "name(s) of default response header fields to exclude"
+        description: "name(s) of default response header fields to exclude",
     },
     {
         option: "body-size",
         type: "Number",
         default: "1024",
-        description: "response body size (bytes)"
-    }
+        description: "response body size (bytes)",
+    },
 ]);
 
 async function Test(testRun, callback) {
