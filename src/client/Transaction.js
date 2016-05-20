@@ -157,6 +157,13 @@ export default class Transaction {
         // no request body by default
 
         this.request.finalize();
+
+        // A finalized request should have uri.address set.
+        // Callers should use URI for request target, even if uri.relative.
+        const addr = this.request.startLine.uri.address;
+        if (addr)
+            this.request.header.add("Host", `${addr.host}:${addr.port}`)
+
         this.finalizedRequest = true;
     }
 
