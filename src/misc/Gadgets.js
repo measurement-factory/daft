@@ -63,6 +63,19 @@ export function SendBytes(socket, bytes, description, logPrefix) {
     console.log(toLog);
 }
 
+export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
+    let toLog = `received ${bytes.length} ${description} bytes`;
+    if (socket) {
+        const addr = socket.address();
+        if (addr) {
+            const ip = addr.family === "IPv6" ? `[${addr.address}]` : addr.address;
+            toLog += ` from ${ip}:${addr.port}`;
+        }
+    }
+    // difficult to prettify received bytes until the parser parses them
+    console.log(toLog);
+}
+
 export function UniqueId(prefix) {
     return prefix + Math.floor(1.0 + 0xFFFFFFFF * Math.random()).toString(16);
 }

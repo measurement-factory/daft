@@ -11,11 +11,10 @@ export default class Body {
 
     constructor(content) {
         this._buf = null; // the entire body (for now)
-        this._length = null; // unknown until setLength()
         this._in = 0;
         this._out = 0;
 
-        this.forceInnedAll = false; // overwrites length-based checks
+        this.innedAll = false; // whether to expect more in() calls
 
         if (content !== undefined)
             this.whole(content);
@@ -42,27 +41,11 @@ export default class Body {
         Must(args.length === 1);
         Must(this._in === 0); // do not overwrite to minimize confusion
         this.in(args[0]);
-        this.setLength(this._buf.length);
-        this.forceInnedAll = true;
-    }
-
-    // TODO: expose .length instead of providing setter and getter?
-    length() {
-        return this._length; // may be null
-    }
-
-    setLength(sizeOrNull) {
-        this._length = sizeOrNull;
+        this.innedAll = true;
     }
 
     innedSize() {
         return this._in;
-    }
-
-    innedAll() {
-        if (this.forceInnedAll)
-            return true;
-        return this._length !== null && this._in >= this._length;
     }
 
     in(data) {
@@ -73,31 +56,20 @@ export default class Body {
         this._in += data.length;
     }
 
-    //hasOut() {
-    //    return this._length === null ||
-    //        this._out < this._length;
-    //}
-
     outedSize() {
         return this._out;
     }
 
     outedAll() {
-        return this.innedAll() && this._out >= this._in;
+        return this.innedAll && this._out >= this._in;
     }
 
     out() {
         if (this.outedAll())
             return "";
 
-        let piece;
-        if (this._length !== null)
-            piece = this.whole().substring(this._out, this._length);
-        else
-            piece = this.whole().substring(this._out);
-
+        const piece = this.whole().substring(this._out);
         this._out += piece.length;
-
         return piece;
     }
 }

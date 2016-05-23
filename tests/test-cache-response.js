@@ -17,11 +17,10 @@ import assert from "assert";
 // custom CLI options
 Config.Recognize([
     {
-        option: "drop",
-        type: "[String]",
-        concatRepeatedArrays: true,
-        default: "[]",
-        description: "name(s) of default response header fields to exclude",
+        option: "response-ends-at-eof",
+        type: "Boolean",
+        default: "false",
+        description: "send unchunked response without Content-Length",
     },
     {
         option: "body-size",
@@ -41,14 +40,13 @@ async function Test(testRun, callback) {
     let resource = new Resource();
     resource.makeCachable();
     resource.body = new Body("x".repeat(Config.BodySize));
-    if (Config.Drop.includes("Content-Length"))
-        resource.body.setLength(null); // unknown Content-Length
     resource.uri.address = Gadgets.ReserveListeningAddress();
     resource.finalize();
 
     let missCase = new ProxyCase(`forward a ${Config.BodySize}-byte response`);
     missCase.client().request.for(resource);
     missCase.server().serve(resource);
+    missCase.server().response.forceEof = Config.ResponseEndsAtEof;
     missCase.check(() => {
         missCase.expectStatusCode(200);
         let virginResponse = missCase.server().transaction().response.body.whole();

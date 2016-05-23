@@ -2,10 +2,10 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import { requestPrefix } from "../http/one/MessageWriter";
+import { requestPrefix, bodyEncoder } from "../http/one/MessageWriter";
 import ResponseParser from "../http/one/ResponseParser";
 import Request from "../http/Request";
-import { Must, SendBytes } from "../misc/Gadgets";
+import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, peer response) tuple.
 export default class Transaction {
@@ -24,6 +24,8 @@ export default class Transaction {
         this.doneReceiving = false; // incoming message
         this.doneSending = false; // outgoing message
         this.doneCallback = null; // set by the initiator if needed
+
+        this._bodyEncoder = null;
     }
 
     start() {
@@ -66,6 +68,7 @@ export default class Transaction {
     }
 
     onReceive(virginData) {
+        ReceivedBytes(this.socket, virginData, "response", "c< ");
         this.parseResponse(virginData);
         this.sendRequest();
     }
@@ -84,7 +87,7 @@ export default class Transaction {
         if (!this.response)
             this.response = this.responseParser.message;
 
-        if (!this.response.body || this.response.body.innedAll()) {
+        if (!this.response.body || this.response.body.innedAll) {
             this.doneReceiving = true;
             this.checkpoint();
         }
@@ -119,12 +122,16 @@ export default class Transaction {
         }
 
         Must(this.request.body);
-        let chunk = this.request.body.out();
-        if (chunk.length)
-            SendBytes(this.socket, chunk, "request body", "c> ");
+
+        if (!this._bodyEncoder)
+            this._bodyEncoder = bodyEncoder(this.request);
+        const out = this._bodyEncoder.encodeBody(this.request.body);
+        if (out.length)
+            SendBytes(this.socket, out, "request body", "c> ");
 
         if (this.request.body.outedAll()) {
-            console.log(`sent all ${this.request.body.outedSize()} request body bytes`);
+            const bytesDescription = this._bodyEncoder.describeBytes("request body");
+            console.log(`sent all ${bytesDescription}`);
             this.doneSending = true;
             this.checkpoint();
             return;
@@ -139,7 +146,7 @@ export default class Transaction {
         if (!this.finalizedRequest)
             this.finalizeRequest();
 
-        if (this.request.body && !this.request.body.innedAll())
+        if (this.request.body && !this.request.body.innedAll)
             this.fillRequestBody();
     }
 

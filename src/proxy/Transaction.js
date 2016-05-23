@@ -7,9 +7,9 @@
 import net from "net";
 import RequestParser from "../http/one/RequestParser";
 import ResponseParser from "../http/one/ResponseParser";
-import { requestPrefix, responsePrefix } from "../http/one/MessageWriter";
+import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter";
 import * as Config from "../misc/Config";
-import { Must, SendBytes } from "../misc/Gadgets";
+import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
 
 export default class Transaction {
 
@@ -35,6 +35,9 @@ export default class Transaction {
         this.responseHeadersSent = null;
 
         this.doneCallback = null; // set by the initiator if needed
+
+        this._userBodyEncoder = null;
+        this._originBodyEncoder = null;
     }
 
     destructor() {
@@ -107,6 +110,7 @@ export default class Transaction {
     }
 
     onUserReceive(virginData) {
+        ReceivedBytes(this.userSocket, virginData, "request", "c> ");
         if (this.ignoreUserData !== null) {
             console.log(`ignoring ${virginData.length} received request bytes; reason: ${this.ignoreUserData}`);
             return;
@@ -157,8 +161,11 @@ export default class Transaction {
         }
 
         if (this.adaptedRequest.body) {
+            if (!this._originBodyEncoder)
+                this._originBodyEncoder = bodyEncoder(this.adaptedRequest);
+            const out = this._originBodyEncoder.encodeBody(this.adaptedRequest.body);
             // now or when finished connecting
-            SendBytes(this.originSocket, this.adaptedRequest.body.out(), "request body");
+            SendBytes(this.originSocket, out, "request body", ">s ");
         }
     }
 
@@ -204,6 +211,7 @@ export default class Transaction {
     }
 
     onOriginReceive(virginData) {
+        ReceivedBytes(this.originSocket, virginData, "response", "<s ");
         if (this.ignoreOriginData !== null) {
             console.log(`ignoring ${virginData.length} received response bytes; reason: ${this.ignoreOriginData}`);
             return;
@@ -252,8 +260,12 @@ export default class Transaction {
             SendBytes(this.userSocket, responsePrefix(this.adaptedResponse), "response header", "c< ");
         }
 
-        if (this.adaptedResponse.body)
-            SendBytes(this.userSocket, this.adaptedResponse.body.out(), "response body");
+        if (this.adaptedResponse.body) {
+            if (!this._userBodyEncoder)
+                this._userBodyEncoder = bodyEncoder(this.adaptedResponse);
+            const out = this._userBodyEncoder.encodeBody(this.adaptedResponse.body);
+            SendBytes(this.userSocket, out, "response body", ">s ");
+        }
     }
 
     adaptResponse() {

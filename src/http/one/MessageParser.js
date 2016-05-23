@@ -7,6 +7,8 @@
 import Field from "../Field";
 import Header from "../Header";
 import Body from "../Body";
+import IdentityDecoder from "./IdentityDecoder";
+import ChunkedDecoder from "./ChunkedDecoder";
 import { Must, PrettyMime, PrettyBody } from "../../misc/Gadgets";
 import * as Config from "../../misc/Config";
 
@@ -22,6 +24,7 @@ export default class MessageParser {
 
         this._raw = ""; // unparsed data
         this.expectBody = true;
+        this._bodyDecoder = null; // will be set if we expect a body
 
         this.logPrefix = null; // should be set by the user
     }
@@ -124,40 +127,54 @@ export default class MessageParser {
         Must(!this.message.body);
         if (!this.expectBody)
             return;
+
+        Must(!this._bodyDecoder);
         // TODO: set true body length when possible
         // XXX: do not disclaim body presence when there is one
-        let len = this.message.header.contentLength();
-        if (len === null)
-            this.determineDefaultBody();
-        else if (len === undefined) {
+        if (this.message.header.chunked()) { // overwrites Content-Length
+            this._bodyDecoder = new ChunkedDecoder();
             this.message.body = new Body();
-            console.log("Warning: Cannot determine message length");
+            console.log("expecting chunked message body");
         } else {
-            this.message.body = new Body();
-            this.message.body.setLength(len);
-            console.log("expecting %d message body bytes", len);
+            const len = this.message.header.contentLength();
+            if (len === null) {
+                this.determineDefaultBody();
+            } else if (len === undefined) {
+                this.message.body = new Body();
+                console.log("Warning: Cannot determine message length");
+            } else {
+                this.message.body = new Body();
+                console.log("expecting %d message body bytes", len);
+            }
+            if (this.message.body && !this._bodyDecoder)
+                this._bodyDecoder = new IdentityDecoder(len === undefined ? null : len);
         }
     }
 
     parseBody() {
         Must(this.message.body);
 
-        // TODO: dechunk (and set final length) as needed
-        this.message.body.in(this._raw);
+        Must(this._bodyDecoder);
+        const decodedBody = this._bodyDecoder.decode(this._raw);
+        this.message.body.in(decodedBody);
+        this._raw = ""; // the decoder may keep any unparsed leftovers
 
         // log body parsing progress, distinguishing Config.LogBodies
         // default/undefined value (log overall progress but not body contents)
         // from its zero value (do not log overall progress either).
-        const parsedLength = this._raw.length;
+        const parsedLength = decodedBody.length;
         if (parsedLength && Config.LogBodies !== 0) {
             const suffix = Config.LogBodies ?
-                ":\n" + PrettyBody(this.logPrefix, this._raw) :
+                ":\n" + PrettyBody(this.logPrefix, decodedBody) :
                 "";
-            console.log(`parsed ${parsedLength} ${this._messageKind} body bytes so far${suffix}`);
+            const bytesDescription = this._bodyDecoder.describeBytes(`${this._messageKind} body`);
+            console.log(`parsed ${bytesDescription} so far${suffix}`);
         }
-        if (this.message.body.innedAll())
-            console.log(`parsed all ${this.message.body.innedSize()} expected ${this._messageKind} body bytes`);
 
-        this._raw = "";
+        if (this._bodyDecoder.decodedAll()) {
+            this.message.body.innedAll = true;
+            const bytesDescription = this._bodyDecoder.describeBytes(`${this._messageKind} body`);
+            console.log(`parsed all ${bytesDescription}`);
+        }
     }
 }

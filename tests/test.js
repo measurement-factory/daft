@@ -36,6 +36,18 @@ describe('Daft Proxy', function () {
         await testCase.run();
     });
 
+    it('should forward chunked response', async function () {
+        testCase.server().response.forceChunked = true;
+        await testCase.run();
+    });
+
+    it('should forward chunked request', async function () {
+        testCase.client().request.startLine.method = 'POST';
+        testCase.client().request.addBody(new Body());
+        testCase.client().request.forceChunked = true;
+        await testCase.run();
+    });
+
     it('should not misinterpret HTTP header bytes as utf8 sequences', async function () {
         testCase.client().request.startLine.method = Buffer("G\u2028T").toString("binary");
         await testCase.run();

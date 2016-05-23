@@ -2,11 +2,11 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import { responsePrefix } from "../http/one/MessageWriter";
+import { responsePrefix, bodyEncoder, forcesEof } from "../http/one/MessageWriter";
 import RequestParser from "../http/one/RequestParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
-import { Must, SendBytes } from "../misc/Gadgets";
+import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, origin response) tuple.
 export default class Transaction {
@@ -25,6 +25,7 @@ export default class Transaction {
         this.doneSending = false; // outgoing message
         this.doneCallback = null; // set by the initiator if needed
         this._finalizedResponse = false;
+        this._bodyEncoder = null;
     }
 
     start() {
@@ -64,6 +65,7 @@ export default class Transaction {
     }
 
     onReceive(virginData) {
+        ReceivedBytes(this.socket, virginData, "request", ">s ");
         this.parseRequest(virginData);
         this.sendResponse();
     }
@@ -82,7 +84,7 @@ export default class Transaction {
         if (!this.request)
             this.request = this.requestParser.message;
 
-        if (!this.request.body || this.request.body.innedAll()) {
+        if (!this.request.body || this.request.body.innedAll) {
             this.doneReceiving = true;
             this.checkpoint();
         }
@@ -109,28 +111,36 @@ export default class Transaction {
             SendBytes(this.socket, responsePrefix(this.response), "response header", "<s ");
 
             if (!this.response.body) {
-                console.log("sent a bodyless response");
-                this.doneSending = true;
-                this.checkpoint();
+                this.endSending("sent a bodyless response");
                 return;
             }
         }
 
         Must(this.response.body);
-        let chunk = this.response.body.out();
-        if (chunk.length)
-            SendBytes(this.socket, chunk, "response body", "<s ");
+        if (!this._bodyEncoder)
+            this._bodyEncoder = bodyEncoder(this.response);
+        const out = this._bodyEncoder.encodeBody(this.response.body);
+        if (out.length)
+            SendBytes(this.socket, out, "response body", "<s ");
 
         if (this.response.body.outedAll()) {
-            console.log(`sent all ${this.response.body.outedSize()} response body bytes`);
-            this.doneSending = true;
-            // if body length is unknown to the recipient, mark its end with EOF
-            if (this.response.body.length() === null && this.socket)
-                this.socket.end(); // half-close; we might still be reading
-            this.checkpoint();
+            const bytesDescription = this._bodyEncoder.describeBytes("response body");
+            this.endSending(`sent all ${bytesDescription}`);
             return;
         }
         console.log("may send more response body later");
+    }
+
+    endSending(why) {
+        console.log(why);
+        this.doneSending = true;
+
+        if (forcesEof(this.request, this.response) && this.socket) {
+            console.log("[half-]closing the connection to mark the end of response");
+            this.socket.end(); // half-close; we might still be reading
+        }
+
+        this.checkpoint();
     }
 
     makeResponse() {
@@ -140,7 +150,7 @@ export default class Transaction {
         if (!this._finalizedResponse)
             this.finalizeResponse();
 
-        if (this.response.body && !this.response.body.innedAll())
+        if (this.response.body && !this.response.body.innedAll)
             this.fillResponseBody();
     }
 

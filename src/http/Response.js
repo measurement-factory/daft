@@ -6,11 +6,22 @@
 
 import Message from "./Message";
 import StatusLine from "./StatusLine";
+import { Must } from "../misc/Gadgets";
 
 export default class Response extends Message {
 
     constructor(...args) {
         super(new StatusLine(), ...args);
+
+        // force the sender to close the connection to mark the end of response
+        this.forceEof = false;
+    }
+
+    // makes us an exact replica of them
+    reset(them) {
+        super.reset(them);
+        this.forceEof = them.forceEof;
+        return this;
     }
 
     from(resource) {
@@ -25,5 +36,17 @@ export default class Response extends Message {
 
         if (resource.body)
             this.addBody(resource.body);
+    }
+
+
+    syncContentLength() {
+        if (this.forceEof) {
+            Must(this.body);
+            Must(!this.forceChunked);
+            this.header.prohibitNamed("Content-Length");
+            this.header.prohibitNamed("Transfer-Encoding"); // XXX: "chunked"
+        } else {
+            super.syncContentLength();
+        }
     }
 }

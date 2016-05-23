@@ -30,7 +30,7 @@ const zeroNineBody =
 async function Test(testRun, callback) {
 
     let testCase = new ProxyCase('forward an HTTP/0.9 response');
-    testCase.client().request.startLine.protocol = "HTTP/1.0"; // disable chunking
+    testCase.client(); // defaults OK
     testCase.server().response.startLine.protocol = "HTTP/0.9";
     testCase.server().response.body = new Body(zeroNineBody);
     testCase.check(() => {

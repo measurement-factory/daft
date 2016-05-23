@@ -58,7 +58,6 @@ export function AssertForwardedMessage(sent, received, kind) {
 
     assert.equal(!sent.body, !received.body);
     if (sent.body) {
-        assert.equal(sent.body.length(), received.body.length());
         assert.equal(sent.body.whole().length, received.body.whole().length);
         // TODO: assert.equal() detects but does not show the suffix difference
         // of long strings (e.g., 17MB bodies with different last few bytes).

@@ -20,6 +20,7 @@ export default class Message {
         this.headerDelimiter = null;
 
         this.body = null; // no body by default
+        this.forceChunked = false; // force chunked Transfer-Encoding
     }
 
     // creates and returns an exact replica of this message
@@ -35,6 +36,7 @@ export default class Message {
         this.header = them.header.clone();
         this.headerDelimiter = them.headerDelimiter;
         this.body = them.body ? them.body.clone() : null;
+        this.forceChunked = them.forceChunked;
         return this;
     }
 
@@ -60,7 +62,6 @@ export default class Message {
         let idFieldName = this._daftFieldName("ID");
         if (!this.header.has(idFieldName))
             this.header.add(idFieldName, Gadgets.UniqueId("mid"));
-        this.header.finalize();
 
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
@@ -69,17 +70,33 @@ export default class Message {
             this.body.finalize();
 
         this.syncContentLength();
+
+        this.header.finalize(); // after syncContentLength() adds headers
     }
 
     addBody(body) {
         Must(!this.body); // not a reset; we do not remove old Content-Length
         this.body = body;
-        this.syncContentLength();
     }
 
     syncContentLength() {
-        if (this.body !== null && this.body.length() !== null && !this.header.has("Content-Length"))
-            this.header.add("Content-Length", this.body.length());
+        if (this.forceChunked) {
+            Must(this.body);
+            if (!this.header.chunked())
+                this.header.add("Transfer-Encoding", "chunked");
+            this.header.prohibitNamed("Content-Length");
+        }
+
+        if (this.body === null)
+            return;
+
+        if (this.header.chunked() || this.header.has("Content-Length"))
+            return;
+
+        if (this.body.innedAll)
+            this.header.add("Content-Length", this.body.innedSize());
+        else
+            this.header.add("Transfer-Encoding", "chunked");
     }
 
     relatedResource(resource, relationship) {
