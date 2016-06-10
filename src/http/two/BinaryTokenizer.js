@@ -126,9 +126,7 @@ export default class BinaryTokenizer {
         return result;
     }
 
-    // XXX fix comment
-    // We want 31 bits, but since we can only access in bytes, we need to get
-    // 32 bits (4 bytes) and then set the first bit to 0.
+    // Get 32 bits, returning first bit and the rest of the bits separately.
     uint1p31(headDesc, tailDesc) {
         const result = this.uint32(`Combo: ${headDesc} + ${tailDesc}`);
         const head = result >>> 31;

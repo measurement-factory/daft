@@ -58,12 +58,10 @@ export default class BinaryPacker {
         this.area(value, 4, desc);
     }
 
-    // XXX fix comment
-    // We want 31 bits, but since we can only access in bytes, we need to get
-    // 32 bits (4 bytes) and then set the first bit to 0.
+    // Pack 32 bits, with the first bit passed separately.
     uint1p31(headValue, tailValue, headDesc, tailDesc) {
         const headBit = headValue ? 0b1 : 0b0;
-        // Remove signedness of the number by 0-shifting it to the right.
+        // Remove signedness of the number by zero-shifting it 0 bits to the right.
         this.uint32((headBit << 31 | tailValue) >>> 0, `Combo: ${headDesc} + ${tailDesc}`);
     }
 
@@ -114,6 +112,7 @@ export default class BinaryPacker {
 
     // XXX: New size must be lower than or equal to the limit set by the
     //      SETTINGS_HEADER_TABLE_SIZE parameter.
+    //      See RFC 7540 Section 6.5.2 and RFC 7541 Section 6.3.
     dynamicTableSizeUpdate(size) {
         this.HPackNumber(0b001, size);
     }
