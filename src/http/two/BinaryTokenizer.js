@@ -1,6 +1,11 @@
-import { Must } from "../../misc/Gadgets";
-
 export class InsufficientInputError extends Error {}
+export class WrongSkipError {
+    constructor(intendedSkip, actuallySkipped, ...args) {
+        this.intendedSkip = intendedSkip;
+        this.actuallySkipped = actuallySkipped;
+        this.message = args.join(" ");
+    }
+}
 
 export default class BinaryTokenizer {
     constructor(data = "") {
@@ -63,8 +68,9 @@ export default class BinaryTokenizer {
 
     skipExact(data, desc) {
         const result = this.area(data.length, desc);
-        Must(result === data, `Expected ${this.binToHex(data)}`,
-            `got ${this.binToHex(result)}; while parsing ${desc}; ${this.context()}`);
+        if (result !== data) {
+            throw new WrongSkipError(data, result, `Expected ${this.binToHex(data)} got ${this.binToHex(result)}; while parsing ${desc}; ${this.context()}`);
+        }
     }
 
     // Returns the next byte interpreted as a number.
