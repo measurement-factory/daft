@@ -1,5 +1,8 @@
 import FrameParser from "./FrameParser";
-import BinaryTokenizer, { InsufficientInputError } from "./BinaryTokenizer";
+import BinaryTokenizer, { InsufficientInputError, WrongSkipError } from "./BinaryTokenizer";
+import HttpTwoFrame, { FrameTypeGoAway } from "./Frame";
+import BinaryPacker from "./BinaryPacker";
+import {packFrame} from "./MessagePacker";
 import HeaderParser from "./HeadersParser";
 import Request from "../Request";
 import { Must } from "../../misc/Gadgets";
@@ -29,7 +32,24 @@ export default class ConnectionParser {
     parseTry(data) {
         if (this.prefixTok) {
             this.prefixTok.in(data);
-            this.prefixTok.skipExact("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "Connection Preface");
+            try {
+                this.prefixTok.skipExact("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "Connection Preface");
+            } catch (error) {
+                if (error instanceof WrongSkipError) {
+                    let packer = new BinaryPacker();
+                    packer.uint1p31(0, 1, "R", "Last Stream ID");
+                    packer.uint32(1, "Error Code");
+                    let payload = packer.raw();
+                    this.transaction.socket.write(
+                        packFrame(
+                            new HttpTwoFrame({ type: FrameTypeGoAway, streamIdentifier: 0, payload })
+                        ),
+                        "binary");
+                    this.transaction.finish();
+                } else {
+                    throw error;
+                }
+            }
             this.prefixTok.commit();
             data = this.prefixTok.leftovers();
             this.prefixTok = null;
