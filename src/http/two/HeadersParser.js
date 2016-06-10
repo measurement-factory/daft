@@ -1,7 +1,7 @@
 import BinaryTokenizer from "./BinaryTokenizer";
 import { Must, PrettyMime } from "../../misc/Gadgets";
 import bigInt from "big-integer";
-import parseHuffmanString from "./HuffmanStringParser";
+import { decode as decodeHuffman } from "./HuffmanStringParser";
 import { requestPrefix } from "../one/MessageWriter";
 
 export const HeaderFlagEnd = 0x4;
@@ -154,8 +154,7 @@ export default class HeadersParser {
         if (head.head === 0) {
             return tok.area(length, "HPACK string");
         } else {
-            console.log("PARSING HUFFMAN STRING");
-            return parseHuffmanString(tok.area(length, "HPACK string (huffman encoded)"), length);
+            return decodeHuffman(tok.area(length, "HPACK string (huffman encoded)"), length);
         }
     }
 
