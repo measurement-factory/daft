@@ -8,10 +8,14 @@ function binaryStr(number, length) {
 }
 
 function getBit(value, length, index) {
-    return parseInt(binaryStr(value, length).charAt(index), 10);
+    let parsed = parseInt(binaryStr(value, length).charAt(index), 10);
+    if (Number.isNaN(parsed)) {
+        throw new Error(`Extracting bit at ${index} from ${value.toString(2)} of length ${length} failed.`);
+    }
+    return parsed;
 }
 
-function tree(table, char) {
+function tree(array, char) {
     function partition(data, condition) {
         let a = [];
         let b = [];
@@ -36,13 +40,13 @@ function tree(table, char) {
         return { [getBit(row.binval, row.len, charIndex)]: nestify(row, charIndex + 1) };
     }
 
-    Must(table.length > 0);
+    Must(array.length > 0);
 
-    if (table.length === 1) {
-        return nestify(table[0], char);
+    if (array.length === 1) {
+        return nestify(array[0], char);
     }
 
-    let [zero, one] = partition(table, row => {
+    let [zero, one] = partition(array, row => {
         return getBit(row.binval, row.len, char) === 0;
     });
 
@@ -60,36 +64,100 @@ function tree(table, char) {
 
 let hTree = tree(table, 0);
 
-export default function parseString(data) {
+export function decode(data) {
     let tok = new BinaryTokenizer(data);
     let parsed = "";
 
-    let atBit = 0;
-    let current = hTree;
-    let nextByte = tok.uint8("Huffman String Byte");
+    let bitIndex = 0;
+    let currentByte = tok.uint8("Huffman string byte");
 
-    // XXX: RFC 7540 Sec 5.2 asserts that the padding must be all 1s; check for this
+    const isLeaf = node => node && node.len !== undefined;
 
-    while (atBit < 8 || !tok.atEnd()) {
-        while (current.len === undefined) {
-            current = current[getBit(nextByte, 8, atBit)];
-            atBit += 1;
+    const nextBit = () => {
+        let bit = getBit(currentByte, 8, bitIndex);
+        bitIndex += 1;
 
-            if (atBit === 8) {
-                if (tok.atEnd()) {
-                    break;
-                } else {
-                    atBit = 0;
-                    nextByte = tok.uint8("Huffman String Byte");
-                }
+        if (bitIndex === 8) {
+            currentByte = null;
+            if (!tok.atEnd()) {
+                bitIndex = 0;
+                currentByte = tok.uint8("Huffman string byte");
+            } else {
+                console.log("no more bits");
             }
         }
 
-        if (current && current.len) {
-            parsed += String.fromCodePoint(current.value);
+        return bit;
+    };
+
+    let current = hTree;
+    while (currentByte) {
+        while (!isLeaf(current) && currentByte) {
+            current = current[nextBit()];
         }
-        current = hTree;
+
+        if (isLeaf(current)) {
+            parsed += String.fromCodePoint(current.value);
+            current = hTree;
+        } else {
+            // XXX: RFC 7540 Sec 5.2 asserts that the padding must be all 1s; check for this
+        }
     }
 
+
     return parsed;
+}
+
+let indexedTable = {};
+for (let element of table) {
+    indexedTable[element.value] = element;
+}
+
+export function encode(str) {
+    let space = 8;
+    let result = [];
+
+    const add = data => {
+        if (space === 8) {
+            result.push(data);
+        } else {
+            result[result.length - 1] |= data;
+        }
+    };
+
+    for (let i = 0; i < str.length; i++) {
+        console.log(`${i} / ${str.length}`);
+        let { binval: data, len: length } = indexedTable[str.charCodeAt(i)];
+
+        while (length > 0) { // there's still something left
+            console.log(length);
+            if (space >= length) { // we can encode everything we have
+                add(data << (space - length));
+                space -= length;
+                length = 0;
+                data = 0;
+            } else {
+                // How much will be left after filling current byte
+                let leftover = length - space;
+
+                add(data >> leftover);
+
+                // Remove what was just inserted
+                data -= (data >> leftover) << leftover;
+
+                // We inserted some data, data is now shorter.
+                length -= space;
+                space = 0;
+            }
+
+            if (space === 0) space = 8;
+        }
+    }
+
+    // Add padding in case we didn't end on a byte boundary
+    if (space !== 8) {
+        add(table[256].binval >> (table[256].len - space));
+    }
+
+    return Buffer.from(result).toString("binary");
 }
