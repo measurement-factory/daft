@@ -2,17 +2,9 @@ import BinaryTokenizer from "./BinaryTokenizer";
 import { Must } from "../../misc/gadgets";
 import table from "./HpackHuffmanTable";
 
-function binaryStr(number, length) {
-    let str = number.toString(2);
-    return "0".repeat(length - str.length) + str;
-}
-
 function getBit(value, length, index) {
-    let parsed = parseInt(binaryStr(value, length).charAt(index), 10);
-    if (Number.isNaN(parsed)) {
-        throw new Error(`Extracting bit at ${index} from ${value.toString(2)} of length ${length} failed.`);
-    }
-    return parsed;
+    Must(length <= 32);
+    return (value >>> (length - (index + 1))) & 1;
 }
 
 function tree(array, char) {
