@@ -52,8 +52,8 @@ export default class BinaryTokenizer {
     }
 
     _got(value, size, desc) {
-        console.log(`${desc} = ${typeof value === "number" ? value : RawToHex(value)};`, size, "bytes long, at",
-            this._parsed, "-", this._parsed + size, "out of", this._data.length);
+        let prettyValue = typeof value === "number" ? value : RawToHex(value);
+        console.log(`got ${desc} = ${prettyValue}, occupying ${size} bytes ${this.context()}`);
     }
 
     area(size, desc) {
