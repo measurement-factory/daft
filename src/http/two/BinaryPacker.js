@@ -1,12 +1,8 @@
-import { Must } from "../../misc/Gadgets";
+import { Must, RawToHex } from "../../misc/Gadgets";
 
 export default class BinaryPacker {
     constructor() {
         this._data = new Buffer("", "binary");
-    }
-
-    static BinToHex(text) {
-        return Buffer(text, "binary").toString("hex");
     }
 
     raw() {
@@ -20,7 +16,7 @@ export default class BinaryPacker {
     }
 
     packed(value, size, desc) {
-        console.log(`${desc} = ${typeof value === "number" ? value : BinaryPacker.BinToHex(value)};`, size, "bytes long");
+        console.log(`${desc} = ${typeof value === "number" ? value : RawToHex(value)};`, size, "bytes long");
     }
 
     uint(value, size, desc) {

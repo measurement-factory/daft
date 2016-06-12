@@ -115,3 +115,7 @@ export function ReserveListeningAddress(requestedAddr) {
 export function ReleaseListeningAddress(addr) {
     _AddressPool.release(addr);
 }
+
+export function RawToHex(raw) {
+    return Buffer(raw, "binary").toString("hex");
+}

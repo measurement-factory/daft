@@ -1,3 +1,5 @@
+import { RawToHex } from "../../misc/Gadgets";
+
 export class InsufficientInputError extends Error {}
 export class WrongSkipError {
     constructor(intendedSkip, actuallySkipped, ...args) {
@@ -20,10 +22,6 @@ export default class BinaryTokenizer {
 
     rollback() {
         this._parsed = this._commitPoint;
-    }
-
-    binToHex(text) {
-        return Buffer(text, "binary").toString("hex");
     }
 
     context() {
@@ -53,7 +51,7 @@ export default class BinaryTokenizer {
     }
 
     got(value, size, desc) {
-        console.log(`${desc} = ${typeof value === "number" ? value : this.binToHex(value)};`, size, "bytes long, at",
+        console.log(`${desc} = ${typeof value === "number" ? value : RawToHex(value)};`, size, "bytes long, at",
             this._parsed, "-", this._parsed + size, "out of", this._data.length);
     }
 
@@ -69,7 +67,7 @@ export default class BinaryTokenizer {
     skipExact(data, desc) {
         const result = this.area(data.length, desc);
         if (result !== data) {
-            throw new WrongSkipError(data, result, `Expected ${this.binToHex(data)} got ${this.binToHex(result)}; while parsing ${desc}; ${this.context()}`);
+            throw new WrongSkipError(data, result, `Expected ${RawToHex(data)} got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
         }
     }
 
