@@ -15,6 +15,8 @@ export default class FrameParser {
             let frameHeader = this.parseFrameHeader();
             let framePayload = this.tok.area(frameHeader.length, `Payload of frame type ${frameHeader.type}`);
 
+            this.tok.consumeParsed();
+
             callback(new Frame({ payload: framePayload, ...frameHeader }));
         }
     }

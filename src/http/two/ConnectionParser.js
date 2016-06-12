@@ -32,7 +32,6 @@ export default class ConnectionParser {
     parseTry(data) {
         if (this.prefixTok) {
             try {
-                this.prefixTok.rollback();
                 this.prefixTok.in(data);
                 this.prefixTok.skipExact("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "Connection Preface");
             } catch (error) {
@@ -51,7 +50,7 @@ export default class ConnectionParser {
                     throw error;
                 }
             }
-            this.prefixTok.commit();
+            this.prefixTok.consumeParsed();
             data = this.prefixTok.leftovers();
             this.prefixTok = null;
         }

@@ -13,15 +13,11 @@ export default class BinaryTokenizer {
     constructor(data = "") {
         this._data = data;
         this._parsed = 0;
-        this._commitPoint = 0;
     }
 
-    commit() {
-        this._commitPoint = this._parsed;
-    }
-
-    rollback() {
-        this._parsed = this._commitPoint;
+    consumeParsed() {
+        this._data = this.leftovers();
+        this._parsed = 0;
     }
 
     context() {
@@ -65,10 +61,9 @@ export default class BinaryTokenizer {
     }
 
     skipExact(data, desc) {
-        this.commit();
         const result = this.area(data.length, desc);
         if (result !== data) {
-            this.rollback();
+            this._parsed -= data.length;
             throw new WrongSkipError(data, result,
                 `Expected ${RawToHex(data)}, got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
         }
