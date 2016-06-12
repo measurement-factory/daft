@@ -5,7 +5,7 @@ export default class BinaryPacker {
         this._data = new Buffer("", "binary");
     }
 
-    binToHex(text) {
+    static BinToHex(text) {
         return Buffer(text, "binary").toString("hex");
     }
 
@@ -25,7 +25,7 @@ export default class BinaryPacker {
     }
 
     put(value, size, desc) {
-        console.log(`${desc} = ${typeof value === "number" ? value : this.binToHex(value)};`, size, "bytes long");
+        console.log(`${desc} = ${typeof value === "number" ? value : BinaryPacker.BinToHex(value)};`, size, "bytes long");
     }
 
     area(value, size, desc) {
