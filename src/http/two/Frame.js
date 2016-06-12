@@ -25,8 +25,4 @@ export default class HttpTwoFrame {
     isSet(mask) {
         return this.flags & mask !== 0;
     }
-
-    setPayload(payload) {
-        this.payload = payload;
-    }
 }
