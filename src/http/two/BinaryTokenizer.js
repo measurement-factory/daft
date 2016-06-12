@@ -2,10 +2,10 @@ import { RawToHex } from "../../misc/Gadgets";
 
 export class InsufficientInputError extends Error {}
 export class WrongSkipError {
-    constructor(intendedSkip, actuallySkipped, ...args) {
+    constructor(intendedSkip, actuallySkipped, message) {
         this.intendedSkip = intendedSkip;
         this.actuallySkipped = actuallySkipped;
-        this.message = args.join(" ");
+        this.message = message;
     }
 }
 
