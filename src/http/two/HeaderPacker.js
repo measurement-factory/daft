@@ -44,7 +44,7 @@ export default class HeaderPacker {
     //      state.
 
     indexedHeaderField(index) {
-        this._HPackNumber(1, 1, index);
+        this._HPackNumber(0b1, 1, index);
     }
 
     // XXX: Alter dynamic table
@@ -55,7 +55,7 @@ export default class HeaderPacker {
     }
 
     literalHeaderFieldWithoutIndexing({ index = 0, name, value }) {
-        this._HPackNumber(0, 4, index);
+        this._HPackNumber(0b0000, 4, index);
         if (index !== 0) this._HPackString(name);
         this._HPackString(value);
     }
