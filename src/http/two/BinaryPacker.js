@@ -12,10 +12,10 @@ export default class BinaryPacker {
     in(raw, desc) {
         Must(typeof raw === "string");
         this._data = Buffer.concat([this._data, Buffer.from(raw, "binary")]);
-        this.packed(raw, raw.length, desc);
+        this._packed(raw, raw.length, desc);
     }
 
-    packed(value, size, desc) {
+    _packed(value, size, desc) {
         console.log(`${desc} = ${typeof value === "number" ? value : RawToHex(value)};`, size, "bytes long");
     }
 
@@ -31,8 +31,8 @@ export default class BinaryPacker {
 
     uint1p7(headValue, tailValue, headDesc, tailDesc) {
         let headBit = headValue ? 0b1 : 0b0;
-        this.packed(headBit, 0, headDesc);
-        this.packed(tailValue, 1, tailDesc);
+        this._packed(headBit, 0, headDesc);
+        this._packed(tailValue, 1, tailDesc);
         this.uint8((headBit << 7 | tailValue) >>> 0, `Combo: ${headDesc} + ${tailDesc}`);
     }
 

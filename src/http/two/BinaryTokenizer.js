@@ -44,13 +44,13 @@ export default class BinaryTokenizer {
         this.want(size, desc);
         let value = this._data.substring(this._parsed, this._parsed + size);
 
-        this.got(value, size, desc);
+        this._got(value, size, desc);
         this._parsed += size;
 
         return value;
     }
 
-    got(value, size, desc) {
+    _got(value, size, desc) {
         console.log(`${desc} = ${typeof value === "number" ? value : RawToHex(value)};`, size, "bytes long, at",
             this._parsed, "-", this._parsed + size, "out of", this._data.length);
     }
@@ -67,7 +67,7 @@ export default class BinaryTokenizer {
     skipExact(data, desc) {
         const result = this.area(data.length, desc);
         if (result !== data) {
-            throw new WrongSkipError(data, result, `Expected ${RawToHex(data)} got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
+            throw new WrongSkipError(data, result, `Expected ${RawToHex(data)} _got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
         }
     }
 
@@ -80,7 +80,7 @@ export default class BinaryTokenizer {
     uint8(desc) {
         this.want(1, desc);
         const result = this.octet();
-        this.got(result, 1, desc);
+        this._got(result, 1, desc);
         return result;
     }
 
@@ -89,8 +89,8 @@ export default class BinaryTokenizer {
         const head = result >>> 7;
         const tail = result & 0b01111111;
 
-        this.got(head, 0, headDesc);
-        this.got(tail, 1, tailDesc);
+        this._got(head, 0, headDesc);
+        this._got(tail, 1, tailDesc);
 
         return { head, tail };
     }
@@ -106,21 +106,21 @@ export default class BinaryTokenizer {
     uint16(desc) {
         this.want(2, desc);
         const result = this._getNumber(16);
-        this.got(result, 2, desc);
+        this._got(result, 2, desc);
         return result;
     }
 
     uint24(desc) {
         this.want(3, desc);
         const result = this._getNumber(24);
-        this.got(result, 3, desc);
+        this._got(result, 3, desc);
         return result;
     }
 
     uint32(desc) {
         this.want(4, desc);
         const result = this._getNumber(32);
-        this.got(result, 4, desc);
+        this._got(result, 4, desc);
         return result;
     }
 
@@ -130,8 +130,8 @@ export default class BinaryTokenizer {
         const head = result >>> 31;
         const tail = result << 1;
 
-        this.got(head, 0, headDesc);
-        this.got(tail, 4, tailDesc);
+        this._got(head, 0, headDesc);
+        this._got(tail, 4, tailDesc);
 
         return { head, tail };
     }
