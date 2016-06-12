@@ -131,7 +131,7 @@ export default class BinaryTokenizer {
     uint1p31(headDesc, tailDesc) {
         const result = this.uint32(`Combo: ${headDesc} + ${tailDesc}`);
         const head = result >>> 31;
-        const tail = result << 1;
+        const tail = result & ~(1 << 31);
 
         this._got(head, 0, headDesc);
         this._got(tail, 4, tailDesc);
