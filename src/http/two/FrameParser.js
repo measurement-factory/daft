@@ -10,8 +10,6 @@ export default class FrameParser {
     parse(data) {
         this.tok.in(data);
 
-        require("fs").writeFileSync("data", this.tok._data, "binary");
-
         while (!this.tok.atEnd()) {
             const frameHeader = this.parseFrameHeader();
             const framePayload = this.tok.area(frameHeader.length, `Payload of frame type ${frameHeader.type}`);
