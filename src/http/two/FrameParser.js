@@ -10,17 +10,11 @@ export default class FrameParser {
     parse(data) {
         this.tok.in(data);
 
-        while (!this.tok.atEnd()) {
-            const frameHeader = this.parseFrameHeader();
-            const framePayload = this.tok.area(frameHeader.length, `Payload of frame type ${frameHeader.type}`);
-
-            this.tok.consumeParsed();
-
-            this.inspector(new Frame({ payload: framePayload, ...frameHeader }));
-        }
+        while (!this.tok.atEnd())
+            this.inspector(this.parseFrame());
     }
 
-    parseFrameHeader() {
+    parseFrame() {
         const length = this.tok.uint24("Frame length");
         const type = this.tok.uint8("Frame type");
         const flags = this.tok.uint8("Frame flags");
@@ -28,6 +22,9 @@ export default class FrameParser {
         // return value) which is ignored (RFC 7540 Section 6.5).
         const streamIdentifier = this.tok.uint1p31("R", "Stream identifier").tail;
 
-        return { length, type, flags, streamIdentifier };
+        const payload = this.tok.area(length, `Payload of frame type ${type}`);
+
+        this.tok.consumeParsed();
+        return new Frame({ payload, length, type, flags, streamIdentifier });
     }
 }
