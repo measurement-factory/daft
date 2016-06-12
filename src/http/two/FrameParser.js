@@ -2,11 +2,12 @@ import Frame from "./Frame";
 import BinaryTokenizer from "./BinaryTokenizer";
 
 export default class FrameParser {
-    constructor() {
+    constructor(inspector) {
         this.tok = new BinaryTokenizer();
+        this.inspector = inspector;
     }
 
-    parse(data, callback) {
+    parse(data) {
         this.tok.in(data);
 
         require("fs").writeFileSync("data", this.tok._data, "binary");
@@ -17,7 +18,7 @@ export default class FrameParser {
 
             this.tok.consumeParsed();
 
-            callback(new Frame({ payload: framePayload, ...frameHeader }));
+            this.inspector(new Frame({ payload: framePayload, ...frameHeader }));
         }
     }
 

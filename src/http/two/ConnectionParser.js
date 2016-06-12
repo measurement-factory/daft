@@ -14,7 +14,23 @@ export default class ConnectionParser {
         this.message = new Request();
         this.prefixTok = new BinaryTokenizer();
         this.headerParser = new HeaderParser(this.message);
-        this.frameParser = new FrameParser();
+        this.frameParser = new FrameParser(this.inspectFrame.bind(this));
+    }
+
+    inspectFrame(frame) {
+        switch (frame.type) {
+            case 0x1:
+                this.headerParser.parseHeaderFrame(frame);
+                break;
+            case 0x4:
+                console.log("settings:", this.parseSettings(frame));
+                break;
+            case 0x9:
+                this.headerParser.parseContinuationFrame(frame);
+                break;
+            default:
+               console.log("WARNING: cannot handle frame type", frame.type);
+        }
     }
 
     parse(data) {
@@ -57,21 +73,7 @@ export default class ConnectionParser {
     parseFrames(data) {
         // XXX: Missing MUSTs regarding CONTINUATION frames following
         // HEADER/PUSH_PROMISE frames.
-        this.frameParser.parse(data, frame => {
-            switch (frame.type) {
-                case 0x1:
-                    this.headerParser.parseHeaderFrame(frame);
-                    break;
-                case 0x4:
-                    console.log("settings:", this.parseSettings(frame));
-                    break;
-                case 0x9:
-                    this.headerParser.parseContinuationFrame(frame);
-                    break;
-                default:
-                   console.log("WARNING: cannot handle frame type", frame.type);
-            }
-        });
+        this.frameParser.parse(data);
     }
 
     parseTry(data) {
