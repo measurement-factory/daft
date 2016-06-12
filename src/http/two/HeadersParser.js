@@ -95,7 +95,7 @@ export default class HeadersParser {
 
     get _dynamicTableSize() {
         let size = 0;
-        for (let [name, value] of this.dynamicTable) {
+        for (const [name, value] of this.dynamicTable) {
             size += name.length + value.length;
         }
         return size;
@@ -104,7 +104,7 @@ export default class HeadersParser {
     addDynamicTableEntry(name, value = "") {
         this.dynamicTable.unshift([name, value]);
 
-        while (this._dynamicTableSize > this.maxDynamicSize) {
+    while (this._dynamicTableSize > this.maxDynamicSize) {
             this.dynamicTable.pop();
         }
     }
@@ -136,8 +136,8 @@ export default class HeadersParser {
                 exponent += 7;
             } while ((next & 128) === 128);
 
-            let bigValue = value;
-            let unsafeValue = bigValue.toJSNumber();
+            const bigValue = value;
+            const unsafeValue = bigValue.toJSNumber();
 
             Must(Number.MIN_SAFE_INTEGER <= unsafeValue && unsafeValue <= Number.MAX_SAFE_INTEGER,
                 "HPACK Integer must be within min/max bounds: " +
@@ -148,8 +148,8 @@ export default class HeadersParser {
     }
 
     parseHpackString(tok) {
-        let head = tok.uint1p7("Huffman", "HPACK String length");
-        let length = this.parseHpackInteger(tok, head.tail, 7);
+        const head = tok.uint1p7("Huffman", "HPACK String length");
+        const length = this.parseHpackInteger(tok, head.tail, 7);
 
         if (head.head === 0) {
             return tok.area(length, "HPACK string");
@@ -164,7 +164,7 @@ export default class HeadersParser {
         } else if (name === ":scheme") {
             this._message.startLine.uri.scheme = value;
         } else if (name === ":authority") {
-            let colonIndex = value.lastIndexOf(":");
+            const colonIndex = value.lastIndexOf(":");
             if (colonIndex === -1) {
                 this._message.startLine.uri.host = value;
             } else {
@@ -182,18 +182,18 @@ export default class HeadersParser {
         let tok = new BinaryTokenizer(this.fragments);
 
         while (!tok.atEnd()) {
-            let head = tok.uint8("HPACK head");
+            const head = tok.uint8("HPACK head");
 
             // indexed header field
             if (head >>> 7 === 1) {
-                let index = this.parseHpackInteger(tok, head & 0b01111111, 7);
+                const index = this.parseHpackInteger(tok, head & 0b01111111, 7);
 
-                let [name, value] = this.getHeaderAt(index);
+                const [name, value] = this.getHeaderAt(index);
                 this.processField(name, value);
             }
             // literal header field with incremental indexing
             else if (head >>> 6 === 1) {
-                let index = head & 0b00111111;
+                const index = head & 0b00111111;
 
                 let name;
                 if (index === 0) {
@@ -202,14 +202,14 @@ export default class HeadersParser {
                     name = this.getHeaderAt(this.parseHpackInteger(tok, index, 6))[0];
                 }
 
-                let value = this.parseHpackString(tok);
+                const value = this.parseHpackString(tok);
 
                 this.addDynamicTableEntry(name, value);
                 this.processField(name, value);
             }
             // literal header field without indexing
             else if (head >>> 4 === 0) {
-                let index = head & 0b00001111;
+                const index = head & 0b00001111;
 
                 let name;
                 if (index === 0) {
@@ -228,7 +228,7 @@ export default class HeadersParser {
             //      "Intermediaries MUST use the same representation for
             //      encoding this header field."
             else if (head >>> 4 === 1) {
-                let index = head & 0b00001111;
+                const index = head & 0b00001111;
 
                 let name;
                 if (index === 0) {
@@ -241,7 +241,7 @@ export default class HeadersParser {
             }
             // dynamic table size update
             else if (head >>> 5 === 1) {
-                let maxSize = this.parseHpackInteger(tok, head & 0b00011111, 5);
+                const maxSize = this.parseHpackInteger(tok, head & 0b00011111, 5);
 
                 this.maxDynamicSize = maxSize;
                 while (this._dynamicTableSize > this.maxDynamicSize) {
@@ -267,7 +267,7 @@ export default class HeadersParser {
 
         let tok = new BinaryTokenizer(frame.payload);
 
-        let padLength = frame.isSet(HeaderFlagPadded) ?
+        const padLength = frame.isSet(HeaderFlagPadded) ?
             tok.uint8("Pad length") : 0;
 
         // RFC 7540 Section 6.1, referenced from RFC 7540 Section 6.2.
@@ -278,8 +278,8 @@ export default class HeadersParser {
             /*let weight = */tok.uint8("Weight");
         }
 
-        let fragmentLength = tok.leftovers().length - padLength;
-        let headerBlockFragment = tok.area(fragmentLength, "Header block fragment");
+        const fragmentLength = tok.leftovers().length - padLength;
+        const headerBlockFragment = tok.area(fragmentLength, "Header block fragment");
 
         tok.skip(padLength, "Padding");
         Must(tok.atEnd());
@@ -311,7 +311,7 @@ export default class HeadersParser {
         if (frame.isSet(HeaderFlagEnd)) {
             this.parseHeaderPayload();
             this._message.finalize();
-            let parsed = requestPrefix(this._message);
+            const parsed = requestPrefix(this._message);
             console.log(`parsed ${parsed.length} request header bytes:\n` +
                 PrettyMime(">s ", parsed));
         }

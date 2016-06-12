@@ -11,8 +11,7 @@ function tree(array, char) {
     function partition(data, condition) {
         let a = [];
         let b = [];
-        for (let i = 0; i < data.length; i++) {
-            let item = data[i];
+        for (const item of data) {
             if (condition(item)) {
                 a.push(item);
             } else {
@@ -38,7 +37,7 @@ function tree(array, char) {
         return nestify(array[0], char);
     }
 
-    let [zero, one] = partition(array, row => {
+    const [zero, one] = partition(array, row => {
         return getBit(row.binval, row.len, char) === 0;
     });
 
@@ -54,7 +53,7 @@ function tree(array, char) {
     return ret;
 }
 
-let hTree = tree(table, 0);
+const hTree = tree(table, 0);
 
 export function decode(data) {
     let tok = new BinaryTokenizer(data);
@@ -66,7 +65,7 @@ export function decode(data) {
     const isLeaf = node => node && node.len !== undefined;
 
     const nextBit = () => {
-        let bit = getBit(currentByte, 8, bitIndex);
+        const bit = getBit(currentByte, 8, bitIndex);
         bitIndex += 1;
 
         if (bitIndex === 8) {
@@ -101,7 +100,7 @@ export function decode(data) {
 }
 
 let indexedTable = {};
-for (let element of table) {
+for (const element of table) {
     indexedTable[element.value] = element;
 }
 
@@ -130,7 +129,7 @@ export function encode(str) {
                 data = 0;
             } else {
                 // How much will be left after filling current byte
-                let leftover = length - space;
+                const leftover = length - space;
 
                 add(data >> leftover);
 

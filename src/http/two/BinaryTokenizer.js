@@ -39,7 +39,7 @@ export default class BinaryTokenizer {
 
     get(size, desc) {
         this._want(size, desc);
-        let value = this._data.substring(this._parsed, this._parsed + size);
+        const value = this._data.substring(this._parsed, this._parsed + size);
 
         this._got(value, size, desc);
         this._parsed += size;
@@ -48,7 +48,7 @@ export default class BinaryTokenizer {
     }
 
     _got(value, size, desc) {
-        let prettyValue = typeof value === "number" ? value : RawToHex(value);
+        const prettyValue = typeof value === "number" ? value : RawToHex(value);
         console.log(`got ${desc} = ${prettyValue}, occupying ${size} bytes ${this.context()}`);
     }
 

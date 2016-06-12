@@ -30,7 +30,7 @@ export default class BinaryPacker {
     }
 
     uint1p7(headValue, tailValue, headDesc, tailDesc) {
-        let headBit = headValue ? 0b1 : 0b0;
+        const headBit = headValue ? 0b1 : 0b0;
         this._packed(headBit, 0, headDesc);
         this._packed(tailValue, 1, tailDesc);
         this.uint8((headBit << 7 | tailValue) >>> 0, `Combo: ${headDesc} + ${tailDesc}`);

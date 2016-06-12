@@ -21,14 +21,14 @@ export function responsePrefix(message) {
 
     let packer = new HeaderPacker();
     packer.indexedHeaderField(8);
-    let payload = packer.raw();
+    const payload = packer.raw();
 
     // let goAwayPacker = new BinaryPacker();
     // packer.uint1p31(0, 0, "R", "Last-Stream-ID");
     // packer.uint32(0, "Error code");
     // let goAwayPayload = goAwayPacker.raw();
 
-    let frame = new HttpTwoFrame({ type: FrameTypeHeaders, streamIdentifier: 1, flags: 0x4, payload });
-    let gaframe = new HttpTwoFrame({ type: FrameTypeData, streamIdentifier: 1, flags: 0x1, payload: "test data" });
+    const frame = new HttpTwoFrame({ type: FrameTypeHeaders, streamIdentifier: 1, flags: 0x4, payload });
+    const gaframe = new HttpTwoFrame({ type: FrameTypeData, streamIdentifier: 1, flags: 0x1, payload: "test data" });
     return packFrame(frame) + packFrame(gaframe);
 }

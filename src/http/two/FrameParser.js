@@ -12,8 +12,8 @@ export default class FrameParser {
         require("fs").writeFileSync("data", this.tok._data, "binary");
 
         while (!this.tok.atEnd()) {
-            let frameHeader = this.parseFrameHeader();
-            let framePayload = this.tok.area(frameHeader.length, `Payload of frame type ${frameHeader.type}`);
+            const frameHeader = this.parseFrameHeader();
+            const framePayload = this.tok.area(frameHeader.length, `Payload of frame type ${frameHeader.type}`);
 
             this.tok.consumeParsed();
 
@@ -22,12 +22,12 @@ export default class FrameParser {
     }
 
     parseFrameHeader() {
-        let length = this.tok.uint24("Frame length");
-        let type = this.tok.uint8("Frame type");
-        let flags = this.tok.uint8("Frame flags");
+        const length = this.tok.uint24("Frame length");
+        const type = this.tok.uint8("Frame type");
+        const flags = this.tok.uint8("Frame flags");
         // There is a single-bit reserved field (head property of uint1p31
         // return value) which is ignored (RFC 7540 Section 6.5).
-        let streamIdentifier = this.tok.uint1p31("R", "Stream identifier").tail;
+        const streamIdentifier = this.tok.uint1p31("R", "Stream identifier").tail;
 
         return { length, type, flags, streamIdentifier };
     }

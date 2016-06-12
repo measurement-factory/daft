@@ -38,7 +38,7 @@ export default class ConnectionParser {
                 let packer = new BinaryPacker();
                 packer.uint1p31(0, 1, "R", "Last Stream ID");
                 packer.uint32(1, "Error Code");
-                let payload = packer.raw();
+                const payload = packer.raw();
                 this.transaction.socket.write(
                     packFrame(
                         new HttpTwoFrame({ type: FrameTypeGoAway, streamIdentifier: 0, payload })
@@ -96,8 +96,8 @@ export default class ConnectionParser {
             Must(frame.payload.length === 0, "FRAME_SIZE_ERROR"); // Section 6.5 of RFC 7540
         } else {
             while (!tok.atEnd()) {
-                let identifier = tok.uint16("Setting Identifier");
-                let value = tok.uint32("Setting Value");
+                const identifier = tok.uint16("Setting Identifier");
+                const value = tok.uint32("Setting Value");
 
                 settings[identifier] = value;
             }

@@ -12,7 +12,7 @@ export default class HeaderPacker {
 
     _HPackString(str, huffman = false) {
         if (huffman) {
-            let packed = huffmanEncode(str);
+            const packed = huffmanEncode(str);
             this._HPackNumber(1, 1, packed.length);
             this._packer.bytes(packed, "Huffman String");
         } else {
