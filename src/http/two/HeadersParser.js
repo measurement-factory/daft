@@ -267,13 +267,13 @@ export default class HeadersParser {
 
         let tok = new BinaryTokenizer(frame.payload);
 
-        let padLength = frame.getFlag(HeaderFlagPadded) ?
+        let padLength = frame.isSet(HeaderFlagPadded) ?
             tok.uint8("Pad length") : 0;
 
         // RFC 7540 Section 6.1, referenced from RFC 7540 Section 6.2.
         Must(padLength <= frame.payload.length, "PROTOCOL_ERROR");
 
-        if (frame.getFlag(HeaderFlagPriority)) {
+        if (frame.isSet(HeaderFlagPriority)) {
             /*let { head: exclusive, tail: streamDep } = */tok.uint1p31("E", "Stream dependency");
             /*let weight = */tok.uint8("Weight");
         }
@@ -308,7 +308,7 @@ export default class HeadersParser {
     addFragment(fragment, frame) {
         this.fragments += fragment;
 
-        if (frame.getFlag(HeaderFlagEnd)) {
+        if (frame.isSet(HeaderFlagEnd)) {
             this.parseHeaderPayload();
             this._message.finalize();
             let parsed = requestPrefix(this._message);

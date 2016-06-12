@@ -84,7 +84,8 @@ export default class ConnectionParser {
         Must(frame.streamIdentifier === 0, "PROTOCOL_ERROR"); // Section 6.5 of RFC 7540
         Must(frame.payload.length % 6 === 0, "FRAME_SIZE_ERROR"); // Section 6.5 of RFC 7540
 
-        const isACK = frame.getFlag(0);
+        const SettingFlagACK = 0x1;
+        const isACK = frame.isSet(SettingFlagACK);
         if (isACK) {
             Must(frame.payload.length === 0, "FRAME_SIZE_ERROR"); // Section 6.5 of RFC 7540
         } else {
