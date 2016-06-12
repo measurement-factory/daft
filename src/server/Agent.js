@@ -8,11 +8,15 @@ import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
 import SideAgent from "../side/Agent";
 
+import HttpTwoFrame, {FrameTypeSettings} from "../http/two/Frame";
+import {packFrame} from "../http/two/MessagePacker";
+
 let asyncNet = Promise.promisifyAll(syncNet);
 
 export default class Agent extends SideAgent {
     constructor() {
         super(arguments);
+        this.prefaceResponse = new HttpTwoFrame({ type: FrameTypeSettings, streamIdentifier: 0 });
         this.response = null; // optional default for all transactions
         this.server = null; // TCP server to be created in start()
 
@@ -36,6 +40,8 @@ export default class Agent extends SideAgent {
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
+                userSocket.write(packFrame(this.prefaceResponse), "binary");
+
                 this._startTransaction(Transaction, userSocket, this.response);
             });
 
