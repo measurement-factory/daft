@@ -37,7 +37,7 @@ export default class BinaryTokenizer {
         if (this._parsed + size > this._data.length) {
             throw new InsufficientInputError(
                 `Need ${this._parsed + size - this._data.length} more ` +
-                `bytes for ${desc} of size ${size}; ${this.context()}`);
+                `bytes for ${desc} of size ${size} ${this.context()}`);
         }
     }
 
