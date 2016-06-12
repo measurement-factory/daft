@@ -61,8 +61,7 @@ export default class BinaryTokenizer {
     }
 
     skip(size, desc) {
-        this._want(size, desc);
-        this._parsed += 1;
+        this.get(size, desc);
     }
 
     skipExact(data, desc) {
