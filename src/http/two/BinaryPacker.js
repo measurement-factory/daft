@@ -13,12 +13,6 @@ export default class BinaryPacker {
         return this._data.toString("binary");
     }
 
-    consume(length) {
-        let buf = new Buffer("", "binary");
-        Must(this._data.copy(buf, 0, 0, length) === length);
-        this._data = buf;
-    }
-
     in(raw, desc) {
         Must(typeof raw === "string");
         this._data = Buffer.concat([this._data, Buffer.from(raw, "binary")]);
