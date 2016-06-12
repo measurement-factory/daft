@@ -28,7 +28,7 @@ export default class BinaryPacker {
         console.log(`${desc} = ${typeof value === "number" ? value : BinaryPacker.BinToHex(value)};`, size, "bytes long");
     }
 
-    area(value, size, desc) {
+    uint(value, size, desc) {
         let buf = Buffer.alloc(size);
         buf.writeUIntBE(value, 0, size);
         this._data = Buffer.concat([this._data, buf]);
@@ -36,7 +36,7 @@ export default class BinaryPacker {
     }
 
     uint8(value, desc) {
-        this.area(value, 1, desc);
+        this.uint(value, 1, desc);
     }
 
     uint1p7(headValue, tailValue, headDesc, tailDesc) {
@@ -47,15 +47,15 @@ export default class BinaryPacker {
     }
 
     uint16(value, desc) {
-        this.area(value, 2, desc);
+        this.uint(value, 2, desc);
     }
 
     uint24(value, desc) {
-        this.area(value, 3, desc);
+        this.uint(value, 3, desc);
     }
 
     uint32(value, desc) {
-        this.area(value, 4, desc);
+        this.uint(value, 4, desc);
     }
 
     // Pack 32 bits, with the first bit passed separately.
