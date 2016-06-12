@@ -14,10 +14,10 @@ export default class HeaderPacker {
         if (huffman) {
             let packed = huffmanEncode(str);
             this._HPackNumber(1, 1, packed.length);
-            this._packer.in(packed, "Huffman String");
+            this._packer.bytes(packed, "Huffman String");
         } else {
             this._HPackNumber(0, 1, str.length);
-            this._packer.in(str, "HPack String value");
+            this._packer.bytes(str, "HPack String value");
         }
     }
 

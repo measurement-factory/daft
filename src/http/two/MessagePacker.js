@@ -12,7 +12,7 @@ export function packFrame(frame) {
     packer.uint8(frame.type, "type");
     packer.uint8(frame.flags, "flags");
     packer.uint1p31(0, frame.streamIdentifier, "R", "Stream Identifier");
-    packer.in(frame.payload, "Payload");
+    packer.bytes(frame.payload, "Payload");
     return packer.raw();
 }
 

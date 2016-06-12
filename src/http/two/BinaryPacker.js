@@ -9,7 +9,7 @@ export default class BinaryPacker {
         return this._data.toString("binary");
     }
 
-    in(raw, desc) {
+    bytes(raw, desc) {
         Must(typeof raw === "string");
         this._data = Buffer.concat([this._data, Buffer.from(raw, "binary")]);
         this._packed(raw, raw.length, desc);
@@ -22,7 +22,7 @@ export default class BinaryPacker {
     uint(value, size, desc) {
         let buf = Buffer.alloc(size);
         buf.writeUIntBE(value, 0, size);
-        this.in(buf.toString("binary"), desc);
+        this.bytes(buf.toString("binary"), desc);
     }
 
     uint8(value, desc) {
