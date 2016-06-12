@@ -65,9 +65,12 @@ export default class BinaryTokenizer {
     }
 
     skipExact(data, desc) {
+        this.commit();
         const result = this.area(data.length, desc);
         if (result !== data) {
-            throw new WrongSkipError(data, result, `Expected ${RawToHex(data)} _got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
+            this.rollback();
+            throw new WrongSkipError(data, result,
+                `Expected ${RawToHex(data)}, got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
         }
     }
 
