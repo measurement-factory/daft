@@ -1,5 +1,6 @@
 import HttpTwoFrame, { FrameTypeHeaders, FrameTypeData } from "./Frame";
 import BinaryPacker from "./BinaryPacker";
+import HeaderPacker from "./HeaderPacker";
 
 export function requestPrefix(/*message*/) {
     return "";
@@ -18,7 +19,7 @@ export function packFrame(frame) {
 export function responsePrefix(message) {
     message.body = null;
 
-    let packer = new BinaryPacker();
+    let packer = new HeaderPacker();
     packer.indexedHeaderField(8);
     let payload = packer.raw();
 
