@@ -25,11 +25,12 @@ export default class BinaryTokenizer {
     }
 
     context() {
-        return `at ${this._parsed} out of ${this._data.length}`;
+        return `at ${this._parsed}.`;
     }
 
     in(data) {
         this._data += data;
+        console.log(`Added ${data.length} bytes, now ${this._data.length} bytes.`);
     }
 
     want(size, desc) {
