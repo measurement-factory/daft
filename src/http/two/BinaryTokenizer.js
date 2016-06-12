@@ -33,7 +33,7 @@ export default class BinaryTokenizer {
         console.log(`Added ${data.length} bytes, now ${this._data.length} bytes.`);
     }
 
-    want(size, desc) {
+    _want(size, desc) {
         if (this._parsed + size > this._data.length) {
             throw new InsufficientInputError(
                 `Need ${this._parsed + size - this._data.length} more ` +
@@ -42,7 +42,7 @@ export default class BinaryTokenizer {
     }
 
     get(size, desc) {
-        this.want(size, desc);
+        this._want(size, desc);
         let value = this._data.substring(this._parsed, this._parsed + size);
 
         this._got(value, size, desc);
@@ -61,7 +61,7 @@ export default class BinaryTokenizer {
     }
 
     skip(size, desc) {
-        this.want(size, desc);
+        this._want(size, desc);
         this._parsed += 1;
     }
 
@@ -82,7 +82,7 @@ export default class BinaryTokenizer {
     }
 
     uint8(desc) {
-        this.want(1, desc);
+        this._want(1, desc);
         const result = this.octet();
         this._got(result, 1, desc);
         return result;
@@ -108,21 +108,21 @@ export default class BinaryTokenizer {
     }
 
     uint16(desc) {
-        this.want(2, desc);
+        this._want(2, desc);
         const result = this._getNumber(16);
         this._got(result, 2, desc);
         return result;
     }
 
     uint24(desc) {
-        this.want(3, desc);
+        this._want(3, desc);
         const result = this._getNumber(24);
         this._got(result, 3, desc);
         return result;
     }
 
     uint32(desc) {
-        this.want(4, desc);
+        this._want(4, desc);
         const result = this._getNumber(32);
         this._got(result, 4, desc);
         return result;
