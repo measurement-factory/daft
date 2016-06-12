@@ -39,15 +39,15 @@ export default class HeaderPacker {
         }
     }
 
-    // XXX: Maybe add a header packing function that will dynamically choose
-    //      the best representation given current dynamic [and static] table
-    //      state.
+    // XXX: Add a headerField(field, addNameToIndexIfNeeded = false, addValueToIndexIfNeeded = false)
+    //      method for high-level callers that just want to send a header
+    //      field and do not care how it is done.
 
     indexedHeaderField(index) {
         this._HPackNumber(0b1, 1, index);
     }
 
-    // XXX: Alter dynamic table
+    // TODO: Update the dynamic table so that we can send dynamically indexed fields.
     literalHeaderFieldIncrementalIndexing({ index = 0, name, value }) {
         this._HPackNumber(0b01, 2, index);
         if (index !== 0) this._HPackString(name);
@@ -66,7 +66,7 @@ export default class HeaderPacker {
         this._HPackString(value);
     }
 
-    // XXX: New size must be lower than or equal to the limit set by the
+    // TODO: New size must be lower than or equal to the limit set by the
     //      SETTINGS_HEADER_TABLE_SIZE parameter.
     //      See RFC 7540 Section 6.5.2 and RFC 7541 Section 6.3.
     dynamicTableSizeUpdate(size) {
