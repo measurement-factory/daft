@@ -29,50 +29,56 @@ export default class ConnectionParser {
         }
     }
 
-    parseTry(data) {
-        if (this.prefixTok) {
-            try {
-                this.prefixTok.in(data);
-                this.prefixTok.skipExact("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "Connection Preface");
-            } catch (error) {
-                if (error instanceof WrongSkipError) {
-                    let packer = new BinaryPacker();
-                    packer.uint1p31(0, 1, "R", "Last Stream ID");
-                    packer.uint32(1, "Error Code");
-                    let payload = packer.raw();
-                    this.transaction.socket.write(
-                        packFrame(
-                            new HttpTwoFrame({ type: FrameTypeGoAway, streamIdentifier: 0, payload })
-                        ),
-                        "binary");
-                    this.transaction.finish();
-                } else {
-                    throw error;
-                }
+    parsePrefix(data) {
+        try {
+            this.prefixTok.in(data);
+            this.prefixTok.skipExact("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n", "Connection Preface");
+        } catch (error) {
+            if (error instanceof WrongSkipError) {
+                let packer = new BinaryPacker();
+                packer.uint1p31(0, 1, "R", "Last Stream ID");
+                packer.uint32(1, "Error Code");
+                let payload = packer.raw();
+                this.transaction.socket.write(
+                    packFrame(
+                        new HttpTwoFrame({ type: FrameTypeGoAway, streamIdentifier: 0, payload })
+                    ),
+                    "binary");
+                this.transaction.finish();
+            } else {
+                throw error;
             }
-            this.prefixTok.consumeParsed();
-            data = this.prefixTok.leftovers();
-            this.prefixTok = null;
         }
+        this.prefixTok.consumeParsed();
+        data = this.prefixTok.leftovers();
+        this.prefixTok = null;
+    }
 
+    parseFrames(data) {
         // XXX: Missing MUSTs regarding CONTINUATION frames following
         // HEADER/PUSH_PROMISE frames.
-        if (!this.prefixTok) {
-            this.frameParser.parse(data, frame => {
-                switch (frame.type) {
-                    case 0x1:
-                        this.headerParser.parseHeaderFrame(frame);
-                        break;
-                    case 0x4:
-                        console.log("settings:", this.parseSettings(frame));
-                        break;
-                    case 0x9:
-                        this.headerParser.parseContinuationFrame(frame);
-                        break;
-                    default:
-                       console.log("WARNING: cannot handle frame type", frame.type);
-                }
-            });
+        this.frameParser.parse(data, frame => {
+            switch (frame.type) {
+                case 0x1:
+                    this.headerParser.parseHeaderFrame(frame);
+                    break;
+                case 0x4:
+                    console.log("settings:", this.parseSettings(frame));
+                    break;
+                case 0x9:
+                    this.headerParser.parseContinuationFrame(frame);
+                    break;
+                default:
+                   console.log("WARNING: cannot handle frame type", frame.type);
+            }
+        });
+    }
+
+    parseTry(data) {
+        if (this.prefixTok) {
+            this.parsePrefix(data);
+        } else {
+            this.parseFrames(data);
         }
     }
 
