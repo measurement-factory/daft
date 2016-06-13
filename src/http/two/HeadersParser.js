@@ -80,6 +80,8 @@ export default class HeadersParser {
             }
         } else if (name === ":path") {
             this._message.startLine.uri.path = value;
+        } else if (name === ":status") {
+            this._message.startLine.statusCode = value;
         } else {
             this._message.header.add(name, value);
         }
