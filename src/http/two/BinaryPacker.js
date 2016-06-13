@@ -64,7 +64,12 @@ export default class BinaryPacker {
     // Pack 32 bits, with the first bit passed separately.
     uint1p31(headValue, tailValue, headDesc, tailDesc) {
         const headBit = headValue ? 0b1 : 0b0;
-        // Remove signedness of the number by zero-shifting it 0 bits to the right.
+        MustFit(tailValue, 31);
+
+        this._packed(headBit, 0, headDesc);
+        this._packed(tailValue, 4, tailDesc);
+
+        // Remove signedness of the number by shifting it 0 bits to the right.
         this.uint32((headBit << 31 | tailValue) >>> 0, `Combo: ${headDesc} + ${tailDesc}`);
     }
 }
