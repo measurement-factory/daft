@@ -73,8 +73,9 @@ export default class ConnectionParser {
             }
         }
         this.prefixTok.consumeParsed();
-        data = this.prefixTok.leftovers();
+        const leftovers = this.prefixTok.leftovers();
         this.prefixTok = null;
+        this.parseTry(leftovers);
     }
 
     parseFrames(data) {

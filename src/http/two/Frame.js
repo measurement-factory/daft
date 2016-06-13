@@ -23,6 +23,6 @@ export default class HttpTwoFrame {
     }
 
     isSet(mask) {
-        return this.flags & mask !== 0;
+        return (this.flags & mask) !== 0;
     }
 }
