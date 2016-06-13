@@ -1,4 +1,4 @@
-import { Defaults } from "./SettingsParser";
+import { Defaults } from "./Settings";
 import { Must } from "../../misc/Gadgets";
 import Field from "../Field";
 
@@ -132,6 +132,7 @@ export const StaticTable = new StaticHpackTable();
 
 export default class DynamicHpackTable extends HpackTable {
     constructor() {
+        // XXX: Don't query default settings, query the latest settings.
         super(StaticTable.lastIndex + 1, Defaults.SETTINGS_HEADER_TABLE_SIZE);
     }
 }

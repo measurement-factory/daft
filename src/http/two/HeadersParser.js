@@ -13,9 +13,10 @@ export const HeaderFlagPriority = 0x20;
 const bigTwo = bigInt(2);
 
 export default class HeadersParser {
-    constructor(message) {
+    constructor(message, settings) {
         this._message = message;
 
+        this.settings = settings;
         this.dynamicTable = new DynamicHpackTable();
 
         this.tok = null;
@@ -119,7 +120,9 @@ export default class HeadersParser {
                 // [HTTP2]) received from the decoder and acknowledged by the
                 // encoder (see Section 6.5.3 of [HTTP2]).
 
-                this.dynamicTable.capacity = this.parseHpackInteger(this.tok, head & 0b00011111, 5);
+                let capacity = this.parseHpackInteger(this.tok, head & 0b00011111, 5);
+                Must(capacity <= this.settings.get("SETTINGS_HEADER_TABLE_SIZE"));
+                this.dynamicTable.capacity = capacity;
                 continue;
             }
 

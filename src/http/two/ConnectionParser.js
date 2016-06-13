@@ -5,12 +5,13 @@ import BinaryPacker from "./BinaryPacker";
 import {packFrame} from "./MessagePacker";
 import HeaderParser from "./HeadersParser";
 import Request from "../Request";
-import { Must } from "../../misc/Gadgets";
+import Settings from "./Settings";
 import { StaticTable } from "./HpackTable";
 
 export default class ConnectionParser {
     constructor(transaction) {
         this.transaction = transaction; // XXX
+        this.settings = new Settings(this.transaction);
 
         this.StaticTable = StaticTable; // poor man's static data member
 
@@ -19,7 +20,7 @@ export default class ConnectionParser {
         this.message.startLine.protocol = "HTTP/2.0";
 
         this.prefixTok = new BinaryTokenizer();
-        this.headerParser = new HeaderParser(this.message);
+        this.headerParser = new HeaderParser(this.message, this.settings);
         this.frameParser = new FrameParser(this.inspectFrame.bind(this));
     }
 
@@ -29,7 +30,7 @@ export default class ConnectionParser {
                 this.headerParser.parseHeaderFrame(frame);
                 break;
             case 0x4:
-                console.log("settings:", this.parseSettings(frame));
+                this.settings.parse(frame);
                 break;
             case 0x9:
                 this.headerParser.parseContinuationFrame(frame);
@@ -90,29 +91,5 @@ export default class ConnectionParser {
         } else {
             this.parseFrames(data);
         }
-    }
-
-    parseSettings(frame) {
-        let settings = {};
-
-        let tok = new BinaryTokenizer(frame.payload);
-
-        Must(frame.streamIdentifier === 0, "PROTOCOL_ERROR"); // Section 6.5 of RFC 7540
-        Must(frame.payload.length % 6 === 0, "FRAME_SIZE_ERROR"); // Section 6.5 of RFC 7540
-
-        const SettingFlagAck = 0x1;
-        const isAck = frame.isSet(SettingFlagAck);
-        if (isAck) {
-            Must(frame.payload.length === 0, "FRAME_SIZE_ERROR"); // Section 6.5 of RFC 7540
-        } else {
-            while (!tok.atEnd()) {
-                const identifier = tok.uint16("Setting Identifier");
-                const value = tok.uint32("Setting Value");
-
-                settings[identifier] = value;
-            }
-        }
-
-        return settings;
     }
 }
