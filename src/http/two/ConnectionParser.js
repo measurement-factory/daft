@@ -15,6 +15,9 @@ export default class ConnectionParser {
         this.StaticTable = StaticTable; // poor man's static data member
 
         this.message = new Request();
+        // HTTP2 doesn't communicate protocol version
+        this.message.startLine.protocol = "HTTP/2.0";
+
         this.prefixTok = new BinaryTokenizer();
         this.headerParser = new HeaderParser(this.message);
         this.frameParser = new FrameParser(this.inspectFrame.bind(this));
