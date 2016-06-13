@@ -4,6 +4,7 @@ import bigInt from "big-integer";
 import { decode as decodeHuffman } from "./HuffmanStringParser";
 import { requestPrefix } from "../one/MessageWriter";
 import DynamicHpackTable, { StaticTable } from "./HpackTable";
+import Field from "../Field";
 
 export const HeaderFlagEnd = 0x4;
 export const HeaderFlagPadded = 0x8;
@@ -16,6 +17,8 @@ export default class HeadersParser {
         this._message = message;
 
         this.dynamicTable = new DynamicHpackTable();
+
+        this.tok = null;
 
         this.fragments = "";
     }
@@ -62,9 +65,11 @@ export default class HeadersParser {
         }
     }
 
-    processField(name, value) {
+    processField(field) {
         // TODO: check that all pseudo-header fields are defined exactly once
 
+        let name = field.name;
+        let value = field.value;
         if (name === ":method") {
             this._message.startLine.method = value;
         } else if (name === ":scheme") {
@@ -82,80 +87,29 @@ export default class HeadersParser {
         } else if (name === ":status") {
             this._message.startLine.statusCode = value;
         } else {
-            this._message.header.add(name, value);
+            this._message.header.add(field);
         }
     }
 
+    parseLiteralFieldName(head, indexBits) {
+        const rightBits = (2 ** indexBits) - 1;
+        const index = head & rightBits;
+        const name = index === 0 ?
+            this.parseHpackString(this.tok) :
+            this.fieldAt(this.parseHpackInteger(this.tok, index, indexBits)).name;
+        const value = this.parseHpackString(this.tok);
+
+        return new Field(name, value);
+    }
+
     parseHeaderPayload() {
-        let tok = new BinaryTokenizer(this.fragments);
+        this.tok = new BinaryTokenizer(this.fragments);
 
-        while (!tok.atEnd()) {
-            const head = tok.uint8("HPACK head");
+        while (!this.tok.atEnd()) {
+            const head = this.tok.uint8("HPACK head");
 
-            // indexed header field
-            if (head >>> 7 === 1) {
-                const index = this.parseHpackInteger(tok, head & 0b01111111, 7);
-
-                const [name, value] = this.getHeaderAt(index);
-                this.processField(name, value);
-            }
-            // literal header field with incremental indexing
-            else if (head >>> 6 === 1) {
-                const index = head & 0b00111111;
-
-                let name;
-                if (index === 0) {
-                    name = this.parseHpackString(tok);
-                } else { // name is indexed
-                    name = this.getHeaderAt(this.parseHpackInteger(tok, index, 6))[0];
-                }
-
-                const value = this.parseHpackString(tok);
-
-                this.addDynamicTableEntry(name, value);
-                this.processField(name, value);
-            }
-            // literal header field without indexing
-            else if (head >>> 4 === 0) {
-                const index = head & 0b00001111;
-
-                let name;
-                if (index === 0) {
-                    name = this.parseHpackString(tok);
-                } else { // name is indexed
-                    name = this.getHeaderAt(this.parseHpackInteger(tok, index, 4))[0];
-                }
-
-                this.processField(name, this.parseHpackString(tok));
-            }
-            // literal header field never indexed
-            // XXX: Same as w/o indexing (only entry condition different) but
-            //      with need to keep it's never-indexed state around.
-            //      See RFC 7541 Sec 6.2.3.
-            //
-            //      "Intermediaries MUST use the same representation for
-            //      encoding this header field."
-            else if (head >>> 4 === 1) {
-                const index = head & 0b00001111;
-
-                let name;
-                if (index === 0) {
-                    name = this.parseHpackString(tok);
-                } else { // name is indexed
-                    name = this.getHeaderAt(this.parseHpackInteger(tok, index, 4))[0];
-                }
-
-                this.processField(name, this.parseHpackString(tok));
-            }
             // dynamic table size update
-            else if (head >>> 5 === 1) {
-                const maxSize = this.parseHpackInteger(tok, head & 0b00011111, 5);
-
-                this.dynamicTableCapacity = maxSize;
-                while (this._dynamicTableSize > this.dynamicTableCapacity) {
-                    this.dynamicTable.pop();
-                }
-
+            if (head >>> 5 === 0b001) {
                 // XXX: Properly handle the below MUST from RFC 7541
                 // The new maximum size MUST be lower than or equal to the
                 // limit determined by the protocol using HPACK.  A value that
@@ -164,9 +118,36 @@ export default class HeadersParser {
                 // SETTINGS_HEADER_TABLE_SIZE parameter (see Section 6.5.2 of
                 // [HTTP2]) received from the decoder and acknowledged by the
                 // encoder (see Section 6.5.3 of [HTTP2]).
+
+                this.dynamicTable.tableCapacity = this.parseHpackInteger(this.tok, head & 0b00011111, 5);
+                continue;
+            }
+
+            let field;
+
+            // indexed header field
+            if (head >>> 7 === 0b1) {
+                field = this.getHeaderAt(this.parseHpackInteger(this.tok, head & 0b01111111, 7));
+            }
+            // literal header field with incremental indexing
+            else if (head >>> 6 === 0b01) {
+                field = this.parseLiteralFieldName();
+                this.dynamicTable.add(field);
+            }
+            // literal header field without indexing
+            else if (head >>> 4 === 0b0000) {
+                field = this.parseLiteralFieldName(head, 4);
+            }
+            // literal header field never indexed
+            // TODO: Add flag to Field which keeps track of whether
+            //       it is a never-indexed field per RFC 7541 Section 6.2.3.
+            else if (head >>> 4 === 0b0001) {
+                field = this.parseLiteralFieldName(head, 4);
             } else {
                 Must(false, "Invalid Header Field", head.toString(2));
             }
+
+            this.processField(field);
         }
     }
 
