@@ -27,31 +27,28 @@ export default class HeadersParser {
     }
 
     parseHpackInteger(tok, value, length) {
-        if (value < 2 ** length - 1) {
+        if (value < 2 ** length - 1)
             return value;
-        } else {
-            Must(value === 2 ** length - 1, `Value = ${value}, expected ${2 ** length - 1}`);
 
-            console.log("starting long parsing of hpack integer");
+        Must(value === 2 ** length - 1, `Value = ${value}, expected ${2 ** length - 1}`);
 
-            let exponent = 0;
-            let next;
-            value = bigInt(value);
-            do {
-                next = tok.uint8("HPACK integer");
-                value = value.add(bigInt(next & 127).multiply(bigTwo.pow(exponent)));
-                exponent += 7;
-            } while ((next & 128) === 128);
+        let exponent = 0;
+        let next;
+        value = bigInt(value);
+        do {
+            next = tok.uint8("HPACK integer");
+            value = value.add(bigInt(next & 127).multiply(bigTwo.pow(exponent)));
+            exponent += 7;
+        } while ((next & 128) === 128);
 
-            const bigValue = value;
-            const unsafeValue = bigValue.toJSNumber();
+        const bigValue = value;
+        const unsafeValue = bigValue.toJSNumber();
 
-            Must(Number.MIN_SAFE_INTEGER <= unsafeValue && unsafeValue <= Number.MAX_SAFE_INTEGER,
-                "HPACK Integer must be within min/max bounds: " +
-                `${Number.MIN_SAFE_INTEGER} <= ${unsafeValue} <= ${Number.MAX_SAFE_INTEGER}`);
+        Must(Number.MIN_SAFE_INTEGER <= unsafeValue && unsafeValue <= Number.MAX_SAFE_INTEGER,
+            "HPACK Integer must be within min/max bounds: " +
+            `${Number.MIN_SAFE_INTEGER} <= ${unsafeValue} <= ${Number.MAX_SAFE_INTEGER}`);
 
-            return unsafeValue;
-        }
+        return unsafeValue;
     }
 
     parseHpackString(tok) {
