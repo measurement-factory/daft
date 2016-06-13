@@ -52,7 +52,7 @@ class HpackTable {
         return this._fields[index];
     }
 
-    has(index) {
+    hasIndex(index) {
         return this.firstIndex <= index && index < this.lastIndex;
     }
 }

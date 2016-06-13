@@ -127,7 +127,7 @@ export default class HeadersParser {
 
             // indexed header field
             if (head >>> 7 === 0b1) {
-                field = this.getHeaderAt(this.parseHpackInteger(this.tok, head & 0b01111111, 7));
+                field = this.fieldAt(this.parseHpackInteger(this.tok, head & 0b01111111, 7));
             }
             // literal header field with incremental indexing
             else if (head >>> 6 === 0b01) {
