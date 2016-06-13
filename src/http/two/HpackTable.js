@@ -33,13 +33,9 @@ class HpackTable {
 
     _trimFat() {
         while (this._size > this._fieldsCapacity) {
-            this._remove();
+            let entry = this._fields.pop();
+            this._size -= FieldSize(entry);
         }
-    }
-
-    _remove() {
-        let entry = this._fields.pop();
-        this._size -= FieldSize(entry);
     }
 
     get capacity() {
