@@ -1,4 +1,4 @@
-import { Must, MustFit, RawToHex } from "../../misc/Gadgets";
+import { Must, MustFitBits, RawToHex } from "../../misc/Gadgets";
 
 export default class BinaryPacker {
     constructor() {
@@ -20,7 +20,7 @@ export default class BinaryPacker {
     }
 
     uint(value, size, desc) {
-        MustFit(value, size * 8); // MustFit takes bits, not bytes
+        MustFitBits(value, size * 8);
 
         let buf = Buffer.alloc(size);
         buf.writeUIntBE(value, 0, size);
@@ -33,10 +33,10 @@ export default class BinaryPacker {
 
     uint8lr(headValue, headLength, headDesc, tailValue, tailDesc) {
         Must(1 <= headLength && headLength <= 7);
-        MustFit(headValue, headLength);
+        MustFitBits(headValue, headLength);
 
         const tailLength = 8 - headLength;
-        MustFit(tailValue, tailLength);
+        MustFitBits(tailValue, tailLength);
 
         this._packed(headValue, 0, headDesc);
         this._packed(tailValue, 1, tailDesc);
@@ -64,7 +64,7 @@ export default class BinaryPacker {
     // Pack 32 bits, with the first bit passed separately.
     uint1p31(headValue, tailValue, headDesc, tailDesc) {
         const headBit = headValue ? 0b1 : 0b0;
-        MustFit(tailValue, 31);
+        MustFitBits(tailValue, 31);
 
         this._packed(headBit, 0, headDesc);
         this._packed(tailValue, 4, tailDesc);

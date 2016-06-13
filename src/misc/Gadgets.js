@@ -19,7 +19,7 @@ export function Must(condition, ...args) {
     }
 }
 
-export function MustFit(number, bits, canBeNegative = false) {
+export function MustFitBits(number, bits, canBeNegative = false) {
     Must(!canBeNegative); // Implement if needed.
     Must(number >= 0);
     Must(bits <= 32); // Because bitwise operators used elsewhere convert to int32.

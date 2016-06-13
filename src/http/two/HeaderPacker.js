@@ -1,4 +1,4 @@
-import { Must, MustFit } from "../../misc/Gadgets";
+import { Must, MustFitBits } from "../../misc/Gadgets";
 import { encode as huffmanEncode } from "./HuffmanStringParser";
 import BinaryPacker from "./BinaryPacker";
 
@@ -31,7 +31,7 @@ export default class HeaderPacker {
         const headLength = 8 - prefixLength;
         const maxPrefix = 0xFF >>> headLength;
 
-        MustFit(head, headLength);
+        MustFitBits(head, headLength);
         Must(number >= 0);
 
         // XXX: Add descriptions for head and number to call signature
