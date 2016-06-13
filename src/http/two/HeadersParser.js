@@ -63,6 +63,8 @@ export default class HeadersParser {
     }
 
     processField(name, value) {
+        // TODO: check that all pseudo-header fields are defined exactly once
+
         if (name === ":method") {
             this._message.startLine.method = value;
         } else if (name === ":scheme") {
