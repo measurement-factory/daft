@@ -28,10 +28,10 @@ class HpackTable {
         // See RFC 7541 Section 4.4
         this._fields.push(field);
         this._size += fieldSize;
-        this._resize();
+        this._trimFat();
     }
 
-    _resize() {
+    _trimFat() {
         while (this._size > this._fieldsCapacity) {
             this._remove();
         }
@@ -48,7 +48,7 @@ class HpackTable {
 
     set capacity(value) {
         this._fieldsCapacity = value;
-        this._resize();
+        this._trimFat();
     }
 
     fieldAt(index) {
