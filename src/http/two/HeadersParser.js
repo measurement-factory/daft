@@ -119,7 +119,7 @@ export default class HeadersParser {
                 // [HTTP2]) received from the decoder and acknowledged by the
                 // encoder (see Section 6.5.3 of [HTTP2]).
 
-                this.dynamicTable.tableCapacity = this.parseHpackInteger(this.tok, head & 0b00011111, 5);
+                this.dynamicTable.capacity = this.parseHpackInteger(this.tok, head & 0b00011111, 5);
                 continue;
             }
 

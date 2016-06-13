@@ -7,17 +7,17 @@ function FieldSize(field) {
 }
 
 class HpackTable {
-    constructor(firstIndex, tableCapacity) {
+    constructor(firstIndex, capacity) {
         this.firstIndex = firstIndex;
-        this._table = [];
+        this._fields = [];
 
         this._size = 0;
 
-        this._tableCapacity = tableCapacity; // bytes
+        this._capacity = capacity; // bytes
     }
 
     get lastIndex() {
-        return this.firstIndex + this._table.length - 1;
+        return this.firstIndex + this._fields.length - 1;
     }
 
     add(field) {
@@ -26,39 +26,39 @@ class HpackTable {
         // Adding an entry whose size is larger than the table capacity
         // results in an empty table
         // See RFC 7541 Section 4.4
-        if (fieldSize > this._tableCapacity) {
+        if (fieldSize > this._fieldsCapacity) {
             this._size = 0;
-            this._table = [];
+            this._fields = [];
         } else {
             this._size += fieldSize;
             this._resize();
-            this._table.push(field);
+            this._fields.push(field);
         }
     }
 
     _resize() {
-        while (this._size > this._tableCapacity) {
+        while (this._size > this._fieldsCapacity) {
             this._remove();
         }
     }
 
     _remove() {
-        let entry = this._table.pop();
+        let entry = this._fields.pop();
         this._size -= FieldSize(entry);
     }
 
-    get tableCapacity() {
-        return this._tableCapacity;
+    get capacity() {
+        return this._fieldsCapacity;
     }
 
-    set tableCapacity(value) {
-        this._tableCapacity = value;
+    set capacity(value) {
+        this._fieldsCapacity = value;
         this._resize();
     }
 
     fieldAt(index) {
         Must(this.hasIndex(index));
-        return this._table[index];
+        return this._fields[index];
     }
 
     has(index) {
