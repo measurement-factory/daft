@@ -57,6 +57,7 @@ export default class ConnectionParser {
                 let packer = new BinaryPacker();
                 packer.uint1p31(0, 1, "R", "Last Stream ID");
                 packer.uint32(1, "Error Code");
+                packer.bytes(error.message, "Additional error data");
                 const payload = packer.raw();
                 this.transaction.socket.write(
                     packFrame(

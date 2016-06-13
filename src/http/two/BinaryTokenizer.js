@@ -2,9 +2,7 @@ import { RawToHex } from "../../misc/Gadgets";
 
 export class InsufficientInputError extends Error {}
 export class WrongSkipError {
-    constructor(intendedSkip, actuallySkipped, message) {
-        this.intendedSkip = intendedSkip;
-        this.actuallySkipped = actuallySkipped;
+    constructor(message) {
         this.message = message;
     }
 }
@@ -64,8 +62,7 @@ export default class BinaryTokenizer {
         const result = this.area(data.length, desc);
         if (result !== data) {
             this._parsed -= data.length;
-            throw new WrongSkipError(data, result,
-                `Expected ${RawToHex(data)}, got ${RawToHex(result)}; while parsing ${desc}; ${this.context()}`);
+            throw new WrongSkipError(`Expected ${RawToHex(data)}, got ${RawToHex(result)} while skipping ${desc} ${this.context()}`);
         }
     }
 
