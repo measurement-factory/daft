@@ -26,14 +26,9 @@ class HpackTable {
         // Adding an entry whose size is larger than the table capacity
         // results in an empty table
         // See RFC 7541 Section 4.4
-        if (fieldSize > this._fieldsCapacity) {
-            this._size = 0;
-            this._fields = [];
-        } else {
-            this._size += fieldSize;
-            this._resize();
-            this._fields.push(field);
-        }
+        this._fields.push(field);
+        this._size += fieldSize;
+        this._resize();
     }
 
     _resize() {
