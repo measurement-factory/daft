@@ -173,13 +173,6 @@ export default class HeadersParser {
         tok.skip(padLength, "Padding");
         Must(tok.atEnd());
 
-        // 6.1 Indexed Header Field Representation
-        // 1; Index: Integer: 7-bit prefix
-        // 01; Index: Integer: 6-bit prefix
-        // 0000; index int 4-bit prefix
-        // 0001; index int 4-bit prefix
-        // 001: Max size 5+
-
         this.addFragment(headerBlockFragment, frame);
 
         // RFC 7540 Section 6.1 says "A receiver is not obligated to verify
