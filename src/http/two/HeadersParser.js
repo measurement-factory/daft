@@ -131,7 +131,7 @@ export default class HeadersParser {
             }
             // literal header field with incremental indexing
             else if (head >>> 6 === 0b01) {
-                field = this.parseLiteralFieldName();
+                field = this.parseLiteralFieldName(head, 6);
                 this.dynamicTable.add(field);
             }
             // literal header field without indexing
