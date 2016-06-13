@@ -20,6 +20,8 @@ export default class BinaryPacker {
     }
 
     uint(value, size, desc) {
+        MustFit(value, size * 8); // MustFit takes bits, not bytes
+
         let buf = Buffer.alloc(size);
         buf.writeUIntBE(value, 0, size);
         this.bytes(buf.toString("binary"), desc);
