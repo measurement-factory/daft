@@ -1,4 +1,4 @@
-import { Must, RawToHex } from "../../misc/Gadgets";
+import { Must, MustFit, RawToHex } from "../../misc/Gadgets";
 
 export default class BinaryPacker {
     constructor() {
@@ -29,11 +29,22 @@ export default class BinaryPacker {
         this.uint(value, 1, desc);
     }
 
+    uint8lr(headValue, headLength, headDesc, tailValue, tailDesc) {
+        Must(1 <= headLength && headLength <= 7);
+        MustFit(headValue, headLength);
+
+        const tailLength = 8 - headLength;
+        MustFit(tailValue, tailLength);
+
+        this._packed(headValue, 0, headDesc);
+        this._packed(tailValue, 1, tailDesc);
+
+        this.uint8((headValue << tailLength) | tailValue, `Combo: ${headDesc} + ${tailDesc}`);
+    }
+
     uint1p7(headValue, tailValue, headDesc, tailDesc) {
         const headBit = headValue ? 0b1 : 0b0;
-        this._packed(headBit, 0, headDesc);
-        this._packed(tailValue, 1, tailDesc);
-        this.uint8((headBit << 7 | tailValue) >>> 0, `Combo: ${headDesc} + ${tailDesc}`);
+        this.uint8lr(headBit, 1, headDesc, tailValue, tailDesc);
     }
 
     uint16(value, desc) {
