@@ -6,10 +6,13 @@ import {packFrame} from "./MessagePacker";
 import HeaderParser from "./HeadersParser";
 import Request from "../Request";
 import { Must } from "../../misc/Gadgets";
+import { StaticTable } from "./HpackTable";
 
 export default class ConnectionParser {
     constructor(transaction) {
         this.transaction = transaction; // XXX
+
+        this.StaticTable = StaticTable; // poor man's static data member
 
         this.message = new Request();
         this.prefixTok = new BinaryTokenizer();

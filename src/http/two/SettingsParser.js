@@ -1,5 +1,3 @@
-// Nothing in this file is ever used
-
 // Defaults are from HTTP2 RFC Section 6.5.2.
 export const Defaults = {
     SETTINGS_HEADER_TABLE_SIZE: 4096, // octets
