@@ -32,18 +32,18 @@ class HpackTable {
     }
 
     _trimFat() {
-        while (this._size > this._fieldsCapacity) {
+        while (this._size > this._capacity) {
             let entry = this._fields.pop();
             this._size -= FieldSize(entry);
         }
     }
 
     get capacity() {
-        return this._fieldsCapacity;
+        return this._capacity;
     }
 
     set capacity(value) {
-        this._fieldsCapacity = value;
+        this._capacity = value;
         this._trimFat();
     }
 
