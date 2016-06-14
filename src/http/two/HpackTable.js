@@ -49,7 +49,7 @@ class HpackTable {
 
     fieldAt(index) {
         Must(this.hasIndex(index), "Has field at", index);
-        index -= this.startIndex; // Internal representation starts at 0, so subtract startIndex.
+        index -= this.firstIndex; // Internal representation starts at 0, so subtract startIndex.
         return this._fields[index];
     }
 
