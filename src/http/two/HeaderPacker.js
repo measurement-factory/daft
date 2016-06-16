@@ -1,5 +1,5 @@
 import { Must, MustFitBits } from "../../misc/Gadgets";
-import { encode as huffmanEncode } from "./HuffmanStringParser";
+import { encode as huffmanEncode } from "./Huffman";
 import BinaryPacker from "./BinaryPacker";
 
 export default class HeaderPacker {

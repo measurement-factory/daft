@@ -1,7 +1,7 @@
 import BinaryTokenizer from "./BinaryTokenizer";
 import { Must, PrettyMime } from "../../misc/Gadgets";
 import bigInt from "big-integer";
-import { decode as decodeHuffman } from "./HuffmanStringParser";
+import { decode as decodeHuffman } from "./Huffman";
 import { requestPrefix } from "../one/MessageWriter";
 import DynamicHpackTable, { StaticTable } from "./HpackTable";
 import Field from "../Field";
