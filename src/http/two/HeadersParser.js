@@ -162,21 +162,24 @@ export default class HeadersParser {
         const padLength = frame.isSet(HeaderFlagPadded) ?
             tok.uint8("Pad length") : 0;
 
-        // RFC 7540 Section 6.1, referenced from RFC 7540 Section 6.2.
-        Must(padLength <= frame.payload.length, "PROTOCOL_ERROR");
 
         if (frame.isSet(HeaderFlagPriority)) {
             /*let { head: exclusive, tail: streamDep } = */tok.uint1p31("E", "Stream dependency");
             /*let weight = */tok.uint8("Weight");
         }
 
-        const fragmentLength = tok.leftovers().length - padLength;
-        const headerBlockFragment = tok.area(fragmentLength, "Header block fragment");
+        const leftoverLength = tok.leftovers().length;
+
+        // RFC 7540 Section 6.1, referenced from RFC 7540 Section 6.2.
+        Must(padLength <= leftoverLength, "PROTOCOL_ERROR");
+
+        const fragmentLength = leftoverLength - padLength;
+        const fragment = tok.area(fragmentLength, "Header block fragment");
 
         tok.skip(padLength, "Padding");
         Must(tok.atEnd());
 
-        this.addFragment(headerBlockFragment, frame);
+        this.addFragment(fragment, frame);
 
         // RFC 7540 Section 6.1 says "A receiver is not obligated to verify
         // padding but MAY treat non-zero padding as a connection error
