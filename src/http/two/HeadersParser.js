@@ -181,10 +181,8 @@ export default class HeadersParser {
 
         this.addFragment(fragment, frame);
 
-        // RFC 7540 Section 6.1 says "A receiver is not obligated to verify
-        // padding but MAY treat non-zero padding as a connection error
-        // (Section 5.4.1) of type PROTOCOL_ERROR." Is this relevant for
-        // header frames? Do we treat it as a PROTOCOL_ERROR?
+        // TODO: Warn if padding is non-zero; see RFC 7540 Section 6.1 which
+        //       applies to header frames as well.
     }
 
     parseContinuationFrame(frame) {
