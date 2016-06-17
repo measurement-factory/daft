@@ -170,7 +170,8 @@ export default class HeadersParser {
 
         const leftoverLength = tok.leftovers().length;
 
-        // RFC 7540 Section 6.1, referenced from RFC 7540 Section 6.2.
+        // RFC 7540 Section 6.2: "Padding that exceeds the size remaining for
+        // the header block fragment MUST be treated as a PROTOCOL_ERROR."
         Must(padLength <= leftoverLength, "PROTOCOL_ERROR");
 
         const fragmentLength = leftoverLength - padLength;
