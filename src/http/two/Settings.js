@@ -10,7 +10,6 @@ export const Defaults = {
     0x2: 1, // Must be 0 or 1
 
     // SETTINGS_MAX_CONCURRENT_STREAMS
-    // XXX: no limit == undefined?
     // 0 is not special; just prevents the creation of new streams.
     // Servers SHOULD set a zero value only for a short time.
     0x3: undefined,
@@ -29,7 +28,6 @@ export const Defaults = {
     0x5: 2 ** 14,
 
     // SETTINGS_MAX_HEADER_LIST_SIZE
-    // XXX: no limit == undefined?
     // Informs receiver of the maximum size of a header list that the
     // sender is prepared to accept in octets. Based off of
     // uncompressed size of header fields, including length and value
