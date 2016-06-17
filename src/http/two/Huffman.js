@@ -7,7 +7,7 @@ function getBit(value, length, index) {
     return (value >>> (length - (index + 1))) & 1;
 }
 
-function tree(array, char) {
+function tree(array, index) {
     function partition(data, condition) {
         let a = [];
         let b = [];
@@ -22,33 +22,21 @@ function tree(array, char) {
         return [a, b];
     }
 
-
-    function nestify(row, charIndex) {
-        if (charIndex === row.len) {
-            return row;
-        }
-
-        return { [getBit(row.encodedValue, row.len, charIndex)]:
-            nestify(row, charIndex + 1) };
-    }
-
     Must(array.length > 0);
 
-    if (array.length === 1) {
-        return nestify(array[0], char);
-    }
+    if (array.length === 1) return array[0];
 
     const [zero, one] = partition(array, row => {
-        return getBit(row.encodedValue, row.len, char) === 0;
+        return getBit(row.encodedValue, row.len, index) === 0;
     });
 
     let ret = {};
 
     if (zero.length > 0) {
-        ret[0] = tree(zero, char + 1);
+        ret[0] = tree(zero, index + 1);
     }
     if (one.length > 0) {
-        ret[1] = tree(one, char + 1);
+        ret[1] = tree(one, index + 1);
     }
 
     return ret;
