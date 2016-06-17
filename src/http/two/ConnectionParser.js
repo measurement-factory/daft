@@ -11,7 +11,7 @@ import { StaticTable } from "./HpackTable";
 export default class ConnectionParser {
     constructor(transaction) {
         this.transaction = transaction; // XXX
-        this.settings = new Settings(this.transaction);
+        this.settings = new Settings();
 
         this.StaticTable = StaticTable; // poor man's static data member
 

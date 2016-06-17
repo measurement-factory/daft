@@ -55,9 +55,8 @@ export const Identifiers = {
 
 // TODO: Implement sync() method
 export default class Settings {
-    constructor(transaction) {
+    constructor() {
         this._settings = Object.assign({}, Defaults);
-        this.transaction = transaction;
     }
 
     get(name) {
