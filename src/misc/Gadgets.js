@@ -8,14 +8,9 @@ import AddressPool from "./AddressPool";
 /* Assorted small handy global functions. */
 
 export function Must(condition, ...args) {
-    let extraInfo = args.length ? args.join(' ') : "";
     if (!condition) {
-        if (condition === false) {
-            condition = "";
-        } else {
-            extraInfo = " " + extraInfo;
-        }
-        throw new Error(`assertion failure: ${condition}${extraInfo}`);
+        const message = args.length ? args.join(" ") : condition;
+        throw new Error(`assertion failure: ${message}`);
     }
 }
 
