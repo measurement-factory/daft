@@ -28,7 +28,8 @@ function tree(array, char) {
             return row;
         }
 
-        return { [getBit(row.binval, row.len, charIndex)]: nestify(row, charIndex + 1) };
+        return { [getBit(row.encodedValue, row.len, charIndex)]:
+            nestify(row, charIndex + 1) };
     }
 
     Must(array.length > 0);
@@ -38,7 +39,7 @@ function tree(array, char) {
     }
 
     const [zero, one] = partition(array, row => {
-        return getBit(row.binval, row.len, char) === 0;
+        return getBit(row.encodedValue, row.len, char) === 0;
     });
 
     let ret = {};
@@ -118,7 +119,7 @@ export function encode(str) {
 
     for (let i = 0; i < str.length; i++) {
         console.log(`${i} / ${str.length}`);
-        let { binval: data, len: length } = indexedTable[str.charCodeAt(i)];
+        let { encodedValue: data, len: length } = indexedTable[str.charCodeAt(i)];
 
         while (length > 0) { // there's still something left
             console.log(length);
@@ -147,7 +148,7 @@ export function encode(str) {
 
     // Add padding in case we didn't end on a byte boundary
     if (space !== 8) {
-        add(table[256].binval >> (table[256].len - space));
+        add(table[256].encodedValue >> (table[256].len - space));
     }
 
     return Buffer.from(result).toString("binary");
