@@ -23,9 +23,8 @@ class HpackTable {
     add(field) {
         const fieldSize = FieldSize(field);
 
-        // Adding an entry whose size is larger than the table capacity
-        // results in an empty table
-        // See RFC 7541 Section 4.4
+        // RFC 7541 Section 4.4: Adding an entry whose size is larger than
+        // table capacity, the result is an empty table
         this._fields.push(field);
         this._size += fieldSize;
         this._trimFat();
