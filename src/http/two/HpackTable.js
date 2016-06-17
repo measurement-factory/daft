@@ -21,7 +21,7 @@ class HpackTable {
     }
 
     add(field) {
-        let fieldSize = FieldSize(field);
+        const fieldSize = FieldSize(field);
 
         // Adding an entry whose size is larger than the table capacity
         // results in an empty table
