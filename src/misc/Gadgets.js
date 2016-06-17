@@ -32,8 +32,7 @@ export function PrettyMime(prefix, data) {
     text = text.replace(/\t/g, "\\t");
     text = text.replace(/\r/g, "\\r");
     text = text.replace(/\n/g, "\\n\n");
-    text = text.replace(/[^\x20-\x7E\n]/g, '.');
-    // XXX: encode non-printable and confusing characters such as \u2028
+    text = text.replace(/[^\x20-\x7E\n]/g, '.'); // just like xxd
     // a bare ^ also matches the end of the string ending with \n!
     text = text.replace(/^./mg, "\t" + prefix + "$&");
     if (!text.endsWith("\n"))
