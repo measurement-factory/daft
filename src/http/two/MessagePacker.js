@@ -1,4 +1,4 @@
-import HttpTwoFrame, { FrameTypeHeaders, FrameTypeData } from "./Frame";
+import Frame, { FrameTypeHeaders, FrameTypeData } from "./Frame";
 import BinaryPacker from "./BinaryPacker";
 import HeaderPacker from "./HeaderPacker";
 
@@ -28,7 +28,7 @@ export function responsePrefix(message) {
     // packer.uint32(0, "Error code");
     // let goAwayPayload = goAwayPacker.raw();
 
-    const frame = new HttpTwoFrame({ type: FrameTypeHeaders, streamIdentifier: 1, flags: 0x4, payload });
-    const gaframe = new HttpTwoFrame({ type: FrameTypeData, streamIdentifier: 1, flags: 0x1, payload: "test data" });
+    const frame = new Frame({ type: FrameTypeHeaders, streamIdentifier: 1, flags: 0x4, payload });
+    const gaframe = new Frame({ type: FrameTypeData, streamIdentifier: 1, flags: 0x1, payload: "test data" });
     return packFrame(frame) + packFrame(gaframe);
 }

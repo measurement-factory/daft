@@ -11,7 +11,7 @@ export const FrameTypeGoAway = 0x7;
 export const FrameTypeWindowUpdate = 0x8;
 export const FrameTypeContinuation = 0x9;
 
-export default class HttpTwoFrame {
+export default class Frame {
     constructor({ type, streamIdentifier, flags = 0, payload = "" }) {
         Must(type !== undefined && type !== null, type);
         Must(streamIdentifier !== undefined && streamIdentifier !== null, streamIdentifier);

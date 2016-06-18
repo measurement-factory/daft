@@ -1,6 +1,6 @@
 import FrameParser from "./FrameParser";
 import BinaryTokenizer, { InsufficientInputError, WrongSkipError } from "./BinaryTokenizer";
-import HttpTwoFrame, { FrameTypeGoAway } from "./Frame";
+import Frame, { FrameTypeGoAway } from "./Frame";
 import BinaryPacker from "./BinaryPacker";
 import {packFrame} from "./MessagePacker";
 import HeaderParser from "./HeadersParser";
@@ -65,7 +65,7 @@ export default class ConnectionParser {
                 const payload = packer.raw();
                 this.transaction.socket.write(
                     packFrame(
-                        new HttpTwoFrame({ type: FrameTypeGoAway, streamIdentifier: 0, payload })
+                        new Frame({ type: FrameTypeGoAway, streamIdentifier: 0, payload })
                     ),
                     "binary");
                 this.transaction.finish();
