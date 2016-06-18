@@ -31,6 +31,7 @@ export default class BinaryPacker {
         this.uint(value, 1, desc);
     }
 
+    // XXX: Support bit packing instead
     uint8lr(headValue, headLength, headDesc, tailValue, tailDesc) {
         Must(1 <= headLength && headLength <= 7);
         MustFitBits(headValue, headLength);

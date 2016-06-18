@@ -1,5 +1,6 @@
 import { Must } from "../../misc/gadgets";
 
+// TODO: Avoid Frame inside Frame
 export const FrameTypeData = 0x0;
 export const FrameTypeHeaders = 0x1;
 export const FrameTypePriority = 0x2;

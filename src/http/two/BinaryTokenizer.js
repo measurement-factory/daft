@@ -78,6 +78,7 @@ export default class BinaryTokenizer {
         return result;
     }
 
+    // XXX: Support bit parsing instead
     uint1p7(headDesc, tailDesc) {
         const result = this.uint8(`Combo: ${headDesc} + ${tailDesc}`);
         const head = result >>> 7;
