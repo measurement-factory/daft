@@ -54,6 +54,7 @@ export const Identifiers = {
 };
 
 // TODO: Implement sync() method
+// The Settings class maintains the current connection settings.
 export default class Settings {
     constructor() {
         this._settings = Object.assign({}, Defaults);
