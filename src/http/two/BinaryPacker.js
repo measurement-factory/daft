@@ -2,16 +2,16 @@ import { Must, MustFitBits, PrettyRaw } from "../../misc/Gadgets";
 
 export default class BinaryPacker {
     constructor() {
-        this._data = new Buffer("", "binary");
+        this._data = "";
     }
 
     raw() {
-        return this._data.toString("binary");
+        return this._data;
     }
 
     bytes(raw, desc) {
         Must(typeof raw === "string");
-        this._data = Buffer.concat([this._data, Buffer.from(raw, "binary")]);
+        this._data += raw;
         this._packed(raw, raw.length, desc);
     }
 
