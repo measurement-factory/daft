@@ -1,4 +1,4 @@
-import { Must, MustFitBits, RawToHex } from "../../misc/Gadgets";
+import { Must, MustFitBits, PrettyRaw } from "../../misc/Gadgets";
 
 export default class BinaryPacker {
     constructor() {
@@ -16,7 +16,7 @@ export default class BinaryPacker {
     }
 
     _packed(value, size, desc) {
-        console.log(`${desc} = ${typeof value === "number" ? value : RawToHex(value)};`, size, "bytes long");
+        console.log(`${desc} = ${PrettyRaw(value).numAsNum().hex()};`, size, "bytes long");
     }
 
     uint(value, size, desc) {

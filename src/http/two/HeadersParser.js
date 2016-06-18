@@ -1,5 +1,5 @@
 import BinaryTokenizer from "./BinaryTokenizer";
-import { Must, PrettyMime } from "../../misc/Gadgets";
+import { Must, PrettyMime, PrettyRaw } from "../../misc/Gadgets";
 import bigInt from "big-integer";
 import { decode as decodeHuffman } from "./Huffman";
 import { requestPrefix } from "../one/MessageWriter";
@@ -147,7 +147,7 @@ export default class HeadersParser {
             else if (head >>> 4 === 0b0001) {
                 field = this.parseLiteralFieldName(head, 4);
             } else {
-                Must(false, "Invalid Header Field", head.toString(2));
+                Must(false, "Invalid Header Field", PrettyRaw(head).bin());
             }
 
             this.processField(field);

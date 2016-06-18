@@ -22,6 +22,7 @@ export function MustFitBits(number, bits, canBeNegative = false) {
     Must(number < limit);
 }
 
+// XXX: Use PrettyRaw(raw).mime() instead.
 export function PrettyMime(prefix, data) {
     if (!data.length)
         return '';
@@ -118,6 +119,40 @@ export function ReleaseListeningAddress(addr) {
     _AddressPool.release(addr);
 }
 
-export function RawToHex(raw) {
-    return Buffer(raw, "binary").toString("hex");
+class _PrettyRaw {
+    constructor(raw) {
+        this.raw = raw;
+
+        this._mime = false;
+        this._base = null;
+        this._numAsNum = false;
+
+        this.hex();
+    }
+
+    numAsNum() { this._numAsNum = true; return this; }
+    bin() { this._base = 2; return this; }
+    dec() { this._base = 10; return this; }
+    hex() { this._base = 16; return this; }
+
+    toString() {
+        Must(this._base);
+
+        if (this._base === 2) {
+            Must(typeof this.raw === "number");
+            return this.raw.toString(this._base);
+        }
+
+        if (this._numAsNum && typeof this.raw === "number") {
+            Must(2 <= this._base && this._base <= 36);
+            return this.raw.toString(this._base);
+        }
+
+        Must(this._base === 16);
+        return Buffer(this.raw, "binary").toString("hex");
+    }
+}
+
+export function PrettyRaw(raw) {
+    return new _PrettyRaw(raw);
 }

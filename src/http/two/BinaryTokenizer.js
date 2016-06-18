@@ -1,4 +1,4 @@
-import { RawToHex } from "../../misc/Gadgets";
+import { PrettyRaw } from "../../misc/Gadgets";
 
 export class InsufficientInputError extends Error {}
 export class WrongSkipError {
@@ -46,8 +46,7 @@ export default class BinaryTokenizer {
     }
 
     _got(value, size, desc) {
-        const prettyValue = typeof value === "number" ? value : RawToHex(value);
-        console.log(`got ${desc} = ${prettyValue}, occupying ${size} bytes ${this.context()}`);
+        console.log(`got ${desc} = ${PrettyRaw(value).numAsNum().hex()}, occupying ${size} bytes ${this.context()}`);
     }
 
     area(size, desc) {
@@ -62,7 +61,7 @@ export default class BinaryTokenizer {
         const result = this.area(data.length, desc);
         if (result !== data) {
             this._parsed -= data.length;
-            throw new WrongSkipError(`Expected ${RawToHex(data)}, got ${RawToHex(result)} while skipping ${desc} ${this.context()}`);
+            throw new WrongSkipError(`Expected ${PrettyRaw(data).hex()}, got ${PrettyRaw(result).raw()} while skipping ${desc} ${this.context()}`);
         }
     }
 
