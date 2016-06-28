@@ -1,7 +1,7 @@
 BIN=./node_modules/.bin
 
 test:
-	$(BIN)/mocha --require tests/mocha-config tests/test.js
+	$(BIN)/mocha --opts tests/mocha.opts tests/test.js
 
 check-lint:
 	$(BIN)/eslint `git ls-files . | grep '[.]js$$'`
