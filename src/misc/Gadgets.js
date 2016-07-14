@@ -8,11 +8,21 @@ import AddressPool from "./AddressPool";
 /* Assorted small handy global functions. */
 
 export function Must(condition, ...args) {
-    const extraInfo = args.length ? ' ' + args.join(' ') : "";
-    if (!condition)
-        throw new Error(`assertion failure: ${condition}${extraInfo}`);
+    if (!condition) {
+        const message = args.length ? args.join(" ") : condition;
+        throw new Error(`assertion failure: ${message}`);
+    }
 }
 
+export function MustFitBits(number, bits, canBeNegative = false) {
+    Must(!canBeNegative); // Implement if needed.
+    Must(number >= 0);
+    Must(bits <= 32); // Because bitwise operators used elsewhere convert to int32.
+    const limit = 2 ** (bits + 1);
+    Must(number < limit);
+}
+
+// XXX: Use PrettyRaw(raw).mime() instead.
 export function PrettyMime(prefix, data) {
     if (!data.length)
         return '';
@@ -23,7 +33,7 @@ export function PrettyMime(prefix, data) {
     text = text.replace(/\t/g, "\\t");
     text = text.replace(/\r/g, "\\r");
     text = text.replace(/\n/g, "\\n\n");
-    // XXX: encode non-printable and confusing characters such as \u2028
+    text = text.replace(/[^\x20-\x7E\n]/g, '.'); // like xxd(1)
     // a bare ^ also matches the end of the string ending with \n!
     text = text.replace(/^./mg, "\t" + prefix + "$&");
     if (!text.endsWith("\n"))
@@ -107,4 +117,42 @@ export function ReserveListeningAddress(requestedAddr) {
 
 export function ReleaseListeningAddress(addr) {
     _AddressPool.release(addr);
+}
+
+class _PrettyRaw {
+    constructor(raw) {
+        this.raw = raw;
+
+        this._mime = false;
+        this._base = null;
+        this._numAsNum = false;
+
+        this.hex();
+    }
+
+    numAsNum() { this._numAsNum = true; return this; }
+    bin() { this._base = 2; return this; }
+    dec() { this._base = 10; return this; }
+    hex() { this._base = 16; return this; }
+
+    toString() {
+        Must(this._base);
+
+        if (this._base === 2) {
+            Must(typeof this.raw === "number");
+            return this.raw.toString(this._base);
+        }
+
+        if (this._numAsNum && typeof this.raw === "number") {
+            Must(2 <= this._base && this._base <= 36);
+            return this.raw.toString(this._base);
+        }
+
+        Must(this._base === 16);
+        return Buffer(this.raw, "binary").toString("hex");
+    }
+}
+
+export function PrettyRaw(raw) {
+    return new _PrettyRaw(raw);
 }

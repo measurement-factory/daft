@@ -2,8 +2,10 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import { responsePrefix, bodyEncoder, forcesEof } from "../http/one/MessageWriter";
-import RequestParser from "../http/one/RequestParser";
+// import { responsePrefix, bodyEncoder, forcesEof } from "../http/one/MessageWriter";
+// import RequestParser from "../http/one/RequestParser";
+import { responsePrefix } from "../http/two/MessagePacker";
+import ConnectionParser from "../http/two/ConnectionParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
 import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
@@ -71,10 +73,12 @@ export default class Transaction {
     }
 
     parseRequest(virginData) {
-        if (!this.requestParser) {
-            this.requestParser = new RequestParser(this);
-            this.requestParser.logPrefix = ">s ";
-        }
+        // if (!this.requestParser) {
+        //     this.requestParser = new RequestParser(this);
+        //     this.requestParser.logPrefix = ">s ";
+        // }
+        if (!this.requestParser)
+            this.requestParser = new ConnectionParser(this);
 
         this.requestParser.parse(virginData);
 
@@ -116,16 +120,18 @@ export default class Transaction {
             }
         }
 
-        Must(this.response.body);
-        if (!this._bodyEncoder)
-            this._bodyEncoder = bodyEncoder(this.response);
-        const out = this._bodyEncoder.encodeBody(this.response.body);
-        if (out.length)
-            SendBytes(this.socket, out, "response body", "<s ");
+        // Must(this.response.body);
+        // if (!this._bodyEncoder)
+        //     this._bodyEncoder = bodyEncoder(this.response);
+        // const out = this._bodyEncoder.encodeBody(this.response.body);
+        // if (out.length)
+        //     SendBytes(this.socket, out, "response body", "<s ");
+
+        SendBytes(this.socket, this.response.body, "response body", "<s ");
 
         if (this.response.body.outedAll()) {
-            const bytesDescription = this._bodyEncoder.describeBytes("response body");
-            this.endSending(`sent all ${bytesDescription}`);
+            // const bytesDescription = this._bodyEncoder.describeBytes("response body");
+            // this.endSending(`sent all ${bytesDescription}`);
             return;
         }
         console.log("may send more response body later");
@@ -135,10 +141,10 @@ export default class Transaction {
         console.log(why);
         this.doneSending = true;
 
-        if (forcesEof(this.request, this.response) && this.socket) {
-            console.log("[half-]closing the connection to mark the end of response");
-            this.socket.end(); // half-close; we might still be reading
-        }
+        // if (forcesEof(this.request, this.response) && this.socket) {
+        //     console.log("[half-]closing the connection to mark the end of response");
+        //     this.socket.end(); // half-close; we might still be reading
+        // }
 
         this.checkpoint();
     }
