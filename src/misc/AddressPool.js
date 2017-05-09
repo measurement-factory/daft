@@ -25,7 +25,7 @@ class AddressMapItem {
     }
 }
 
-export default class AddressPool {
+class AddressPool {
     constructor() {
         this._map = new Map();
         this._nextPort = Config.OriginAuthority.port;
@@ -73,4 +73,16 @@ export default class AddressPool {
         else
             this._map.remove(key);
     }
+}
+
+let _AddressPool = new AddressPool();
+
+export function ReserveListeningAddress(requestedAddr) {
+    return requestedAddr ?
+        _AddressPool.reserveGiven(requestedAddr) :
+        _AddressPool.reserveAny();
+}
+
+export function ReleaseListeningAddress(addr) {
+    _AddressPool.release(addr);
 }

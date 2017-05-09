@@ -3,7 +3,6 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import * as Config from "./Config";
-import AddressPool from "./AddressPool";
 
 /* Assorted small handy global functions. */
 
@@ -95,16 +94,4 @@ export function FinalizeListeningAddress(addr) {
     return (addr.host === 'localhost') ?
         { host: '::', port: addr.port } : // listen on all available IPs
         { host: addr.host, port: addr.port };
-}
-
-let _AddressPool = new AddressPool();
-
-export function ReserveListeningAddress(requestedAddr) {
-    return requestedAddr ?
-        _AddressPool.reserveGiven(requestedAddr) :
-        _AddressPool.reserveAny();
-}
-
-export function ReleaseListeningAddress(addr) {
-    _AddressPool.release(addr);
 }

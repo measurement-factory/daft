@@ -5,6 +5,7 @@
 import syncNet from "net";
 import Promise from 'bluebird';
 import * as Gadgets from "../misc/Gadgets";
+import * as AddressPool from "../misc/AddressPool";
 import Transaction from "./Transaction";
 import SideAgent from "../side/Agent";
 
@@ -66,20 +67,21 @@ export default class Agent extends SideAgent {
     listenAt(address) {
         Gadgets.Must(address);
         this._requestedListeningAddress = address;
+        console.log("Server plans to use listening address %j", this._requestedListeningAddress);
     }
 
     _reserveListeningAddress() {
         Gadgets.Must(!this._requestedListeningAddress);
         Gadgets.Must(!this._reservedListeningAddress);
         this._reservedListeningAddress =
-            Gadgets.ReserveListeningAddress();
+            AddressPool.ReserveListeningAddress();
         console.log("Server locks listening address %j", this._reservedListeningAddress);
     }
 
     _releaseListeningAddress() {
         if (this._reservedListeningAddress) {
             console.log("Server unlocks listening address %j", this._reservedListeningAddress);
-            Gadgets.ReleaseListeningAddress(this._reservedListeningAddress);
+            AddressPool.ReleaseListeningAddress(this._reservedListeningAddress);
             this._reservedListeningAddress = null;
         }
     }
