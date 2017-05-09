@@ -36,6 +36,17 @@ export function PrettyBody(prefix, rawBody) {
     return rawBody.length ? PrettyMime(prefix, rawBody) : "";
 }
 
+export function PrettySocketAddress(prefix = "", addr) {
+    if (!addr)
+        return "";
+
+    let result = prefix;
+    result += (addr.family === "IPv6") ? `[${addr.address}]` : addr.address;
+    if (addr.port !== null)
+        result += ':' + addr.port;
+    return result;
+}
+
 // to avoid dumping "prettified" bytes on console, omit logPrefix
 // TODO: Add our own socket wrapper to store logPrefix and ensure binary output?
 export function SendBytes(socket, bytes, description, logPrefix) {
@@ -47,6 +58,7 @@ export function SendBytes(socket, bytes, description, logPrefix) {
     socket.write(bytes, 'binary');
 
     let toLog = `sending ${bytes.length} ${description} bytes`;
+    toLog += PrettySocketAddress(" to ", socket.address());
 
     // add pretty bytes if needed
     if (bytes.length && logPrefix !== undefined && logPrefix !== null) {
@@ -64,13 +76,7 @@ export function SendBytes(socket, bytes, description, logPrefix) {
 
 export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
     let toLog = `received ${bytes.length} ${description} bytes`;
-    if (socket) {
-        const addr = socket.address();
-        if (addr) {
-            const ip = addr.family === "IPv6" ? `[${addr.address}]` : addr.address;
-            toLog += ` from ${ip}:${addr.port}`;
-        }
-    }
+    toLog += PrettySocketAddress(" from ", socket.address());
     // difficult to prettify received bytes until the parser parses them
     console.log(toLog);
 }
