@@ -11,6 +11,7 @@ import Proxy from "../src/proxy/Agent";
 import Request from "../src/http/Request";
 import Response from "../src/http/Response";
 import * as Lifetime from "../src/misc/Lifetime";
+import { Must } from "../src/misc/Gadgets";
 import assert from "assert";
 
 
@@ -25,6 +26,9 @@ export default class ProxyCase {
         this._startAgentsPromise = null;
         this._stopAgentsPromise = null;
         this._runPromise = null;
+
+        this._startTime = null;
+        this._finishTime = null;
     }
 
     client() {
@@ -64,6 +68,7 @@ export default class ProxyCase {
                 tap(this._begin).
                 tap(this.startAgents).
                 then(this._promiseTransactions).
+                tap(this._stopClock).
                 finally(this.stopAgents).
                 tap(this._doCheck).
                 finally(this._end);
@@ -72,9 +77,17 @@ export default class ProxyCase {
         });
     }
 
+    runtime() {
+        Must(this._startTime);
+        Must(this._finishTime);
+        return new Date(this._finishTime.getTime() - this._startTime.getTime());
+    }
+
     _begin() {
         console.log("Starting test case:", this.gist);
         Lifetime.Extend();
+        Must(!this._startTime);
+        this._startTime = new Date();
     }
 
     _end() {
@@ -98,6 +111,11 @@ export default class ProxyCase {
             }
             return Promise.all(transactions);
         });
+    }
+
+    _stopClock() {
+        Must(!this._finishTime);
+        this._finishTime = new Date();
     }
 
     check(checker) {
