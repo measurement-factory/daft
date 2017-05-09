@@ -44,6 +44,16 @@ export function AssertForwardedHeaderFieldValue(sent, received, context) {
 export function AssertForwardedMessage(sent, received, kind) {
     assert(sent && received);
 
+    assert.equal(!sent.startLine, !received.startLine);
+    if (sent.startLine) {
+	assert.equal(!sent.startLine.statusCode, !received.startLine.statusCode);
+	if (sent.startLine.statusCode !== undefined) {
+	    const scSent = parseInt(sent.startLine.statusCode, 10);
+            const scReceived = parseInt(received.startLine.statusCode, 10);
+            assert.equal(scSent, scReceived, "received status code matches the sent one");
+        }
+    }
+
     assert(sent.header && received.header);
     for (let field of sent.header.fields) {
         let name = field.name;
