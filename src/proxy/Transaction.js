@@ -75,19 +75,11 @@ export default class Transaction {
 
     }
 
-    originAddress() {
-        return Config.isReverseProxy() ? Config.OriginAuthority : this.forwardingAddress();
-    }
-
-    forwardingAddress() {
-        return {
-            host: this.requestParser.message.startLine.uri.host,
-            port: this.requestParser.message.startLine.uri.port
-        };
-    }
-
     startConnectingToOrigin() {
-        this.originSocket = net.connect(this.originAddress());
+        const destination = Config.isReverseProxy() ?
+            Config.OriginAuthority :
+            this.requestParser.message.startLine.uri.address;
+        this.originSocket = net.connect(destination);
 
         /* setup event listeners for the origin socket */
 
