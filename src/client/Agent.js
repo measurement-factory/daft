@@ -5,6 +5,7 @@
 import net from "net";
 import Promise from 'bluebird';
 import * as Config from "../misc/Config";
+import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
 import SideAgent from "../side/Agent";
 
@@ -26,10 +27,11 @@ export default class Agent extends SideAgent {
             this.socket.connect(Config.ProxyListeningAddress, resolve);
         }).tap(() => {
             this.socket.removeListener('error', savedReject);
-            this.localAddress = this.socket.address();
-            this.remoteAddress = this.socket.remoteAddress;
-            console.log("Client at %j connected to %j",
-                this.localAddress, this.remoteAddress);
+            this.localAddress = { host: this.socket.localAddress, port: this.socket.localPort };
+            this.remoteAddress = { host: this.socket.remoteAddress, port: this.socket.remotePort };
+            console.log("Client at %s connected to %s",
+                Gadgets.PrettyAddress(this.localAddress),
+                Gadgets.PrettyAddress(this.remoteAddress));
         }).tap(() => {
             this._startTransaction(Transaction, this.socket, this.request);
         });
@@ -39,8 +41,9 @@ export default class Agent extends SideAgent {
         if (this.socket) {
             this.socket.destroy(); // XXX: what if a transaction does it too?
             this.socket = null;
-            console.log("Client at %j disconnected from %j",
-                this.localAddress, this.remoteAddress);
+            console.log("Client at %s disconnected from %s",
+                Gadgets.PrettyAddress(this.localAddress),
+                Gadgets.PrettyAddress(this.remoteAddress));
         }
         return super._stop();
     }

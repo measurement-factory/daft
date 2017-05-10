@@ -11,6 +11,7 @@
  */
 
 import { Must } from "../misc/Gadgets";
+import * as Gadgets from "../misc/Gadgets";
 
 
 export default class Authority {
@@ -72,18 +73,7 @@ export default class Authority {
     }
 
     raw() {
-        let image = "";
-
-        if (this.host !== null) {
-            image = this.host;
-            if (this._isIpv6())
-                image = "[" + image + "]";
-        }
-
-        if (this.hasPort())
-            image += ":" + this._port;
-
-        return image;
+        return Gadgets.PrettyAddress(this.host, this._port);
     }
 
     static Parse(rawBytes) {

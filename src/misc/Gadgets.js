@@ -36,15 +36,45 @@ export function PrettyBody(prefix, rawBody) {
     return rawBody.length ? PrettyMime(prefix, rawBody) : "";
 }
 
-export function PrettySocketAddress(prefix = "", addr) {
-    if (!addr)
-        return "";
+// either PrettyAddress({host, port})
+// or PrettyAddress(host, port)
+export function PrettyAddress(...args) {
+    let host;
+    let port;
+    if (args.length > 1) {
+        host = args[0];
+        port = args[1];
+    } else {
+        host = args[0].host;
+        port = args[0].port;
+    }
 
-    let result = prefix;
-    result += (addr.family === "IPv6") ? `[${addr.address}]` : addr.address;
-    if (addr.port !== null)
-        result += ':' + addr.port;
-    return result;
+    let buf = "";
+
+    if (host !== null) {
+        const ipv6 = host.indexOf(":") >= 0;
+        if (ipv6)
+            buf += "[";
+        buf += host;
+        if (ipv6)
+            buf += "]";
+    }
+
+    if (port !== null)
+        buf += ':' + port;
+
+    return buf;
+}
+
+// returns msg framed by local and remote socket addresses
+export function DescribeSocketIo(socket, msg) {
+    let buf = "";
+    buf += PrettyAddress(socket.localAddress, socket.localPort);
+    buf += " ";
+    buf += msg;
+    buf += " ";
+    buf += PrettyAddress(socket.remoteAddress, socket.remotePort);
+    return buf;
 }
 
 // to avoid dumping "prettified" bytes on console, omit logPrefix
@@ -57,8 +87,7 @@ export function SendBytes(socket, bytes, description, logPrefix) {
     // to avoid *default* conversion to utf8 (that will not work for a binary string!).
     socket.write(bytes, 'binary');
 
-    let toLog = `sending ${bytes.length} ${description} bytes`;
-    toLog += PrettySocketAddress(" to ", socket.address());
+    let toLog = DescribeSocketIo(socket, `sending ${bytes.length} ${description} bytes to`);
 
     // add pretty bytes if needed
     if (bytes.length && logPrefix !== undefined && logPrefix !== null) {
@@ -75,8 +104,7 @@ export function SendBytes(socket, bytes, description, logPrefix) {
 }
 
 export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
-    let toLog = `received ${bytes.length} ${description} bytes`;
-    toLog += PrettySocketAddress(" from ", socket.address());
+    let toLog = DescribeSocketIo(socket, `received ${bytes.length} ${description} bytes from`);
     // difficult to prettify received bytes until the parser parses them
     console.log(toLog);
 }
