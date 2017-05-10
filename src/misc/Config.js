@@ -22,7 +22,7 @@ export const ProxyListeningAddress = { // TODO: Make configurable
 };
 
 // Used to form request URLs.
-export const OriginAuthority = { // TODO: Make configurable
+export const OriginAuthority = {
     host: 'localhost',
     port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
 };
@@ -63,6 +63,12 @@ let _CliOptions = [
         type: "Boolean",
         overrideRequired: true,
         description: "show this help message",
+    },
+    {
+        option: "origin-authority",
+        type: "{host: String, port: Number}",
+        default: `{host: "localhost", port: ${OriginAuthority.port}}`,
+        description: "ultimate request destination",
     },
 ];
 
