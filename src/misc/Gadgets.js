@@ -66,6 +66,12 @@ export function PrettyAddress(...args) {
     return buf;
 }
 
+// returns host address "family" string comparable
+// with net.socket.address().family and net.server.address().family
+export function HostFamilyString(host) {
+    return host.indexOf(":") >= 0 ? "IPv6" : "IPv4";
+}
+
 // returns msg framed by local and remote socket addresses
 export function DescribeSocketIo(socket, msg) {
     let buf = "";
