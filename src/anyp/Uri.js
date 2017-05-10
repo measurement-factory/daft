@@ -6,14 +6,14 @@
 
 import * as Global from "../misc/Global";
 import * as Config from "../misc/Config";
+import Authority from "./Authority";
 import { Must, UniqueId } from "../misc/Gadgets";
 
 export default class Uri {
 
     constructor() {
         this.scheme = null;
-        this.host = null;
-        this._port = null;
+        this.authority = null;
         this.path = null;
         this.relative = false; // whether raw() lacks scheme://authority prefix
     }
@@ -21,8 +21,7 @@ export default class Uri {
     clone() {
         let dupe = new Uri();
         dupe.scheme = this.scheme;
-        dupe.host = this.host;
-        dupe._port = this._port;
+        dupe.authority = this.authority ? this.authority.clone() : null;
         dupe.path = this.path;
         dupe.relative = this.relative;
         return dupe;
@@ -36,34 +35,25 @@ export default class Uri {
     // throws if port is known but malformed
     // throws if port is unknown and cannot be computed using scheme
     get port() {
-        if (this._port === null)
-            return Global.DefaultSchemePort(this.scheme);
-
-        // A weak check that the value is usable as a network port.
-        // Or should we do what Header::contentLength() does?
-        Must(0 <= this._port && this._port <= 65535, `0 <= ${this._port} <= 65535`);
-        return Number.parseInt(this._port, 10);
+        return (this.authority && this.authority.hasPort()) ?
+            this.authority.port :
+            Global.DefaultSchemePort(this.scheme);
     }
 
     set port(value) {
         Must(value !== undefined);
-        this._port = value; // may be null
+        if (!this.authority)
+            this.authority = new Authority();
+        this.authority.port = value; // may be null
     }
 
     get address() {
-        if (this.host === null)
-            return null;
-
-        return {
-            host: this.host,
-            port: this.port
-        };
+        return this.authority ?
+            this.authority.toHostPort(this._defaultPortOrNull()) : null;
     }
 
     set address(value) {
-        Must(value);
-        this.host = value.host;
-        this.port = value.port;
+        this.authority = Authority.FromHostPort(value);
     }
 
     raw() {
@@ -71,10 +61,8 @@ export default class Uri {
         if (!this.relative) {
             if (this.scheme !== null)
                 image += this.scheme + "://";
-            if (this.host !== null)
-                image += this.host;
-            if (this._port !== null)
-                image += ":" + this._port;
+            if (this.authority)
+                image += this.authority.raw();
         }
         if (this.path !== null)
             image += this.path;
@@ -115,27 +103,27 @@ export default class Uri {
         }
 
         // Assume it is an absolute-URI
-        let urlRe = /^(\S+?:\/\/)([^\/\?:#]+)(:\d*)?(\S*)$/;
+        let urlRe = /^(\S+?:\/\/)([^\/\?#]+)(\S*)$/;
         let urlMatch = urlRe.exec(rawBytes);
         if (!urlMatch)
             throw new Error("Unsupported or malformed URI: " + rawBytes);
 
         this.scheme = urlMatch[1].substring(0, urlMatch[1].length - 3);
-        this.host = urlMatch[2];
+        this.authority = Authority.Parse(urlMatch[2]);
+
         if (urlMatch[3] !== undefined)
-            this._port = urlMatch[3].substring(1);
-        if (urlMatch[4] !== undefined)
-            this.path = urlMatch[4];
+            this.path = urlMatch[3];
     }
 
     finalize() {
         if (!this.relative) {
             if (this.scheme === null)
                 this.scheme = "http";
-            if (this.host === null)
-                this.host = Config.OriginAuthority.host;
-            if (this._port === null)
-                this._port = Config.OriginAuthority.port; // TODO: Omit default.
+
+            if (this.authority === null)
+                this.authority = Authority.FromHostPort(Config.OriginAuthority);
+            else if (!this.authority.hasPort())
+                this.authority.port = Config.OriginAuthority.port; // TODO: Omit default.
         }
         if (!this.hasPath()) {
             if (Config.ProxyListeningAddress)
@@ -143,5 +131,10 @@ export default class Uri {
             else
                 this.path = "/";
         }
+    }
+
+    // returns default port (if we can compute one) or null (otherwise)
+    _defaultPortOrNull() {
+        return !this.scheme ? null : Global.DefaultSchemePort(this.scheme);
     }
 }
