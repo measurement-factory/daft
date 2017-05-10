@@ -4,6 +4,7 @@
 
 /* Base class for HTTP request or response message, including headers and body */
 
+import Authority from "../anyp/Authority";
 import Header from "./Header";
 import { Must } from "../misc/Gadgets";
 import * as Gadgets from "../misc/Gadgets";
@@ -54,6 +55,18 @@ export default class Message {
         Must(args.length === 1);
         Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
         this.header.add(fieldName, args[0]);
+    }
+
+    // IP address of the agent that generated the message
+    generatorAddress(...args) {
+        let fieldName = this._daftFieldName('Generator-Address');
+        if (!args.length) {
+            const rawValue = this.header.value(fieldName);
+            return Authority.Parse(rawValue).toHostPort();
+        }
+        Must(args.length === 1);
+        Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
+        this.header.add(fieldName, Gadgets.PrettyAddress(args[0]));
     }
 
     finalize() {

@@ -77,6 +77,14 @@ export function DescribeSocketIo(socket, msg) {
     return buf;
 }
 
+// returns a {host,port} structure with local socket addresses
+export function LocalAddress(socket) {
+    return {
+        host: socket.localAddress,
+        port: socket.localPort,
+    };
+}
+
 // to avoid dumping "prettified" bytes on console, omit logPrefix
 // TODO: Add our own socket wrapper to store logPrefix and ensure binary output?
 export function SendBytes(socket, bytes, description, logPrefix) {

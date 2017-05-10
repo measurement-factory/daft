@@ -6,7 +6,7 @@ import { responsePrefix, bodyEncoder, forcesEof } from "../http/one/MessageWrite
 import RequestParser from "../http/one/RequestParser";
 import Response from "../http/Response";
 import Body from "../http/Body";
-import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
+import { Must, SendBytes, ReceivedBytes, LocalAddress } from "../misc/Gadgets";
 
 // Transaction is a single (user agent request, origin response) tuple.
 export default class Transaction {
@@ -172,6 +172,7 @@ export default class Transaction {
         this.response.header.add("Server", "DaftServer/1.0");
         this.response.header.add("Connection", "close");
         this.response.header.add("Date", new Date().toUTCString());
+        this.response.generatorAddress(LocalAddress(this.socket));
         this.response.finalize();
 
         this._finalizedResponse = true;
