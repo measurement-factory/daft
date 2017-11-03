@@ -41,17 +41,20 @@ export function PrettyBody(prefix, rawBody) {
 export function PrettyAddress(...args) {
     let host;
     let port;
-    if (args.length > 1) {
-        host = args[0];
-        port = args[1];
-    } else {
+    if (args.length === 1) {
+        if (args[0] === null)
+            return "[null address]";
         host = args[0].host;
         port = args[0].port;
+    } else {
+        Must(args.length === 2);
+        host = args[0];
+        port = args[1];
     }
 
     let buf = "";
 
-    if (host !== null) {
+    if (host !== null && host !== undefined) {
         const ipv6 = host.indexOf(":") >= 0;
         if (ipv6)
             buf += "[";
@@ -60,7 +63,7 @@ export function PrettyAddress(...args) {
             buf += "]";
     }
 
-    if (port !== null)
+    if (port !== null && port !== undefined)
         buf += ':' + port;
 
     return buf;
