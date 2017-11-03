@@ -168,10 +168,9 @@ export default class Transaction {
         if (!this.response.body && this.response.startLine.statusCode !== 304)
             this.response.addBody(new Body());
 
-        // XXX: Do not overwrite already set properties
-        this.response.header.add("Server", "DaftServer/1.0");
-        this.response.header.add("Connection", "close");
-        this.response.header.add("Date", new Date().toUTCString());
+        this.response.header.addByDefault("Server", "DaftServer/1.0");
+        this.response.header.addByDefault("Connection", "close");
+        this.response.header.addByDefault("Date", new Date().toUTCString());
         this.response.generatorAddress(LocalAddress(this.socket));
         this.response.finalize();
 

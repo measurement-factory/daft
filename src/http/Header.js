@@ -109,17 +109,15 @@ export default class Header {
     }
 
     add(...args) {
-        let field = null;
-        if (args.length === 1) { // add(field)
-            Must(args[0] instanceof Field);
-            field = args[0].clone();
-        } else {
-            Must(args.length === 2); // add(name, value)
-            field = new Field(...args);
-        }
-        Must(field);
+        let field = this._argsToField(...args);
         this.fields.push(field);
         this._raw = null;
+    }
+
+    addByDefault(...args) {
+        let field = this._argsToField(...args);
+        if (!this.has(field.name))
+            this.add(field);
     }
 
     deleteAllNamed(name) {
@@ -128,5 +126,19 @@ export default class Header {
             return field.id() !== id; // true result keeps the field
         });
         this._raw = null;
+    }
+
+    // converts field-or-(name,value) method arguments to field
+    _argsToField(...args) {
+        let field = null;
+        if (args.length === 1) { // foo(field)
+            Must(args[0] instanceof Field);
+            field = args[0].clone();
+        } else {
+            Must(args.length === 2); // foo(name, value)
+            field = new Field(...args);
+        }
+        Must(field);
+        return field;
     }
 }

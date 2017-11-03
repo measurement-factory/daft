@@ -158,16 +158,15 @@ export default class Transaction {
     finalizeRequest() {
         Must(this.request);
 
-        // XXX: Do not overwrite already set properties
-        this.request.header.add("User-Agent", "DaftClient/1.0");
-        this.request.header.add("Connection", "close");
+        this.request.header.addByDefault("User-Agent", "DaftClient/1.0");
+        this.request.header.addByDefault("Connection", "close");
         // no request body by default
 
         this.request.finalize();
 
         // A finalized request should have uri.authority set.
         // Callers should use that for request target, even if uri.relative.
-        this.request.header.add("Host", this.request.startLine.uri.authority.raw());
+        this.request.header.addByDefault("Host", this.request.startLine.uri.authority.raw());
 
         this.finalizedRequest = true;
     }
