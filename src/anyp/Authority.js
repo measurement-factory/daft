@@ -63,7 +63,8 @@ export default class Authority {
         // A weak check that the value is usable as a network port.
         // Or should we do what Header::contentLength() does?
         const rawPort = this._port;
-        Must(0 <= rawPort && rawPort <= 65535, `0 <= ${rawPort} <= 65535`);
+        Must(rawPort >= 0, `${rawPort} >= 0`);
+        Must(rawPort <= 65535, `${rawPort} <= 65535`);
         return Number.parseInt(rawPort, 10);
     }
 

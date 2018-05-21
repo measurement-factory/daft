@@ -50,23 +50,24 @@ export default class Message {
     // an optional human-friendly message label
     tag(...args) {
         let fieldName = this._daftFieldName('Tag');
-        if (!args.length)
-            return this.header.value(fieldName);
-        Must(args.length === 1);
-        Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
-        this.header.add(fieldName, args[0]);
+        if (args.length) {
+            Must(args.length === 1);
+            Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
+            this.header.add(fieldName, args[0]);
+        }
+        return this.header.value(fieldName);
     }
 
     // IP address of the agent that generated the message
     generatorAddress(...args) {
         let fieldName = this._daftFieldName('Generator-Address');
-        if (!args.length) {
-            const rawValue = this.header.value(fieldName);
-            return Authority.Parse(rawValue).toHostPort();
+        if (args.length) {
+            Must(args.length === 1);
+            Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
+            this.header.add(fieldName, Gadgets.PrettyAddress(args[0]));
         }
-        Must(args.length === 1);
-        Must(!this.header.has(fieldName)); // or is that unnecessary too strict?
-        this.header.add(fieldName, Gadgets.PrettyAddress(args[0]));
+        const rawValue = this.header.value(fieldName);
+        return Authority.Parse(rawValue).toHostPort();
     }
 
     finalize() {

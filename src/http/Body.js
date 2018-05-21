@@ -42,6 +42,8 @@ export default class Body {
         Must(this._in === 0); // do not overwrite to minimize confusion
         this.in(args[0]);
         this.innedAll = true;
+        Must(this._buf !== null);
+        return this._buf;
     }
 
     innedSize() {
