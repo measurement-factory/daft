@@ -116,6 +116,7 @@ export default class ProxyCase {
     _stopClock() {
         Must(!this._finishTime);
         this._finishTime = new Date();
+        console.log(`test case took ${this.runtime().getTime()}ms`);
     }
 
     check(checker) {
