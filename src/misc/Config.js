@@ -82,6 +82,7 @@ export function Recognize(options) {
 function _Import(options) {
     for (const key of Object.keys(options)) {
         const uppedKey = key.charAt(0).toUpperCase() + key.slice(1);
+        console.log("Command-line option", `${key}:`, options[key]);
         module.exports[uppedKey] = options[key];
     }
 }
