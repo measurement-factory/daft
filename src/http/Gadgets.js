@@ -34,7 +34,7 @@ export function AssertForwardedHeaderFieldValue(sent, received, context) {
     for (let i = 0; i < sent.length; ++i) {
         // trim while comparing but show failed assert using raw values
         if (sent[i].trim() !== received[i].trim()) {
-            assert.equal(sent[i], received[i], `same ${context} value #${i}`);
+            assert.equal(sent[i], received[i], `same ${context} value #${i}: ${sent[i]} is not ${received[i]}`);
             assert(false, `unreachable code: ${sent[i]} is not ${received[i]}`);
         }
     }
