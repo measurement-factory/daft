@@ -7,23 +7,48 @@
 import assert from "assert";
 
 
-export function IsHopByHop(name /*, header */) {
-    const hopByHops = [ "connection", "keep-alive",
-        "proxy-authenticate", "proxy-authorization", "te", "trailer",
-        "transfer-encoding", "upgrade" ];
+const _HopByHopHeaderNames = [
+    "Connection",
+    "Keep-Alive",
+    "Proxy-Authenticate",
+    "Proxy-Authorization",
+    "TE",
+    "Trailer",
+    "Transfer-Encoding",
+    "Upgrade"
+].map(name => name.toLowerCase());
 
+// Response headers that may differ between a cache miss sent to the
+// cache and the later corresponding cache hit received from the cache.
+// TODO: Only enable for cases where caching is allowed/expected?
+// TODO: Make configurable so that test cases that alter stored cache
+// headers can exclude headers like
+// "X-Daft-Response-Tag",
+// "X-Daft-Response-ID",
+// "Changing-Field",
+// "New-Field"
+const _ControlledByCacheHeaderNames = [
+    "Age",
+    "Via",
+    "X-Proxy-Worker-ID"
+].map(name => name.toLowerCase());
+
+export function IsHopByHop(name /*, header */) {
     // XXX: remove once request-line is supported
     if (name.match(/^\w+ +http:/))
         return true;
 
     // TODO: or is listed in header.values("Connection")
-    return hopByHops.indexOf(name.toLowerCase()) >= 0;
+    return _HopByHopHeaderNames.indexOf(name.toLowerCase()) >= 0;
 }
 
 export function IsEndToEnd(name, header) {
     return !IsHopByHop(name, header);
 }
 
+function IsControlledByCache(name) {
+    return _ControlledByCacheHeaderNames.indexOf(name.toLowerCase()) >= 0;
+}
 
 // XXX: Flip our assert*(sent, received) arguments to match "official" order in
 // node::assert.equal(actual, expected). Check all node::assert*Equal() calls.
@@ -58,6 +83,8 @@ export function AssertForwardedMessage(sent, received, kind) {
     for (let field of sent.header.fields) {
         let name = field.name;
         if (!IsEndToEnd(name, sent))
+            continue;
+        if (IsControlledByCache(name))
             continue;
         assert(received.header.has(name), `received ${kind} has ${name}`);
         AssertForwardedHeaderFieldValue(
