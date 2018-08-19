@@ -122,7 +122,7 @@ export default class Header {
 
     deleteAllNamed(name) {
         let id = Field.Id(name);
-        this.fields.filter((field) => {
+        this.fields = this.fields.filter((field) => {
             return field.id() !== id; // true result keeps the field
         });
         this._raw = null;
