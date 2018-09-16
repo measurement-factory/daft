@@ -77,17 +77,26 @@ export default class ProxyCase {
         });
     }
 
-    runtime() {
+    startTime() {
+        Must(this._startTime);
+        return this._startTime;
+    }
+
+    finishTime() {
         Must(this._startTime);
         Must(this._finishTime);
-        return new Date(this._finishTime.getTime() - this._startTime.getTime());
+        return this._finishTime;
+    }
+
+    runtime() {
+        return new Date(this.finishTime().getTime() - this.startTime().getTime());
     }
 
     _begin() {
-        console.log("Starting test case:", this.gist);
-        Lifetime.Extend();
         Must(!this._startTime);
         this._startTime = new Date();
+        console.log(this._startTime.toISOString(), "Starting test case:", this.gist);
+        Lifetime.Extend();
     }
 
     _end() {
