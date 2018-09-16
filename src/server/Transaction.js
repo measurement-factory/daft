@@ -12,9 +12,10 @@ import { Must, SendBytes, ReceivedBytes, LocalAddress } from "../misc/Gadgets";
 export default class Transaction {
 
     constructor(userSocket, response) {
-        let myType = Object.getPrototypeOf(this).constructor.name;
+        const myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`starting ${myType} transaction`);
 
+        this._startTime = null;
         this.socket = userSocket;
 
         this.requestParser = null;
@@ -28,7 +29,17 @@ export default class Transaction {
         this._bodyEncoder = null;
     }
 
+    startTime() {
+        Must(this._startTime !== null);
+        return this._startTime;
+    }
+
     start() {
+        Must(this._startTime === null);
+        this._startTime = new Date();
+        const myType = Object.getPrototypeOf(this).constructor.name;
+        console.log(this._startTime.toISOString(), `${myType} transaction started`);
+
         /* setup event listeners */
 
         this.socket.on('data', data => {

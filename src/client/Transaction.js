@@ -22,10 +22,15 @@ export default class Transaction {
         this.finalizedRequest = false;
 
         this.doneReceiving = false; // incoming message
-        this.doneSending = false; // outgoing message
+        this.doneSending = null; // outgoing message
         this.doneCallback = null; // set by the initiator if needed
 
         this._bodyEncoder = null;
+    }
+
+    sentTime() {
+        Must(this.doneSending !== null);
+        return this.doneSending;
     }
 
     start() {
@@ -114,8 +119,8 @@ export default class Transaction {
             SendBytes(this.socket, requestPrefix(this.request), "request header", "c> ");
 
             if (!this.request.body) {
+                this.doneSending = new Date();
                 console.log("sent a bodyless request");
-                this.doneSending = true;
                 this.checkpoint();
                 return;
             }
@@ -130,9 +135,9 @@ export default class Transaction {
             SendBytes(this.socket, out, "request body", "c> ");
 
         if (this.request.body.outedAll()) {
+            this.doneSending = new Date();
             const bytesDescription = this._bodyEncoder.describeBytes("request body");
             console.log(`sent all ${bytesDescription}`);
-            this.doneSending = true;
             this.checkpoint();
             return;
         }
