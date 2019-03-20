@@ -120,7 +120,7 @@ export default class Transaction {
 
             if (!this.request.body) {
                 this.doneSending = new Date();
-                console.log("sent a bodyless request");
+                console.log(this.doneSending.toISOString(), "sent a bodyless request");
                 this.checkpoint();
                 return;
             }
