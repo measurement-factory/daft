@@ -54,8 +54,6 @@ export const LogBodies = undefined; // whether to log bodies on console
 
 /* Command-line options handling */
 
-export let CliHelp; // set in Finalize()
-
 // accumulates recognized CLI options
 let _CliOptions = [
     {
@@ -87,19 +85,30 @@ function _Import(options) {
     }
 }
 
-// parse all recognized CLI options
-export function Finalize() {
-    try {
+// Import CLI options. On --help and misconfiguration errors, print usage and
+// return false: Throwing in such cases would require sophisticated catchers,
+// exposing the generated usage text, and/or usually useless stack trace.
+export function Finalize(argv) {
         var optionator = require('optionator')({
-            prepend: "$(BIN)/babel-node <test-script> [options]",
+            prepend: "usage: daft.js run <test.js> [options]",
             options: _CliOptions
         });
-        CliHelp = optionator.generateHelp();
-        const options = optionator.parseArgv(process.argv);
-        _Import(options);
+
+    let options = null;
+    try {
+        options = optionator.parseArgv(argv);
     } catch (error) {
-        if (CliHelp !== undefined)
-            console.log(CliHelp);
-        throw error;
+        process.exitCode = 1;
+        console.log(optionator.generateHelp());
+        console.log("Error:", error.message);
+        return false;
     }
+    _Import(options);
+
+    if ("help" in options) {
+        console.log(optionator.generateHelp());
+        return false;
+    }
+
+    return true;
 }
