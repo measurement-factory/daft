@@ -81,7 +81,7 @@ export default class Authority {
         let authority = new Authority();
 
         // required IPv4, domain name, or [IPv6] followed by optional :port
-        const reAddress = /^(\[?[^[\/\?#]+?\]?)(:\d*)?$/;
+        const reAddress = /^(\[?[^[/?#]+?\]?)(:\d*)?$/;
         const reMatch = reAddress.exec(rawBytes);
         Must(reMatch);
 

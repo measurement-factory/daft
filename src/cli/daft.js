@@ -2,6 +2,6 @@
 
 // A main.js wrapper that enables ES6 module support in node.js
 
-/* eslint no-native-reassign: "off" */
+// eslint-disable-next-line no-native-reassign, no-global-assign
 require = require("esm")(module);
 module.exports = require("./main.js");

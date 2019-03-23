@@ -1,6 +1,5 @@
 import Promise from "bluebird";
 import * as Config from "../misc/Config";
-import * as AddressPool from "../misc/AddressPool";
 import StartTests from "../misc/TestRunner";
 import assert from "assert";
 import path from "path";
@@ -65,13 +64,11 @@ async function main_()
     // import before Config.Finalize() because commands usually add options
     const CommandModule = await import(testScriptLocationAbsolute);
 
-    let XXX = 0;
-
     if (!Config.Finalize(commandArgv))
         return;
 
     const test = new CommandModule.default();
-    return StartTests(test);
+    StartTests(test);
 }
 
 async function main()

@@ -103,7 +103,7 @@ export default class Uri {
         }
 
         // Assume it is an absolute-URI
-        let urlRe = /^(\S+?:\/\/)([^\/\?#]+)(\S*)$/;
+        let urlRe = /^(\S+?:\/\/)([^/?#]+)(\S*)$/;
         let urlMatch = urlRe.exec(rawBytes);
         if (!urlMatch)
             throw new Error("Unsupported or malformed URI: " + rawBytes);
