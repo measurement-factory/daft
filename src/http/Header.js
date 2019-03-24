@@ -56,7 +56,9 @@ export default class Header {
 
         if (values.length > 1) { // multiple values
             // TODO: We should compare _parsed_ items.
-            if (!value.every(function(item) { return item === value; }))
+            if (!value.every(function (item) {
+                return item === value;
+            }))
                 return undefined; // multiple different values
         }
 

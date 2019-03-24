@@ -3,11 +3,11 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 /* Manages HTTP URI Authority component and similar "addresses".
-
-   Per RFC 3986: authority = [ userinfo "@" ] host [ ":" port ]
-   but the userinfo part is deprecated and currently unsupported.
-
-   In raw authority strings, IPv6 hosts are bracketed: [::1]:8080.
+ *
+ * Per RFC 3986: authority = [ userinfo "@" ] host [ ":" port ]
+ * but the userinfo part is deprecated and currently unsupported.
+ *
+ * In raw authority strings, IPv6 hosts are bracketed: [::1]:8080.
  */
 
 import { Must } from "../misc/Gadgets";

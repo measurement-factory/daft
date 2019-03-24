@@ -14,8 +14,7 @@ function help(...error) {
 }
 
 // extracts TestPlot argv from process.argv
-function parseArgv()
-{
+function parseArgv() {
     if (process.argv.length <= 2)
         throw help("missing command (e.g., 'run')");
 
@@ -39,8 +38,7 @@ function parseArgv()
     return result;
 }
 
-async function main_()
-{
+async function main_() {
     process.exitCode = 0;
 
     process.on("unhandledRejection", function (reason /*, promise */) {
@@ -58,8 +56,8 @@ async function main_()
     const testScriptLocationFromUserPov = commandArgv[1];
     const testScriptLocationAbsolute =
         testScriptLocationFromUserPov.indexOf("file:") === 0 ?
-            testScriptLocationFromUserPov : // leave file:... URLs alone
-            `file://${path.resolve(testScriptLocationFromUserPov)}`;
+        testScriptLocationFromUserPov : // leave file:... URLs alone
+        `file://${path.resolve(testScriptLocationFromUserPov)}`;
 
     // import before Config.Finalize() because commands usually add options
     const CommandModule = await import(testScriptLocationAbsolute);
@@ -71,12 +69,10 @@ async function main_()
     StartTests(test);
 }
 
-async function main()
-{
+async function main() {
     try {
         await main_();
-    }
-    catch (error) {
+    } catch (error) {
         if (error !== help)
             throw error;
     }

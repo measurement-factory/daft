@@ -89,10 +89,10 @@ function _Import(options) {
 // return false: Throwing in such cases would require sophisticated catchers,
 // exposing the generated usage text, and/or usually useless stack trace.
 export function Finalize(argv) {
-        var optionator = require('optionator')({
-            prepend: "usage: daft.js run <test.js> [options]",
-            options: _CliOptions
-        });
+    var optionator = require('optionator')({
+        prepend: "usage: daft.js run <test.js> [options]",
+        options: _CliOptions
+    });
 
     let options = null;
     try {
