@@ -13,5 +13,6 @@
     "bluebird": "^3.5.3",
     "esm": "^3.2.20",
     "optionator": "^0.8.2"
-  }
+  },
+  "license": "Apache-2.0"
 }
