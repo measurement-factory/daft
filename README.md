@@ -22,11 +22,6 @@ There are several ways to use an HTTP agent from the Daft toolbox:
 
         tests/test-proxy-must-update-headers-after-304.js
 
-3. Write Mocha-driven tests using HTTP agents as configurable objects. For
-   example, here are Daft Proxy self-tests executed by "make test".
-
-        mocha --opts tests/mocha.opts tests/test.js
-
 
 ## Daft Proxy
 

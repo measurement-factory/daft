@@ -1,3 +1,0 @@
---require esm
---timeout 10000
---slow 5000
