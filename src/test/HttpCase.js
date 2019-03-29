@@ -2,25 +2,26 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-/* Manages a single case testing a proxy  */
+/* Manages a single case testing an HTTP client, server, and/or proxy. */
 
 import Promise from "bluebird";
-import Client from "../src/client/Agent";
-import Server from "../src/server/Agent";
-import Proxy from "../src/proxy/Agent";
-import Request from "../src/http/Request";
-import Response from "../src/http/Response";
-import * as Lifetime from "../src/misc/Lifetime";
-import { Must } from "../src/misc/Gadgets";
+import Client from "../client/Agent";
+import Server from "../server/Agent";
+import Proxy from "../proxy/Agent";
+import Request from "../http/Request";
+import Response from "../http/Response";
+import * as Lifetime from "../misc/Lifetime";
+import { Must } from "../misc/Gadgets";
 import assert from "assert";
 
 
-export default class ProxyCase {
+export default class HttpCase {
 
     constructor(gist) {
         this.gist = gist;
         this._client = null;
         this._server = null;
+        this._proxy = null;
         this._checkers = [];
 
         this._startAgentsPromise = null;

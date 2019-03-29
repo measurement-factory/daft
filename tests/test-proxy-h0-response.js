@@ -4,7 +4,7 @@
 
 /* Tests whether an HTTP proxy forwards an HTTP/0.9 response */
 
-import ProxyCase from "./ProxyCase";
+import HttpTestCase from "../src/test/HttpCase";
 import Response from "../src/http/Response";
 import Body from "../src/http/Body";
 import * as Config from "../src/misc/Config";
@@ -29,7 +29,7 @@ const zeroNineBody =
 
 async function Test(testRun, callback) {
 
-    let testCase = new ProxyCase('forward an HTTP/0.9 response');
+    let testCase = new HttpTestCase('forward an HTTP/0.9 response');
     testCase.client(); // defaults OK
     testCase.server().response.startLine.protocol = "HTTP/0.9";
     testCase.server().response.body = new Body(zeroNineBody);

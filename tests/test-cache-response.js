@@ -5,7 +5,7 @@
 /* Tests whether an HTTP proxy caches a response
  * Parameters: [drop-Content-Length] [body size] */
 
-import ProxyCase from "./ProxyCase";
+import HttpTestCase from "../src/test/HttpCase";
 import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as Gadgets from "../src/misc/Gadgets";
@@ -43,7 +43,7 @@ async function Test(testRun, callback) {
     resource.uri.address = Gadgets.ReserveListeningAddress();
     resource.finalize();
 
-    let missCase = new ProxyCase(`forward a ${Config.BodySize}-byte response`);
+    let missCase = new HttpTestCase(`forward a ${Config.BodySize}-byte response`);
     missCase.client().request.for(resource);
     missCase.server().serve(resource);
     missCase.server().response.forceEof = Config.ResponseEndsAtEof;
@@ -55,7 +55,7 @@ async function Test(testRun, callback) {
     });
     await missCase.run();
 
-    let hitCase = new ProxyCase(`hit a ${Config.BodySize}-byte response`);
+    let hitCase = new HttpTestCase(`hit a ${Config.BodySize}-byte response`);
     hitCase.client().request.for(resource);
     hitCase.check(() => {
         hitCase.expectStatusCode(200);

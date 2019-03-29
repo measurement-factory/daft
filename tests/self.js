@@ -2,7 +2,7 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import ProxyCase from "./ProxyCase";
+import HttpTestCase from "../src/test/HttpCase";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
 import Test from "../src/misc/Test";
@@ -55,7 +55,7 @@ export default class MyTest extends Test {
     }
 
     makeCase(title) {
-        let testCase = new ProxyCase(title);
+        let testCase = new HttpTestCase(title);
 
         /* force creation of all agents, even those we do not customize later */
         testCase.client();
