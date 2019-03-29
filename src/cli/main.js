@@ -1,6 +1,6 @@
 import Promise from "bluebird";
 import * as Config from "../misc/Config";
-import StartTests from "../misc/TestRunner";
+import StartTests from "../test/Runner";
 import assert from "assert";
 import path from "path";
 

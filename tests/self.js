@@ -6,7 +6,7 @@ import HttpTestCase from "../src/test/HttpCase";
 import Proxy from "../src/proxy/Agent";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
-import Test from "../src/misc/Test";
+import Test from "../src/test/Test";
 import assert from "assert";
 
 export default class MyTest extends Test {

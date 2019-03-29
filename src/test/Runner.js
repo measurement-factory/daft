@@ -4,8 +4,8 @@
 
 /* Manages [concurrent] execution of tests. */
 
-import TestRun from "./TestRun";
-import * as Config from "./Config";
+import TestRun from "./Run";
+import * as Config from "../misc/Config";
 
 Config.Recognize([
     {

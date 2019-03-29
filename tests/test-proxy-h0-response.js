@@ -9,7 +9,7 @@ import Response from "../src/http/Response";
 import Body from "../src/http/Body";
 import * as Config from "../src/misc/Config";
 import { responsePrefix } from "../src/http/one/MessageWriter";
-import StartTests from "../src/misc/TestRunner";
+import StartTests from "../src/test/Runner";
 import assert from "assert";
 
 if (Config.LogBodies === undefined)

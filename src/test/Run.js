@@ -4,7 +4,7 @@
 
 /* A single test execution. */
 
-export default class TestRun {
+export default class Run {
 
     constructor(runId, threadId) {
         this.id = runId;

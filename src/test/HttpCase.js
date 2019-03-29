@@ -7,7 +7,6 @@
 import Promise from "bluebird";
 import Client from "../client/Agent";
 import Server from "../server/Agent";
-import Proxy from "../proxy/Agent";
 import Request from "../http/Request";
 import Response from "../http/Response";
 import * as Lifetime from "../misc/Lifetime";
