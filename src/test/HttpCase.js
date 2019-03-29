@@ -50,10 +50,16 @@ export default class HttpCase {
         return this._server;
     }
 
-    proxy() {
+    // * to set the proxy, call with a proxy argument (once)
+    // * to get the previously set proxy, call without an argument
+    proxy(aProxy = undefined) {
         if (!this._proxy) {
             assert(!this._runPromise); // do not create agents after run()
-            this._proxy = new Proxy();
+            assert(arguments.length === 1); // do not ask before setting
+            assert(aProxy);
+            this._proxy = aProxy;
+        } else {
+            assert(arguments.length === 0); // do not set twice
         }
         return this._proxy;
     }

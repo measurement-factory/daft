@@ -3,6 +3,7 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import HttpTestCase from "../src/test/HttpCase";
+import Proxy from "../src/proxy/Agent";
 import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
 import Test from "../src/misc/Test";
@@ -60,7 +61,7 @@ export default class MyTest extends Test {
         /* force creation of all agents, even those we do not customize later */
         testCase.client();
         testCase.server();
-        testCase.proxy();
+        testCase.proxy(new Proxy());
 
         testCase.check(() => {
             Http.AssertForwardedMessage(testCase.client().transaction().request, testCase.server().transaction().request, "request");
