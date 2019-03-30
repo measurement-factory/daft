@@ -34,9 +34,11 @@ let TestsRunning = 0; // number of concurrent tests running now
 async function TestThread(test, threadId) {
     while (TestsStarted < Config.Tests) {
         const run = new TestRun(++TestsStarted, threadId);
-        console.log("Starting %s. Concurrency level: %d.", run, ++TestsRunning);
+        ++TestsRunning;
+        console.log(`Starting ${run}. Concurrency level: ${TestsRunning}`);
         await test.run(run);
-        console.log("Finished %s. Concurrency level: %d.", run, --TestsRunning);
+        --TestsRunning;
+        console.log(`Finished ${run}. Concurrency level: ${TestsRunning}`);
     }
 }
 
