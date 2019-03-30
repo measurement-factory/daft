@@ -40,14 +40,23 @@ async function TestThread(test, threadId) {
     }
 }
 
-export default function StartTests(test) {
+export default async function Run(test) {
 
     if (Config.ConcurrencyLevel > 1 || Config.Tests > 1)
         console.log(`Starting ${Config.ConcurrencyLevel} test threads to run ${Config.Tests} tests.`);
 
-    for (let threadId = 1; threadId <= Config.ConcurrencyLevel; ++threadId)
-        TestThread(test, threadId);
+    await test.startup();
 
-    if (Config.ConcurrencyLevel > 1)
-        console.log(`Started all ${Config.ConcurrencyLevel} test threads.`);
+    try {
+        let threads = [];
+        for (let threadId = 1; threadId <= Config.ConcurrencyLevel; ++threadId)
+            threads.push(TestThread(test, threadId));
+
+        if (Config.ConcurrencyLevel > 1)
+            console.log(`Started all ${Config.ConcurrencyLevel} test threads.`);
+
+        await Promise.all(threads);
+    } finally {
+        await test.shutdown();
+    }
 }

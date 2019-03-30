@@ -1,6 +1,6 @@
 import Promise from "bluebird";
 import * as Config from "../misc/Config";
-import StartTests from "../test/Runner";
+import RunTest from "../test/Runner";
 import assert from "assert";
 import path from "path";
 
@@ -66,7 +66,7 @@ async function main_() {
         return;
 
     const test = new CommandModule.default();
-    StartTests(test);
+    await RunTest(test);
 }
 
 async function main() {

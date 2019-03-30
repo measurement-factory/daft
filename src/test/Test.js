@@ -8,8 +8,17 @@ import { Must } from "../misc/Gadgets";
 // usually revolving around validating some DUT feature or functionality
 export default class Test {
 
-    // promises to execute a sequence of checks
-    async run() {
+    // called once before any run() calls
+    async startup() {
+    }
+
+    // called once after all run()s complete
+    async shutdown() {
+    }
+
+    // executes a sequence of checks
+    // may be called multiple times when repeating/parallelizing test runs
+    async run(/*testRun*/) {
         Must(false, `pure virtual: kids must override`);
     }
 
