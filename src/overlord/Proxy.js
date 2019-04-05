@@ -26,18 +26,28 @@ Config.Recognize([
     },
 ]);
 
-class SquidConfig {
+// Configuration (i.e. the set of tuning options) for the Device Under Test.
+// The current _implementation_ is Squid-specific.
+export class DutConfig {
     constructor() {
+        this._memoryCaching = false;
+    }
+
+    memoryCaching(enable) {
+        assert.strictEqual(arguments.length, 1);
+        assert(enable !== undefined); // for now; can be used for default mode later
+        this._memoryCaching = enable;
     }
 
     // returns ready-to-use configuration text
     make() {
-        const prettyCfg = `# Daft-generated configuration
+        const cfg = `
+            # Daft-generated configuration
             http_port 3128
             http_access allow localhost
             dns_nameservers 127.0.0.1
             negative_dns_ttl 1 second
-            cache_mem 0
+            ${this._memoryCachingCfg()}
             shutdown_lifetime 1 seconds
             visible_hostname squid.daft.test
             coredump_dir /usr/local/squid/var/logs/overlord
@@ -45,13 +55,33 @@ class SquidConfig {
             access_log stdio:access.log xsquid
             cache_log cache.log
         `;
-        const cfg = prettyCfg.replace(/^\s{12}/mg, ""); // trim indentation
-        return cfg;
+        return this._trimCfg(cfg);
+    }
+
+    _memoryCachingCfg() {
+        const memCacheSize = this._memoryCaching ? "100 MB" : "0";
+        const cfg = `
+            cache_mem ${memCacheSize}
+        `;
+        return this._trimCfg(cfg);
+    }
+
+    // makes cfg text pretty
+    _trimCfg(cfg) {
+        // TODO: Support rudimentary configuration parsing instead?
+        cfg = cfg.replace(/^\s+$/, ""); // remove leading empty line
+        cfg = cfg.replace(/^\s+/, ""); // remove leading empty space
+        cfg = cfg.replace(/\s+$/mg, ""); // remove trailing whitespace
+        cfg = cfg.replace(/^\s{12}/mg, ""); // trim indentation
+        return cfg + "\n";
     }
 }
 
-export default class ProxyOverlord {
-    constructor() {
+export class ProxyOverlord {
+    constructor(cfg) {
+        assert.strictEqual(arguments.length, 1);
+        assert(cfg);
+        this._dutConfig = cfg;
         this._start = null; // future start() promise
     }
 
@@ -63,8 +93,7 @@ export default class ProxyOverlord {
             return;
         }
 
-        const cfg = new SquidConfig().make();
-        this._start = this._remoteCall("/reset", cfg);
+        this._start = this._remoteCall("/reset", this._dutConfig.make());
 
         await this._start;
         console.log("Proxy is listening");
