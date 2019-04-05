@@ -7,6 +7,24 @@
 import http from "http";
 import Promise from 'bluebird';
 import assert from "assert";
+import * as Config from "../misc/Config";
+
+Config.Recognize([
+    {
+        option: "dut-at-startup",
+        type: "String",
+        enum: [ "reset", "as-is" ],
+        default: "reset",
+        description: "desired DUT state before starting tests",
+    },
+    {
+        option: "dut-at-shutdown",
+        type: "String",
+        enum: [ "stopped", "as-is" ],
+        default: "stopped",
+        description: "desired DUT state after all tests are done",
+    },
+]);
 
 class SquidConfig {
     constructor() {
@@ -37,18 +55,28 @@ export default class ProxyOverlord {
         this._start = null; // future start() promise
     }
 
-    async start() {
+    async noteStartup() {
         assert(!this._start);
+
+        if (Config.DutAtStartup !== "reset") {
+            assert.strictEqual(Config.DutAtStartup, "as-is");
+            return;
+        }
 
         const cfg = new SquidConfig().make();
         this._start = this._remoteCall("/reset", cfg);
 
-        const result = await this._start;
+        await this._start;
         console.log("Proxy is listening");
-        return result;
+        return;
     }
 
-    async stop() {
+    async noteShutdown() {
+        if (Config.DutAtShutdown !== "stopped") {
+            assert.strictEqual(Config.DutAtShutdown, "as-is");
+            return;
+        }
+
         if (this._start) {
             await this._remoteCall("/stop");
             console.log("Proxy stopped listening");
