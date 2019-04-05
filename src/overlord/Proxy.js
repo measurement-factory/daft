@@ -13,14 +13,14 @@ Config.Recognize([
     {
         option: "dut-at-startup",
         type: "String",
-        enum: [ "reset", "as-is" ],
+        enum: ["reset", "as-is"],
         default: "reset",
         description: "desired DUT state before starting tests",
     },
     {
         option: "dut-at-shutdown",
         type: "String",
-        enum: [ "stopped", "as-is" ],
+        enum: ["stopped", "as-is"],
         default: "stopped",
         description: "desired DUT state after all tests are done",
     },
@@ -138,7 +138,9 @@ export class ProxyOverlord {
                 });
             });
 
-            request.on('error', (err) => { throw new Error(err); });
+            request.on('error', (err) => {
+                throw new Error(err);
+            });
 
             if (requestHasBody)
                 request.write(requestBody);
