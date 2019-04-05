@@ -44,13 +44,14 @@ async function TestThread(test, threadId) {
 
 export default async function Run(test) {
 
-    if (Config.ConcurrencyLevel > 1 || Config.Tests > 1)
-        console.log(`Starting ${Config.ConcurrencyLevel} test threads to run ${Config.Tests} tests.`);
-
     await test.startup();
 
     try {
         let threads = [];
+
+        if (Config.ConcurrencyLevel > 1 || Config.Tests > 1)
+            console.log(`Starting ${Config.ConcurrencyLevel} test threads to run ${Config.Tests} tests.`);
+
         for (let threadId = 1; threadId <= Config.ConcurrencyLevel; ++threadId)
             threads.push(TestThread(test, threadId));
 
@@ -58,7 +59,11 @@ export default async function Run(test) {
             console.log(`Started all ${Config.ConcurrencyLevel} test threads.`);
 
         await Promise.all(threads);
+
+        if (Config.ConcurrencyLevel > 1)
+            console.log(`Finished all ${Config.ConcurrencyLevel} test threads.`);
     } finally {
+        console.log("Shutting down.");
         await test.shutdown();
     }
 }
