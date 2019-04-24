@@ -16,6 +16,7 @@ export default class Agent extends SideAgent {
         this.socket = null; // connection to be established in start()
         this.localAddress = null;
         this.remoteAddress = null;
+        this.nextHopAddress = Config.ProxyListeningAddress;
     }
 
     start() {
@@ -24,7 +25,7 @@ export default class Agent extends SideAgent {
             this.socket = new net.Socket();
             this.socket.once('error', savedReject = reject);
             // open a TCP connection to the proxy
-            this.socket.connect(Config.ProxyListeningAddress, resolve);
+            this.socket.connect(this.nextHopAddress, resolve);
         }).tap(() => {
             this.socket.removeListener('error', savedReject);
             this.localAddress = { host: this.socket.localAddress, port: this.socket.localPort };
