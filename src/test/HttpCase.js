@@ -18,7 +18,7 @@ export default class HttpCase {
 
     constructor(gist) {
         this.gist = gist;
-        this._client = null;
+        this._clients = [];
         this._server = null;
         this._proxy = null;
         this._checkers = [];
@@ -31,13 +31,28 @@ export default class HttpCase {
         this._finishTime = null;
     }
 
+    // add (and return) a client, assuming there may be more than one
+    // single-client test cases should use the client() method instead
+    addClient() {
+        assert(!this._runPromise); // do not create agents after run()
+        let client = new Client();
+        client.request = new Request();
+        this._clients.push(client);
+        return client;
+    }
+
+    // add the first (and possibly the only) client OR
+    // get access to the previously set (and necessarily the only) client
     client() {
-        if (!this._client) {
-            assert(!this._runPromise); // do not create agents after run()
-            this._client = new Client();
-            this._client.request = new Request();
-        }
-        return this._client;
+        if (!this._clients.length)
+            return this.addClient();
+
+        assert.strictEqual(this._clients.length, 1);
+        return this._clients[0];
+    }
+
+    clients() {
+        return this._clients;
     }
 
     server() {
@@ -120,9 +135,9 @@ export default class HttpCase {
                 console.log("will wait for proxy transaction");
                 transactions.push(this._proxy.transactionPromise);
             }
-            if (this._client) {
-                console.log("will wait for user transaction");
-                transactions.push(this._client.transactionPromise);
+            if (this._clients.length > 0) {
+                console.log(`will wait for ${this._clients.length} user transaction(s)`);
+                transactions.push(...this._clients.map(client => client.transactionPromise));
             }
             return Promise.all(transactions);
         });
@@ -148,24 +163,29 @@ export default class HttpCase {
     }
 
     expectStatusCode(expected) {
-        assert(this._client);
-        assert(this._client.transaction());
-        assert(this._client.transaction().response);
-        let received = parseInt(this._client.transaction().response.startLine.statusCode, 10);
-        assert.equal(received, expected, "expected response status code");
+        assert(this._clients.length);
+        for (const client of this._clients) {
+            assert(client);
+            assert(client.transaction());
+            assert(client.transaction().response);
+            let received = parseInt(client.transaction().response.startLine.statusCode, 10);
+            assert.equal(received, expected, "expected response status code");
+        }
     }
 
     startAgents() {
         if (this._startAgentsPromise)
             return this._startAgentsPromise;
 
-        // the client (if any) probably wants to reach the server (if any)
-        if (this._client && this._server && !this._client.request.startLine.uri.address)
-            this._client.request.startLine.uri.address = this._server.address();
+        for (const client of this._clients) {
+            // the client (if any) probably wants to reach the server (if any)
+            if (client && this._server && !client.request.startLine.uri.address)
+                client.request.startLine.uri.address = this._server.address();
 
-        // most proxy tests are done with unique URLs to prevent caching
-        if (this._client && !this._client.request.startLine.uri.hasPath())
-            this._client.request.startLine.uri.makeUnique();
+            // most proxy tests are done with unique URLs to prevent caching
+            if (client && !client.request.startLine.uri.hasPath())
+                client.request.startLine.uri.makeUnique();
+        }
 
         let agents = this._agents();
         assert(agents.length); // a test case cannot work without any agents
@@ -189,8 +209,7 @@ export default class HttpCase {
             agents.push(this._server);
         if (this._proxy)
             agents.push(this._proxy);
-        if (this._client)
-            agents.push(this._client);
+        agents.push(...this._clients);
         return agents;
     }
 }
