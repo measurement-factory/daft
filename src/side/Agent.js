@@ -34,8 +34,8 @@ export default class Agent {
         socket.setEncoding('binary');
         let xactType = Global.Types.getNumberedOrMatched(
             defaultTransactionClass, this.xCount, socket);
-        let xact = new xactType(socket, ...other);
+        let xact = new xactType(...other);
         xact.doneCallback = this._transactionPromiseResolver;
-        xact.start();
+        xact.start(socket);
     }
 }

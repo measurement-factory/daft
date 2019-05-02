@@ -10,14 +10,16 @@ import ResponseParser from "../http/one/ResponseParser";
 import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter";
 import * as Config from "../misc/Config";
 import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
+import assert from "assert";
 
 export default class Transaction {
 
-    constructor(userSocket) {
+    constructor() {
+        assert.strictEqual(arguments.length, 0);
         let myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`starting ${myType} transaction`);
 
-        this.userSocket = userSocket;
+        this.userSocket = null;
         this.originSocket = null;
 
         this.requestParser = null;
@@ -47,7 +49,12 @@ export default class Transaction {
             this.doneCallback(this);
     }
 
-    start() {
+    start(userSocket) {
+        assert.strictEqual(arguments.length, 1);
+        assert(userSocket);
+        assert(!this.userSocket);
+        this.userSocket = userSocket;
+
         this.startServingUser(this.userSocket);
         this.sendRequest();
         // for the case when test plot wants to simulate an "early" response

@@ -6,18 +6,25 @@ import Response from "../Response";
 import StatusLine from "../StatusLine";
 import Body from "../Body";
 import MessageParser from "./MessageParser";
-import { Must } from "../../misc/Gadgets";
+import assert from "assert";
 
 export default class ResponseParser extends MessageParser {
 
-    constructor(transaction, request) {
+    constructor(transaction, aRequest = null) {
         super(transaction);
         this._messageType = Response;
         this._messageKind = "response";
 
-        Must(request !== undefined);
-        this.request = request;
-        this.expectBody = this.request.startLine.method !== "HEAD";
+        this._request = null;
+        if (aRequest)
+            this.request(aRequest);
+    }
+
+    request(aRequest) {
+        assert(aRequest);
+        assert(!this._request);
+        this._request = aRequest;
+        this.expectBody = this._request.startLine.method !== "HEAD";
     }
 
     determineDefaultBody() {
@@ -27,6 +34,8 @@ export default class ResponseParser extends MessageParser {
     }
 
     parseStartLine(raw) {
+        assert(this._request);
+
         let statusLine = new StatusLine();
 
         let match = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/.exec(raw);

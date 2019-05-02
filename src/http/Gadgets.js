@@ -67,7 +67,8 @@ export function AssertForwardedHeaderFieldValue(sent, received, context) {
 
 // assert if the received message differs from the sent one too much
 export function AssertForwardedMessage(sent, received, kind) {
-    assert(sent && received);
+    assert(sent);
+    assert(received);
 
     assert.equal(!sent.startLine, !received.startLine);
     if (sent.startLine) {

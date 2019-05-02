@@ -28,4 +28,8 @@ export default class Request extends Message {
         if ('ims' in ifs)
             this.header.add("If-Modified-Since", ifs.ims.toUTCString());
     }
+
+    prefix(messageWriter) {
+        return messageWriter.requestPrefix(this);
+    }
 }

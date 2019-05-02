@@ -49,4 +49,8 @@ export default class Response extends Message {
             super.syncContentLength();
         }
     }
+
+    prefix(messageWriter) {
+        return messageWriter.responsePrefix(this);
+    }
 }
