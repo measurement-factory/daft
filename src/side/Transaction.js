@@ -2,6 +2,7 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import Promise from 'bluebird';
 import * as MessageWriter from "../http/one/MessageWriter";
 import * as Gadgets from "../misc/Gadgets";
 import assert from "assert";
@@ -9,22 +10,37 @@ import assert from "assert";
 // a process of sending and receiving a (request, response) tuple
 // kids define which of those two messages is sent and which is received
 export default class Transaction {
-    constructor(messageOut) {
-        assert.strictEqual(arguments.length, 1);
+    constructor() {
+        assert.strictEqual(arguments.length, 0);
 
         /* kids must set these */
         this.ownerKind = undefined;
         this.peerKind = undefined;
         this.messageOutKind = undefined;
+        this.messageInKind = undefined;
+
+        this._id = Gadgets.UniqueId("xact");
 
         this._startTime = null;
         this.socket = null;
 
         this.messageIn = null; // e.g., Request for server transactions
-        this.messageOut = messageOut ? messageOut.clone() : null;
+        this.messageOut = null; // e.g., Request for client transactions
 
-        this.doneReceiving = false; // incoming message
+        this._blockedSending = false;
+        this._blockedSendingActive = false;
         this.doneSending = null; // Date
+        // a promise to send everything
+        this._sentEverything = new Promise((resolve) => {
+            this._sentEverythingResolver = resolve;
+        });
+
+        this.doneReceiving = null; // Date
+        // a promise to receive everything
+        this._receivedEverything = new Promise((resolve) => {
+            this._receivedEverythingResolver = resolve;
+        });
+
         this.doneCallback = null; // set by the initiator if needed
 
         // Whether this.messageOut has all the details except body content.
@@ -42,6 +58,36 @@ export default class Transaction {
     sentTime() {
         assert(this.doneSending);
         return this.doneSending;
+    }
+
+    sentEverything() {
+        assert(this._sentEverything); // but may not be resolved yet
+        return this._sentEverything;
+    }
+
+    blockSendingUntil(externalEvent, waitingFor) {
+        assert(!this._blockedSending); // not really needed; may simplify triage
+        this._blockedSending = waitingFor;
+        assert(this._blockedSending);
+
+        externalEvent.tap(() => this.unblockSending());
+        console.log(`will block sending ${this.messageOutKind} to ${this._blockedSending}`);
+    }
+
+    unblockSending() {
+        const verb = this._blockedSendingActive ? "resume" : "will no longer block";
+        console.log(`${verb} sending ${this.messageOutKind} after ${this._blockedSending}`);
+        assert(this._blockedSending); // not really needed; may simplify triage
+        this._blockedSending = false;
+        if (this._blockedSendingActive) {
+            this._blockedSendingActive = false;
+            this.send();
+        }
+    }
+
+    receivedEverything() {
+        assert(this._receivedEverything); // but may not be resolved yet
+        return this._receivedEverything;
     }
 
     start(socket) {
@@ -62,10 +108,10 @@ export default class Transaction {
         });
 
         this.socket.on('end', () => {
-            console.log(new Date().toISOString(), `${this.peerKind} disconnected`);
             // assume all 'data' events always arrive before 'end'
-            this.doneReceiving = true;
-            this.checkpoint();
+            if (!this.doneReceiving)
+                this.endReceiving(`${this.peerKind} disconnected`);
+            // else ignore post-message EOF; TODO: Clear this.socket?
         });
 
         this.send();
@@ -105,25 +151,35 @@ export default class Transaction {
         if (!this.messageIn)
             this.messageIn = this.messageParser.message;
 
-        if (!this.messageIn.body || this.messageIn.body.innedAll) {
-            this.doneReceiving = true;
-            this.checkpoint();
-        }
+        if (!this.messageIn.body)
+            this.endReceiving(`got header-only ${this.messageInKind}`);
+        else if (this.messageIn.body.innedAll)
+            this.endReceiving(`got ${this.messageInKind} body`);
     }
 
     send() {
         if (this.doneSending)
             return;
 
+        if (this._blockedSendingActive)
+            return;
+
+        if (this._blockedSending) {
+            this._blockedSendingActive = true;
+            console.log(`not ready to send ${this.messageOutKind}: ${this._blockedSending}`);
+            return;
+        }
+
         let hadHeaders = this._finalizedMessage;
         if (!hadHeaders)
             this.makeMessage();
 
         if (!this._finalizedMessage) {
-            console.log(`not ready to send ${this.messageOutKind}`);
+            console.log(`${this._id} not ready to send ${this.messageOutKind}`);
             assert(!this.doneSending);
             return;
         }
+
 
         assert(this.messageOut);
 
@@ -132,7 +188,7 @@ export default class Transaction {
             Gadgets.SendBytes(this.socket, this.messageOut.prefix(MessageWriter), `${this.messageOutKind} header`, this.logPrefixForSending);
 
             if (!this.messageOut.body) {
-                this.endSending(`sent a bodyless ${this.messageOutKind}`);
+                this.endSending(`${this._id} sent a bodyless ${this.messageOutKind}`);
                 return;
             }
         }
@@ -152,9 +208,19 @@ export default class Transaction {
         console.log(`may send more ${this.messageOutKind} body later`);
     }
 
+    endReceiving(why) {
+        assert(!this.doneReceiving);
+        this.doneReceiving = new Date();
+        console.log(this.doneReceiving.toISOString(), "done receiving:", why);
+        this._receivedEverythingResolver(this);
+        this.checkpoint();
+    }
+
     endSending(why) {
+        assert(!this.doneSending);
         this.doneSending = new Date();
-        console.log(this.doneSending.toISOString(), why);
+        console.log(this.doneSending.toISOString(), this._id, "done sending:", why);
+        this._sentEverythingResolver(this);
         this.checkpoint();
     }
 

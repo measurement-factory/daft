@@ -3,15 +3,23 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import Promise from 'bluebird';
-import * as Global from "../misc/Global";
+import Checker from "../test/Checker";
+import assert from "assert";
 
 export default class Agent {
     constructor() {
+        assert.strictEqual(arguments.length, 0);
+
+        /* kids must set this */
+        this._transaction = undefined;
+
         this.xCount = 0;
 
-        this.transactionPromise = new Promise((resolve) => {
-            this._transactionPromiseResolver = resolve;
+        this.transactionDone = new Promise((resolve) => {
+            this._transactionDoneResolver = resolve;
         });
+
+        this.checks = new Checker();
     }
 
     stop() {
@@ -21,7 +29,8 @@ export default class Agent {
     }
 
     transaction() {
-        return this.transactionPromise.value(); // throws if unresolved
+        assert(this._transaction);
+        return this._transaction;
     }
 
     _stop() {
@@ -29,13 +38,18 @@ export default class Agent {
         return Promise.resolve(this);
     }
 
-    _startTransaction(defaultTransactionClass, socket, ...other) {
+    _startTransaction(socket) {
+        assert.strictEqual(arguments.length, 1);
+
+        if (this._transaction.doneCallback) { // already started one transaction
+            console.log("ignoring an unexpected transaction");
+            socket.destroy();
+            return;
+        }
+
         ++this.xCount;
         socket.setEncoding('binary');
-        let xactType = Global.Types.getNumberedOrMatched(
-            defaultTransactionClass, this.xCount, socket);
-        let xact = new xactType(...other);
-        xact.doneCallback = this._transactionPromiseResolver;
-        xact.start(socket);
+        this._transaction.doneCallback = this._transactionDoneResolver;
+        this._transaction.start(socket);
     }
 }

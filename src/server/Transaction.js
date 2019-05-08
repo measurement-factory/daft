@@ -15,6 +15,7 @@ export default class Transaction extends SideTransaction {
 
     constructor() {
         super(...arguments);
+        this.messageOut = new Response();
 
         this.ownerKind = "server";
         this.peerKind = "client";

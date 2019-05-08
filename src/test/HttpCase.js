@@ -5,10 +5,9 @@
 /* Manages a single case testing an HTTP client, server, and/or proxy. */
 
 import Promise from "bluebird";
+import Checker from "../test/Checker";
 import Client from "../client/Agent";
 import Server from "../server/Agent";
-import Request from "../http/Request";
-import Response from "../http/Response";
 import * as Lifetime from "../misc/Lifetime";
 import { Must } from "../misc/Gadgets";
 import assert from "assert";
@@ -21,7 +20,7 @@ export default class HttpCase {
         this._clients = [];
         this._server = null;
         this._proxy = null;
-        this._checkers = [];
+        this._checks = new Checker();
 
         this._startAgentsPromise = null;
         this._stopAgentsPromise = null;
@@ -36,7 +35,6 @@ export default class HttpCase {
     addClient() {
         assert(!this._runPromise); // do not create agents after run()
         let client = new Client();
-        client.request = new Request();
         this._clients.push(client);
         return client;
     }
@@ -51,6 +49,15 @@ export default class HttpCase {
         return this._clients[0];
     }
 
+    // add (and return) a client, assuming there may be more than one
+    // single-client test cases should use the client() method instead
+    makeClients(count, initializer) {
+        while (--count >= 0) {
+            let client = this.addClient();
+            initializer(client);
+        }
+    }
+
     clients() {
         return this._clients;
     }
@@ -59,7 +66,6 @@ export default class HttpCase {
         if (!this._server) {
             assert(!this._runPromise); // do not create agents after run()
             this._server = new Server();
-            this._server.response = new Response();
         }
         return this._server;
     }
@@ -113,6 +119,10 @@ export default class HttpCase {
         return new Date(this.finishTime().getTime() - this.startTime().getTime());
     }
 
+    clientsSentEverything() {
+        return Promise.all(this._clients.map(client => client.transaction().sentEverything()));
+    }
+
     _begin() {
         Must(!this._startTime);
         this._startTime = new Date();
@@ -128,16 +138,16 @@ export default class HttpCase {
         return Promise.try(() => {
             let transactions = [];
             if (this._server) {
-                console.log("will wait for origin transaction");
-                transactions.push(this._server.transactionPromise);
+                console.log("will wait for the origin transaction to end");
+                transactions.push(this._server.transactionDone);
             }
             if (this._proxy) {
-                console.log("will wait for proxy transaction");
-                transactions.push(this._proxy.transactionPromise);
+                console.log("will wait for the proxy transaction to end");
+                transactions.push(this._proxy.transactionDone);
             }
             if (this._clients.length > 0) {
-                console.log(`will wait for ${this._clients.length} user transaction(s)`);
-                transactions.push(...this._clients.map(client => client.transactionPromise));
+                console.log(`will wait for ${this._clients.length} user agent transaction(s) to end`);
+                transactions.push(...this._clients.map(client => client.transactionDone));
             }
             return Promise.all(transactions);
         });
@@ -149,27 +159,26 @@ export default class HttpCase {
         console.log(`test case took ${this.runtime().getTime()}ms`);
     }
 
-    check(checker) {
-        // simplification: all automatic checks must be set before run()
-        // so that we do not need to guess whether we have to perform the
-        // new checks now or attach them to this._runPromise. The simple
-        // approach may also help with TestCase reuse.
-        assert(!this._runPromise);
-        this._checkers.push(checker);
+    check(futureCheck) {
+        this._checks.add(futureCheck);
     }
 
     _doCheck() {
-        this._checkers.forEach(check => check(this));
+        if (this._server)
+            this._server.checks.run(this._server);
+        if (this._proxy)
+            this._proxy.checks.run(this._proxy);
+        for (const client of this._clients) {
+            client.checks.run(client);
+        }
+        this._checks.run(this);
     }
 
+    // TODO: Call expectStatusCode(200) by default.
     expectStatusCode(expected) {
         assert(this._clients.length);
         for (const client of this._clients) {
-            assert(client);
-            assert(client.transaction());
-            assert(client.transaction().response);
-            let received = parseInt(client.transaction().response.startLine.statusCode, 10);
-            assert.equal(received, expected, "expected response status code");
+            client.expectStatusCode(expected);
         }
     }
 

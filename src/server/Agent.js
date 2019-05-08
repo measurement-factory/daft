@@ -4,6 +4,7 @@
 
 import syncNet from "net";
 import Promise from 'bluebird';
+import assert from "assert";
 import * as Gadgets from "../misc/Gadgets";
 import * as AddressPool from "../misc/AddressPool";
 import Transaction from "./Transaction";
@@ -13,8 +14,11 @@ let asyncNet = Promise.promisifyAll(syncNet);
 
 export default class Agent extends SideAgent {
     constructor() {
-        super(arguments);
-        this.response = null; // optional default for all transactions
+        assert.strictEqual(arguments.length, 0);
+
+        super();
+        this._transaction = new Transaction();
+
         this.server = null; // TCP server to be created in start()
 
         // where to listen for requests (may contain wildcards like '::')
@@ -31,13 +35,17 @@ export default class Agent extends SideAgent {
         return this._reservedListeningAddress;
     }
 
+    get response() {
+        return this._transaction.response;
+    }
+
     start() {
         return Promise.try(() => {
             // start a TCP server
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
-                this._startTransaction(Transaction, userSocket, this.response);
+                this._startTransaction(userSocket);
             });
 
             const addr = Gadgets.FinalizeListeningAddress(this.address());

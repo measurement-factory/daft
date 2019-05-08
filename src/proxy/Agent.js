@@ -4,6 +4,7 @@
 
 import syncNet from "net";
 import Promise from 'bluebird';
+import assert from "assert";
 import * as Config from "../misc/Config";
 import Transaction from "./Transaction";
 import SideAgent from "../side/Agent";
@@ -12,7 +13,11 @@ let asyncNet = Promise.promisifyAll(syncNet);
 
 export default class Agent extends SideAgent {
     constructor() {
-        super(arguments);
+        assert.strictEqual(arguments.length, 0);
+
+        super();
+        this._transaction = new Transaction();
+
         this.server = null; // TCP server to be created in start()
     }
 
@@ -22,7 +27,7 @@ export default class Agent extends SideAgent {
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
-                this._startTransaction(Transaction, userSocket);
+                this._startTransaction(userSocket);
             });
 
             return this.server.listenAsync(Config.ProxyListeningAddress.port,

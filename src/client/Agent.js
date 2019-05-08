@@ -4,6 +4,7 @@
 
 import net from "net";
 import Promise from 'bluebird';
+import assert from "assert";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
@@ -11,12 +12,29 @@ import SideAgent from "../side/Agent";
 
 export default class Agent extends SideAgent {
     constructor() {
-        super(arguments);
-        this.request = null; // optional default for all transactions
+        assert.strictEqual(arguments.length, 0);
+
+        super();
+        this._transaction = new Transaction();
+
         this.socket = null; // connection to be established in start()
         this.localAddress = null;
         this.remoteAddress = null;
         this.nextHopAddress = Config.ProxyListeningAddress;
+    }
+
+    get request() {
+        return this._transaction.request;
+    }
+
+    expectStatusCode(expectedCode) {
+        this.checks.add((client) => {
+            assert(client);
+            assert(client.transaction());
+            assert(client.transaction().response);
+            const receivedCode = parseInt(client.transaction().response.startLine.statusCode, 10);
+            assert.strictEqual(receivedCode, expectedCode);
+        });
     }
 
     start() {
@@ -34,7 +52,7 @@ export default class Agent extends SideAgent {
                 Gadgets.PrettyAddress(this.localAddress),
                 Gadgets.PrettyAddress(this.remoteAddress));
         }).tap(() => {
-            this._startTransaction(Transaction, this.socket, this.request);
+            this._startTransaction(this.socket);
         });
     }
 
