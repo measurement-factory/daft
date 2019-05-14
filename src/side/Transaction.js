@@ -5,6 +5,7 @@
 import Promise from 'bluebird';
 import * as MessageWriter from "../http/one/MessageWriter";
 import * as Gadgets from "../misc/Gadgets";
+import Context from "../misc/Context";
 import assert from "assert";
 
 // a process of sending and receiving a (request, response) tuple
@@ -19,7 +20,7 @@ export default class Transaction {
         this.messageOutKind = undefined;
         this.messageInKind = undefined;
 
-        this._id = Gadgets.UniqueId("xact");
+        this.context = new Context("xact");
 
         this._startTime = null;
         this.socket = null;
@@ -71,18 +72,21 @@ export default class Transaction {
         assert(this._blockedSending);
 
         externalEvent.tap(() => this.unblockSending());
-        console.log(`will block sending ${this.messageOutKind} to ${this._blockedSending}`);
+        this.context.log(`will block sending ${this.messageOutKind} to ${this._blockedSending}`);
     }
 
     unblockSending() {
-        const verb = this._blockedSendingActive ? "resume" : "will no longer block";
-        console.log(`${verb} sending ${this.messageOutKind} after ${this._blockedSending}`);
+        const verb = this._blockedSendingActive ? "resumes" : "will no longer block";
+        this.context.enter(`${verb} sending ${this.messageOutKind} after ${this._blockedSending}`);
+
         assert(this._blockedSending); // not really needed; may simplify triage
         this._blockedSending = false;
         if (this._blockedSendingActive) {
             this._blockedSendingActive = false;
             this.send();
         }
+
+        this.context.exit();
     }
 
     receivedEverything() {
@@ -92,34 +96,38 @@ export default class Transaction {
 
     start(socket) {
         assert.strictEqual(arguments.length, 1);
+
+        assert(!this._startTime);
+        this._startTime = this.context.enter(`${this.ownerKind} transaction started`);
+
         assert(socket);
         assert(!this.socket);
         this.socket = socket;
 
-        assert(!this._startTime);
-        this._startTime = new Date();
-        console.log(this._startTime.toISOString(),
-            `${this.ownerKind} transaction started`);
-
         /* setup event listeners */
 
         this.socket.on('data', data => {
+            this.context.enter();
             this.onReceive(data);
+            this.context.exit();
         });
 
         this.socket.on('end', () => {
+            this.context.enter();
             // assume all 'data' events always arrive before 'end'
             if (!this.doneReceiving)
                 this.endReceiving(`${this.peerKind} disconnected`);
             // else ignore post-message EOF; TODO: Clear this.socket?
+            this.context.exit();
         });
 
         this.send();
+
+        this.context.exit();
     }
 
     finish() {
-        console.log(this._startTime.toISOString(),
-            `${this.ownerKind} transaction ended`);
+        this.context.log(`${this.ownerKind} transaction ended`);
 
         if (this.socket) {
             this.socket.destroy();
@@ -166,7 +174,7 @@ export default class Transaction {
 
         if (this._blockedSending) {
             this._blockedSendingActive = true;
-            console.log(`not ready to send ${this.messageOutKind}: ${this._blockedSending}`);
+            this.context.log(`not ready to send ${this.messageOutKind}: ${this._blockedSending}`);
             return;
         }
 
@@ -175,7 +183,7 @@ export default class Transaction {
             this.makeMessage();
 
         if (!this._finalizedMessage) {
-            console.log(`${this._id} not ready to send ${this.messageOutKind}`);
+            this.context.log(`not ready to send ${this.messageOutKind}`);
             assert(!this.doneSending);
             return;
         }
@@ -188,7 +196,7 @@ export default class Transaction {
             Gadgets.SendBytes(this.socket, this.messageOut.prefix(MessageWriter), `${this.messageOutKind} header`, this.logPrefixForSending);
 
             if (!this.messageOut.body) {
-                this.endSending(`${this._id} sent a bodyless ${this.messageOutKind}`);
+                this.endSending(`sent a bodyless ${this.messageOutKind}`);
                 return;
             }
         }
@@ -205,21 +213,19 @@ export default class Transaction {
             this.endSending(`sent all ${bytesDescription}`);
             return;
         }
-        console.log(`may send more ${this.messageOutKind} body later`);
+        this.context.log(`may send more ${this.messageOutKind} body later`);
     }
 
     endReceiving(why) {
         assert(!this.doneReceiving);
-        this.doneReceiving = new Date();
-        console.log(this.doneReceiving.toISOString(), "done receiving:", why);
+        this.doneReceiving = this.context.log("done receiving:", why);
         this._receivedEverythingResolver(this);
         this.checkpoint();
     }
 
     endSending(why) {
         assert(!this.doneSending);
-        this.doneSending = new Date();
-        console.log(this.doneSending.toISOString(), this._id, "done sending:", why);
+        this.doneSending = this.context.log("done sending:", why);
         this._sentEverythingResolver(this);
         this.checkpoint();
     }
