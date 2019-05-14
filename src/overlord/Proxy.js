@@ -26,11 +26,29 @@ Config.Recognize([
     },
 ]);
 
+// TODO: Make worker port range configurable
+const FirstWorkerPort = 3130; // for _dedicatedWorkerPorts
+
+
 // Configuration (i.e. the set of tuning options) for the Device Under Test.
 // The current _implementation_ is Squid-specific.
 export class DutConfig {
     constructor() {
+        this._workers = null; // no workers directive at all
+        this._dedicatedWorkerPorts = false; // one listening port per worker
         this._memoryCaching = false;
+        this._collapsedForwarding = false;
+    }
+
+    workers(count) {
+        assert(count > 0);
+        this._workers = count;
+    }
+
+    dedicatedWorkerPorts(enable) {
+        assert.strictEqual(arguments.length, 1);
+        assert(enable !== undefined); // for now; can be used for default mode later
+        this._dedicatedWorkerPorts = enable;
     }
 
     memoryCaching(enable) {
@@ -39,23 +57,51 @@ export class DutConfig {
         this._memoryCaching = enable;
     }
 
+    collapsedForwarding(enable) {
+        assert.strictEqual(arguments.length, 1);
+        assert(enable !== undefined); // for now; can be used for default mode later
+        this._collapsedForwarding = enable;
+    }
+
     // returns ready-to-use configuration text
     make() {
+        const kid = "kid${process_number}";
         const cfg = `
             # Daft-generated configuration
             http_port 3128
+            ${this._workersCfg()}
             http_access allow localhost
             dns_nameservers 127.0.0.1
             negative_dns_ttl 1 second
+            ${this._collapsedForwardingCfg()}
             ${this._memoryCachingCfg()}
             shutdown_lifetime 1 seconds
-            visible_hostname squid.daft.test
+            visible_hostname ${kid}.squid.daft.test
             coredump_dir /usr/local/squid/var/logs/overlord
             logformat xsquid %err_code/%err_detail ... %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
-            access_log stdio:access.log xsquid
-            cache_log cache.log
+            access_log stdio:access-${kid}.log xsquid
+            cache_log cache-${kid}.log
         `;
         return this._trimCfg(cfg);
+    }
+
+    // result[0] (i.e. the first address) is the default port shared by all workers
+    // result[k] is the http_port dedicated to SMP worker #k (k >= 1)
+    workerListeningAddresses() {
+        assert(this._workers > 0);
+        let addresses = [{
+            host: Config.ProxyListeningAddress.host,
+            port: Config.ProxyListeningAddress.port
+        }];
+        // all workers listen on the primary port (e.g., 3128), but _dedicatedWorkerPorts
+        // adds a unique listening port to each worker (e.g., 3131, 3132, ...)
+        for (let worker = 1; worker <= this._workers; ++worker) {
+            addresses.push({
+                host: Config.ProxyListeningAddress.host,
+                port: FirstWorkerPort + worker
+            });
+        }
+        return addresses;
     }
 
     _memoryCachingCfg() {
@@ -63,6 +109,25 @@ export class DutConfig {
         const cfg = `
             cache_mem ${memCacheSize}
         `;
+        return this._trimCfg(cfg);
+    }
+
+    _collapsedForwardingCfg() {
+        if (this._collapsedForwarding === undefined)
+            return '';
+        return `collapsed_forwarding ${this._collapsedForwarding ? 'on' : 'off'}`;
+    }
+
+    _workersCfg() {
+        if (!this._workers)
+            return '';
+
+        let cfg = `workers ${this._workers}\n`;
+        if (this._dedicatedWorkerPorts) {
+            const dedicatedPortPrefix = Math.trunc(FirstWorkerPort / 10);
+            const dedicatedPortSuffix = '${process_number}';
+            cfg += `http_port ${dedicatedPortPrefix}${dedicatedPortSuffix}\n`;
+        }
         return this._trimCfg(cfg);
     }
 
