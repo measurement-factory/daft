@@ -78,7 +78,7 @@ export class DutConfig {
             shutdown_lifetime 1 seconds
             visible_hostname ${kid}.squid.daft.test
             coredump_dir /usr/local/squid/var/logs/overlord
-            logformat xsquid %err_code/%err_detail ... %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
+            logformat xsquid %err_code/%err_detail %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
             access_log stdio:access-${kid}.log xsquid
             cache_log cache-${kid}.log
         `;
