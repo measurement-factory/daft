@@ -28,13 +28,8 @@ export default class Agent extends SideAgent {
     }
 
     expectStatusCode(expectedCode) {
-        this.checks.add((client) => {
-            assert(client);
-            assert(client.transaction());
-            assert(client.transaction().response);
-            const receivedCode = parseInt(client.transaction().response.startLine.statusCode, 10);
-            assert.strictEqual(receivedCode, expectedCode);
-        });
+        const receivedCode = parseInt(this.transaction().response.startLine.statusCode, 10);
+        assert.strictEqual(receivedCode, expectedCode);
     }
 
     start() {
