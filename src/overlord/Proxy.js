@@ -37,7 +37,14 @@ export class DutConfig {
         this._workers = null; // no workers directive at all
         this._dedicatedWorkerPorts = false; // one listening port per worker
         this._memoryCaching = false;
+        this._diskCaching = false;
         this._collapsedForwarding = false;
+        this._listeningPorts = [];
+    }
+
+    // DUT listening ports; they may be difficult for Overlord to infer
+    listeningPorts() {
+        return this._listeningPorts;
     }
 
     workers(count) {
@@ -57,6 +64,12 @@ export class DutConfig {
         this._memoryCaching = enable;
     }
 
+    diskCaching(enable) {
+        assert.strictEqual(arguments.length, 1);
+        assert(enable !== undefined); // for now; can be used for default mode later
+        this._diskCaching = enable;
+    }
+
     collapsedForwarding(enable) {
         assert.strictEqual(arguments.length, 1);
         assert(enable !== undefined); // for now; can be used for default mode later
@@ -65,16 +78,18 @@ export class DutConfig {
 
     // returns ready-to-use configuration text
     make() {
+        this._rememberListeningPort(3128);
         const kid = "kid${process_number}";
         const cfg = `
             # Daft-generated configuration
             http_port 3128
             ${this._workersCfg()}
+            ${this._collapsedForwardingCfg()}
+            ${this._memoryCachingCfg()}
+            ${this._diskCachingCfg()}
             http_access allow localhost
             dns_nameservers 127.0.0.1
             negative_dns_ttl 1 second
-            ${this._collapsedForwardingCfg()}
-            ${this._memoryCachingCfg()}
             shutdown_lifetime 1 seconds
             visible_hostname ${kid}.squid.daft.test
             coredump_dir /usr/local/squid/var/logs/overlord
@@ -105,9 +120,21 @@ export class DutConfig {
     }
 
     _memoryCachingCfg() {
-        const memCacheSize = this._memoryCaching ? "100 MB" : "0";
+        const cacheSize = this._memoryCaching ? "100 MB" : "0";
         const cfg = `
-            cache_mem ${memCacheSize}
+            cache_mem ${cacheSize}
+        `;
+        return this._trimCfg(cfg);
+    }
+
+    _diskCachingCfg() {
+        if (!this._diskCaching)
+            return '';
+
+        const kid = "kid${process_number}";
+        const cfg = `
+            cache_dir rock /usr/local/squid/var/cache/overlord/rock 100
+            cache_store_log stdio:store-${kid}.log
         `;
         return this._trimCfg(cfg);
     }
@@ -127,8 +154,16 @@ export class DutConfig {
             const dedicatedPortPrefix = Math.trunc(FirstWorkerPort / 10);
             const dedicatedPortSuffix = '${process_number}';
             cfg += `http_port ${dedicatedPortPrefix}${dedicatedPortSuffix}\n`;
+            for (var worker = 1; worker <= this._workers; ++worker) {
+                const port = dedicatedPortPrefix*10 + worker;
+                this._rememberListeningPort(port);
+            }
         }
         return this._trimCfg(cfg);
+    }
+
+    _rememberListeningPort(port) {
+        this._listeningPorts.push(port);
     }
 
     // makes cfg text pretty
@@ -142,6 +177,7 @@ export class DutConfig {
     }
 }
 
+// proxy instance/service manager
 export class ProxyOverlord {
     constructor(cfg) {
         assert.strictEqual(arguments.length, 1);
@@ -190,6 +226,9 @@ export class ProxyOverlord {
                 }
             };
 
+            options.headers['Overlord-Listening-Ports'] =
+                this._dutConfig.listeningPorts().join(",");
+
             // disable request chunking
             if (requestHasBody)
                 options.headers['Content-Length'] = requestBody.length;
@@ -198,7 +237,7 @@ export class ProxyOverlord {
                 const responseBody = [];
                 response.on('data', chunk => responseBody.push(chunk));
                 response.on('end', () => {
-                    assert(response.statusCode === 200);
+                    assert.strictEqual(response.statusCode, 200);
                     resolve(responseBody.join(''));
                 });
             });
