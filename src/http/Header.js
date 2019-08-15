@@ -84,6 +84,25 @@ export default class Header {
         return codings.indexOf("chunked") >= 0; // XXX: imprecise!
     }
 
+    addWarning(code, text = "warning text") {
+        this.add("Warning", `${code} daft-host "${text}"`);
+    }
+
+    hasWarning(code) {
+        const name = 'Warning';
+        if (this.has(name)) {
+            const values = this.values(name);
+            for (let v of values) {
+                const match = /^([0-9]+) /.exec(v);
+                if (match) {
+                    if (code === Number.parseInt(match[1], 10))
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
     has(name) {
         let id = Field.Id(name);
         for (let field of this.fields) {
