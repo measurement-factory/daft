@@ -184,6 +184,7 @@ export class ProxyOverlord {
         assert(cfg);
         this._dutConfig = cfg;
         this._start = null; // future start() promise
+        this._oldHealth = null; // proxy status during the previous _remoteCall()
     }
 
     async noteStartup() {
@@ -191,6 +192,7 @@ export class ProxyOverlord {
 
         if (Config.DutAtStartup !== "reset") {
             assert.strictEqual(Config.DutAtStartup, "as-is");
+            await this._remoteCall("/check");
             return;
         }
 
@@ -204,6 +206,7 @@ export class ProxyOverlord {
     async noteShutdown() {
         if (Config.DutAtShutdown !== "stopped") {
             assert.strictEqual(Config.DutAtShutdown, "as-is");
+            await this._remoteCall("/check");
             return;
         }
 
@@ -234,11 +237,21 @@ export class ProxyOverlord {
                 options.headers['Content-Length'] = requestBody.length;
 
             const request = http.request(options, (response) => {
-                const responseBody = [];
-                response.on('data', chunk => responseBody.push(chunk));
+                const responseBodyChunks = [];
+                response.on('data', chunk => responseBodyChunks.push(chunk));
                 response.on('end', () => {
                     assert.strictEqual(response.statusCode, 200);
-                    resolve(responseBody.join(''));
+
+                    const rawBody = responseBodyChunks.join('');
+                    const health = JSON.parse(rawBody);
+                    const oldProblems = this._oldHealth ? this._oldHealth.problems : "";
+                    const newProblems = health.problems.startsWith(oldProblems) ?
+                        health.problems.substring(oldProblems.length) : health.problems;
+                    if (newProblems.length)
+                        throw new Error(`proxy-reported problem(s):\n${newProblems}`);
+                    this._oldHealth = health;
+
+                    resolve(true);
                 });
             });
 
