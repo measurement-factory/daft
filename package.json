@@ -1,4 +1,9 @@
 {
+  "name": "daft",
+  "version": "1.0.210",
+  "main": "./src/cli/daft.js",
+  "author": "The Measurement Factory",
+  "license": "Apache-2.0",
   "devDependencies": {
     "babel-eslint": "^10.0.1",
     "eslint": "^5.15.3"
@@ -8,5 +13,10 @@
     "esm": "^3.2.20",
     "optionator": "^0.8.2"
   },
-  "license": "Apache-2.0"
+  "files": [
+    "Makefile",
+    "README.md",
+    "src",
+    "tests"
+  ]
 }
