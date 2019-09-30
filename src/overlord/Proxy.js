@@ -121,9 +121,13 @@ export class DutConfig {
 
     _memoryCachingCfg() {
         const cacheSize = this._memoryCaching ? "100 MB" : "0";
-        const cfg = `
+        let cfg = `
             cache_mem ${cacheSize}
         `;
+        // Avoid "WARNING: disk-cache maximum object size is too large for mem-cache"
+        // TODO: The proxy should not warn about its own defaults!
+        if (this._memoryCaching)
+            cfg += `maximum_object_size_in_memory 4 MB`;
         return this._trimCfg(cfg);
     }
 
