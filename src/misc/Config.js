@@ -65,7 +65,7 @@ let _CliOptions = [
     {
         option: "origin-authority",
         type: "{host: String, port: Number}",
-        default: `{host: "localhost", port: ${OriginAuthority.port}}`,
+        default: `{host: ${OriginAuthority.host}, port: ${OriginAuthority.port}}`,
         description: "ultimate request destination",
     },
 ];
