@@ -28,8 +28,12 @@ export default class Transaction {
         this.messageIn = null; // e.g., Request for server transactions
         this.messageOut = null; // e.g., Request for client transactions
 
-        this._blockedSending = false;
-        this._blockedSendingActive = false;
+        // _blockSending() sets message part blocks
+        this._sendingBlocks = {
+            headers: null,
+            body: null
+        };
+
         this.doneSending = null; // Date
         // a promise to send everything
         this._sentEverything = new Promise((resolve) => {
@@ -37,6 +41,10 @@ export default class Transaction {
         });
 
         this.doneReceiving = null; // Date
+        // a promise to receive headers
+        this._receivedHeaders = new Promise((resolve) => {
+            this._receivedHeadersResolver = resolve;
+        });
         // a promise to receive everything
         this._receivedEverything = new Promise((resolve) => {
             this._receivedEverythingResolver = resolve;
@@ -67,26 +75,59 @@ export default class Transaction {
     }
 
     blockSendingUntil(externalEvent, waitingFor) {
-        assert(!this._blockedSending); // not really needed; may simplify triage
-        this._blockedSending = waitingFor;
-        assert(this._blockedSending);
-
-        externalEvent.tap(() => this.unblockSending());
-        this.context.log(`will block sending ${this.messageOutKind} to ${this._blockedSending}`);
+        this._blockSending('headers', externalEvent, waitingFor);
     }
 
-    unblockSending() {
-        const verb = this._blockedSendingActive ? "resumes" : "will no longer block";
-        this.context.enter(`${verb} sending ${this.messageOutKind} after ${this._blockedSending}`);
+    blockSendingBodyUntil(externalEvent, waitingFor) {
+        this._blockSending('body', externalEvent, waitingFor);
+    }
 
-        assert(this._blockedSending); // not really needed; may simplify triage
-        this._blockedSending = false;
-        if (this._blockedSendingActive) {
-            this._blockedSendingActive = false;
-            this.send();
+    _blockSending(part, externalEvent, waitingFor) {
+        assert(part in this._sendingBlocks); // valid message part name
+        assert(!this._sendingBlocks[part]); // not really needed; may simplify triage
+        const block = {
+            what: `${this.messageOutKind} ${part}`,
+            waitingFor: waitingFor,
+            active: false // nobody is waiting for this block to be removed yet
+        };
+        this._sendingBlocks[part] = block;
+        this.context.log(`will block sending ${block.what} to ${block.waitingFor}`);
+        externalEvent.tap(() => this._unblockSending(part));
+    }
+
+    _unblockSending(part) {
+        assert(part in this._sendingBlocks); // valid message part name
+        const block = this._sendingBlocks[part];
+        assert(block);
+
+        const verb = block.active ? "resumes" : "will no longer block";
+        this.context.enter(`${verb} sending ${block.what} after ${block.waitingFor}`);
+        this._sendingBlocks[part] = null;
+        if (block.active) {
+            block.active = false;
+            this.send(); // may block again
         }
-
         this.context.exit();
+    }
+
+    _allowedToSend(part) {
+        assert(part in this._sendingBlocks); // valid message part name
+        const block = this._sendingBlocks[part];
+
+        if (!block)
+            return true; // never configured
+
+        if (block.active)
+            return false; // configured and already activated
+
+        block.active = true;
+        this.context.log(`not ready to send ${block.what}: ${block.waitingFor}`);
+        return false; // configured and now activated
+    }
+
+    receivedHeaders() {
+        assert(this._receivedHeaders); // but may not be resolved yet
+        return this._receivedHeaders;
     }
 
     receivedEverything() {
@@ -156,8 +197,10 @@ export default class Transaction {
         if (!this.messageParser.message)
             return; // have not found the end of headers yet
 
-        if (!this.messageIn)
+        if (!this.messageIn) {
             this.messageIn = this.messageParser.message;
+            this._endReceivingHeaders();
+        }
 
         if (!this.messageIn.body)
             this.endReceiving(`got header-only ${this.messageInKind}`);
@@ -169,14 +212,8 @@ export default class Transaction {
         if (this.doneSending)
             return;
 
-        if (this._blockedSendingActive)
+        if (!this._allowedToSend('headers'))
             return;
-
-        if (this._blockedSending) {
-            this._blockedSendingActive = true;
-            this.context.log(`not ready to send ${this.messageOutKind}: ${this._blockedSending}`);
-            return;
-        }
 
         let hadHeaders = this._finalizedMessage;
         if (!hadHeaders)
@@ -201,6 +238,9 @@ export default class Transaction {
             }
         }
 
+        if (!this._allowedToSend('body'))
+            return;
+
         assert(this.messageOut.body);
         if (!this._bodyEncoder)
             this._bodyEncoder = MessageWriter.bodyEncoder(this.messageOut);
@@ -216,10 +256,19 @@ export default class Transaction {
         this.context.log(`may send more ${this.messageOutKind} body later`);
     }
 
+    _endReceivingHeaders() {
+        assert(this._receivedHeadersResolver);
+        this._receivedHeadersResolver(this);
+        this._receivedHeadersResolver = null;
+        // no this.checkpoint() because it does not depend on headers
+    }
+
     endReceiving(why) {
         assert(!this.doneReceiving);
         this.doneReceiving = this.context.log("done receiving:", why);
         this._receivedEverythingResolver(this);
+        if (this._receivedHeadersResolver)
+            this._endReceivingHeaders();
         this.checkpoint();
     }
 
