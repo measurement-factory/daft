@@ -40,6 +40,7 @@ export class DutConfig {
         this._diskCaching = false;
         this._collapsedForwarding = false;
         this._listeningPorts = [];
+        this._customDirectives = [];
     }
 
     // DUT listening ports; they may be difficult for Overlord to infer
@@ -76,6 +77,14 @@ export class DutConfig {
         this._collapsedForwarding = enable;
     }
 
+    // Adds a squid.conf directive that is expected to be used by only one test
+    // and, hence, is not worth supporting via a directive-specific method.
+    custom(directive) {
+        assert.strictEqual(arguments.length, 1);
+        assert(directive !== undefined);
+        this._customDirectives.push(directive);
+    }
+
     // returns ready-to-use configuration text
     make() {
         this._rememberListeningPort(3128);
@@ -87,6 +96,7 @@ export class DutConfig {
             ${this._collapsedForwardingCfg()}
             ${this._memoryCachingCfg()}
             ${this._diskCachingCfg()}
+            ${this._customCfg()}
             http_access allow localhost
             dns_nameservers 127.0.0.1
             negative_dns_ttl 1 second
@@ -163,6 +173,13 @@ export class DutConfig {
                 this._rememberListeningPort(port);
             }
         }
+        return this._trimCfg(cfg);
+    }
+
+    _customCfg() {
+        let cfg = '';
+        for (let directive of this._customDirectives)
+            cfg += `${directive}\n`;
         return this._trimCfg(cfg);
     }
 
