@@ -135,6 +135,10 @@ export default class Header {
         this._raw = null;
     }
 
+    addMany(...args) {
+        args.map(v => this.add(v));
+    }
+
     addByDefault(...args) {
         let field = this._argsToField(...args);
         if (!this.has(field.name))
