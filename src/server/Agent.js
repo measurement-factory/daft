@@ -75,7 +75,7 @@ export default class Agent extends SideAgent {
     listenAt(address) {
         Gadgets.Must(address);
         this._requestedListeningAddress = address;
-        console.log("Server plans to use listening address %j", this._requestedListeningAddress);
+        console.log("Server plans to use listening address %O", this._requestedListeningAddress);
     }
 
     _reserveListeningAddress() {
@@ -83,12 +83,12 @@ export default class Agent extends SideAgent {
         Gadgets.Must(!this._reservedListeningAddress);
         this._reservedListeningAddress =
             AddressPool.ReserveListeningAddress();
-        console.log("Server locks listening address %j", this._reservedListeningAddress);
+        console.log("Server locks listening address %O", this._reservedListeningAddress);
     }
 
     _releaseListeningAddress() {
         if (this._reservedListeningAddress) {
-            console.log("Server unlocks listening address %j", this._reservedListeningAddress);
+            console.log("Server unlocks listening address %O", this._reservedListeningAddress);
             AddressPool.ReleaseListeningAddress(this._reservedListeningAddress);
             this._reservedListeningAddress = null;
         }
@@ -97,12 +97,12 @@ export default class Agent extends SideAgent {
     _startedListening() {
         Gadgets.Must(!this._actualListeningAddress);
         this._actualListeningAddress = this.server.address();
-        console.log("Server is listening on %j", this._actualListeningAddress);
+        console.log("Server is listening on %O", this._actualListeningAddress);
     }
 
     _stoppedListening() {
         Gadgets.Must(this._actualListeningAddress);
-        console.log("Server stopped listening on %j", this._actualListeningAddress);
+        console.log("Server stopped listening on %O", this._actualListeningAddress);
         this._actualListeningAddress = null;
         this._releaseListeningAddress();
     }

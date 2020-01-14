@@ -32,7 +32,7 @@ export default class Agent extends SideAgent {
 
             return this.server.listenAsync(Config.ProxyListeningAddress.port,
                 Config.ProxyListeningAddress.host).tap(() => {
-                    console.log("Proxy is listening on %j", this.server.address());
+                    console.log("Proxy is listening on %O", this.server.address());
                 });
         });
     }
@@ -41,7 +41,7 @@ export default class Agent extends SideAgent {
         if (this.server && this.server.address()) {
             let savedAddress = this.server.address();
             return this.server.closeAsync().tap(() => {
-                console.log("Proxy stopped listening on %j", savedAddress);
+                console.log("Proxy stopped listening on %O", savedAddress);
             }).then(super._stop);
         }
         return super._stop();
