@@ -35,15 +35,20 @@ export default class Encoder {
     finish(data) {
         const encodedData = this.encode(data);
         this._finished = true;
+        this._reportCompletion();
         return encodedData;
     }
 
-    // describes encoded bytes
-    describeBytes(messagePart) {
-        return `${this._outSize} ${messagePart} bytes (${this._inSize} bytes before ${this.codingName} encoding)`;
+    outputSize() {
+        return this._outSize;
     }
 
     _encode(data) {
         Must(false, `pure virtual: kids must override to encode ${data}`);
+    }
+
+    _reportCompletion() {
+        console.log(`${this.codingName}-encoded all ${this._inSize} bytes`);
+        console.log(`produced ${this._outSize} ${this.codingName}-encoded bytes`);
     }
 }

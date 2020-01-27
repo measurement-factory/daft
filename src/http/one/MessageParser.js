@@ -60,8 +60,7 @@ export default class MessageParser {
         this._raw = match[4]; // body [prefix] or an empty string
 
         const parsed = match[1] + match[2] + match[3];
-        console.log(`parsed ${parsed.length} ${this._messageKind} header bytes:\n` +
-            PrettyMime(this.logPrefix, parsed));
+        console.log(`parsed ${this._messageKind} header` + PrettyMime(this.logPrefix, parsed));
 
         this.determineBodyLength();
     }
@@ -159,22 +158,26 @@ export default class MessageParser {
         this.message.body.in(decodedBody);
         this._raw = ""; // the decoder may keep any unparsed leftovers
 
+        if (this._bodyDecoder.decodedAll())
+            this.message.body.innedAll = true;
+
+        let reportedAll = false;
+
         // log body parsing progress, distinguishing Config.LogBodies
         // default/undefined value (log overall progress but not body contents)
         // from its zero value (do not log overall progress either).
         const parsedLength = decodedBody.length;
         if (parsedLength && Config.LogBodies !== 0) {
-            const suffix = Config.LogBodies ?
-                ":\n" + PrettyBody(this.logPrefix, decodedBody) :
-                "";
-            const bytesDescription = this._bodyDecoder.describeBytes(`${this._messageKind} body`);
-            console.log(`parsed ${bytesDescription} so far${suffix}`);
+            const parsedAllNow = this.message.body.innedAll &&
+                decodedBody.length === this._bodyDecoder.outputSize();
+            const parsedThing = parsedAllNow ?
+                `the entire ${this._messageKind} body`:
+                `a piece of the ${this._messageKind} body`;
+            console.log(`parsed ${parsedThing}` + PrettyBody(this.logPrefix, decodedBody));
+            reportedAll = parsedAllNow;
         }
 
-        if (this._bodyDecoder.decodedAll()) {
-            this.message.body.innedAll = true;
-            const bytesDescription = this._bodyDecoder.describeBytes(`${this._messageKind} body`);
-            console.log(`parsed all ${bytesDescription}`);
-        }
+        if (this.message.body.innedAll && !reportedAll)
+            console.log(`parsed the entire ${this._messageKind} body`);
     }
 }

@@ -22,6 +22,10 @@ export default class Decoder {
         Must(false, `pure virtual: kids must override`);
     }
 
+    outputSize() {
+        return this._outSize;
+    }
+
     decode(data) {
         Must(!this.decodedAll());
 
@@ -29,6 +33,10 @@ export default class Decoder {
         this._raw += data;
         const decoded = this._decode();
         this._outSize += decoded.length;
+
+        if (this.decodedAll())
+            this._reportCompletion();
+
         return decoded;
     }
 
@@ -36,12 +44,13 @@ export default class Decoder {
         return this._raw;
     }
 
-    // describes decoded bytes
-    describeBytes(messagePart) {
-        return `${this._inSize} ${messagePart} bytes (${this._outSize} bytes after ${this.codingName} decoding)`;
-    }
-
     _decode() {
         Must(false, `pure virtual: kids must override`);
     }
+
+    _reportCompletion() {
+        console.log(`decoded all ${this._inSize} ${this.codingName}-encoded bytes`);
+        console.log(`produced ${this._outSize} decoded bytes`);
+    }
+
 }

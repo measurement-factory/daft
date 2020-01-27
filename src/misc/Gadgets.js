@@ -12,9 +12,16 @@ export function Must(condition, ...args) {
         throw new Error(`assertion failure: ${condition}${extraInfo}`);
 }
 
+// the always-present leading part of PrettyMime() and PrettyBody() output
+function _PrettyIntro(data) {
+    return ` [${data.length} bytes]`;
+}
+
 export function PrettyMime(prefix, data) {
+    let out = _PrettyIntro(data);
+
     if (!data.length)
-        return '';
+        return out;
 
     if (prefix === undefined || prefix === null)
         prefix = "";
@@ -27,13 +34,15 @@ export function PrettyMime(prefix, data) {
     text = text.replace(/^./mg, "\t" + prefix + "$&");
     if (!text.endsWith("\n"))
         text += "\n";
-    return "\n" + text;
+    out += ":\n\n" + text;
+    return out;
 }
 
 // currently abusing PrettyMime() to format bodies, but that may change
 export function PrettyBody(prefix, rawBody) {
-    Must(Config.LogBodies); // may be relaxed later
-    return rawBody.length ? PrettyMime(prefix, rawBody) : "";
+    if (!Config.LogBodies)
+        return _PrettyIntro(rawBody);
+    return PrettyMime(prefix, rawBody);
 }
 
 // either PrettyAddress({host, port})
@@ -96,28 +105,15 @@ export function LocalAddress(socket) {
 
 // to avoid dumping "prettified" bytes on console, omit logPrefix
 // TODO: Add our own socket wrapper to store logPrefix and ensure binary output?
-export function SendBytes(socket, bytes, description, logPrefix) {
+export function SendBytes(socket, bytes, description) {
+    Must(arguments.length === 3);
     // bytes must be a "binary" string for the binary conversion in write() to work;
     // for example, the following writes just one byte: write("\u2028", 'binary')
     Must(Buffer(bytes, "binary").toString("binary") === bytes);
     // Even though bytes are in binary format, we must specify "binary" explicitly
     // to avoid *default* conversion to utf8 (that will not work for a binary string!).
     socket.write(bytes, 'binary');
-
-    let toLog = DescribeSocketIo(socket, `sending ${bytes.length} ${description} bytes to`);
-
-    // add pretty bytes if needed
-    if (bytes.length && logPrefix !== undefined && logPrefix !== null) {
-        let detail = "";
-        if (description.includes("header"))
-            detail = PrettyMime(logPrefix, bytes);
-        else if (Config.LogBodies && description.includes("body"))
-            detail = PrettyBody(logPrefix, bytes);
-
-        if (detail.length)
-            toLog += ":\n" + detail;
-    }
-    console.log(toLog);
+    console.log(DescribeSocketIo(socket, `is sending ${bytes.length} ${description} bytes to`));
 }
 
 export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {

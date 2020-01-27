@@ -227,33 +227,52 @@ export default class Transaction {
 
 
         assert(this.messageOut);
+        const out = this._makeOut(!hadHeaders);
 
-        if (!hadHeaders) {
-            // send message headers once we got them
-            Gadgets.SendBytes(this.socket, this.messageOut.prefix(MessageWriter), `${this.messageOutKind} header`, this.logPrefixForSending);
+        if (out.length)
+            Gadgets.SendBytes(this.socket, out, this.messageOutKind);
 
-            if (!this.messageOut.body) {
-                this.endSending(`sent a bodyless ${this.messageOutKind}`);
-                return;
-            }
+        if (!this.messageOut.body) {
+            this.endSending(`sent a bodyless ${this.messageOutKind}`);
+            return;
+        }
+
+        if (this.messageOut.body.outedAll()) {
+            this.endSending(`sent the entire ${this.messageOutKind} body`);
+            return;
         }
 
         if (!this._allowedToSend('body'))
             return;
 
-        assert(this.messageOut.body);
-        if (!this._bodyEncoder)
-            this._bodyEncoder = MessageWriter.bodyEncoder(this.messageOut);
-        const out = this._bodyEncoder.encodeBody(this.messageOut.body);
-        if (out.length)
-            Gadgets.SendBytes(this.socket, out, `${this.messageOutKind} body`, this.logPrefixForSending);
-
-        if (this.messageOut.body.outedAll()) {
-            const bytesDescription = this._bodyEncoder.describeBytes(`${this.messageOutKind} body`);
-            this.endSending(`sent all ${bytesDescription}`);
-            return;
-        }
         this.context.log(`may send more ${this.messageOutKind} body later`);
+    }
+
+    _makeOut(callerWantsHeaders) {
+        let out = "";
+
+        if (callerWantsHeaders) {
+            const hdrOut = this.messageOut.prefix(MessageWriter);
+            console.log(`will send ${this.messageOutKind} header` +
+                Gadgets.PrettyMime(this.logPrefixForSending, hdrOut));
+            out += hdrOut;
+        }
+
+        if (this.messageOut.body && this._allowedToSend('body')) {
+            if (!this._bodyEncoder)
+                this._bodyEncoder = MessageWriter.bodyEncoder(this.messageOut);
+            const bodyOut = this._bodyEncoder.encodeBody(this.messageOut.body);
+            out += bodyOut;
+
+            const madeAllNow = this.messageOut.body.outedAll() &&
+                bodyOut.length === this._bodyEncoder.outputSize();
+            const madeThing = madeAllNow ?
+                `the entire ${this.messageOutKind} body`:
+                `a piece of the ${this.messageOutKind} body`;
+            console.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
+        }
+
+        return out;
     }
 
     _endReceivingHeaders() {

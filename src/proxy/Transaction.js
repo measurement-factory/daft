@@ -9,7 +9,7 @@ import RequestParser from "../http/one/RequestParser";
 import ResponseParser from "../http/one/ResponseParser";
 import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter";
 import * as Config from "../misc/Config";
-import { Must, SendBytes, ReceivedBytes } from "../misc/Gadgets";
+import { Must, SendBytes, ReceivedBytes, PrettyMime, PrettyBody } from "../misc/Gadgets";
 import assert from "assert";
 
 export default class Transaction {
@@ -120,7 +120,7 @@ export default class Transaction {
         } catch (error) {
             console.log("request parsing error:", error.message);
             this.ignoreUserData = "request parsing error";
-            SendBytes(this.userSocket, this.generateErrorResponse(400), "error response", "c< ");
+            SendBytes(this.userSocket, this.generateErrorResponse(400), "error response");
             this.userSocket.end();
             return;
         }
@@ -151,21 +151,33 @@ export default class Transaction {
             return;
         }
 
+        let out = "";
+        const logPrefix = ">s ";
+
         if (!this.originSocket) {
             this.adaptedRequest.finalize();
             this.startConnectingToOrigin();
 
+            const hdrOut = requestPrefix(this.adaptedRequest);
+            out += hdrOut;
             // when finished connecting
-            SendBytes(this.originSocket, requestPrefix(this.adaptedRequest), "request header", ">s ");
+            console.log(`will send request header` + PrettyMime(logPrefix, hdrOut));
         }
 
         if (this.adaptedRequest.body) {
             if (!this._originBodyEncoder)
                 this._originBodyEncoder = bodyEncoder(this.adaptedRequest);
-            const out = this._originBodyEncoder.encodeBody(this.adaptedRequest.body);
-            // now or when finished connecting
-            SendBytes(this.originSocket, out, "request body", ">s ");
+            const bodyOut = this._originBodyEncoder.encodeBody(this.adaptedRequest.body);
+            out += bodyOut;
+
+            const madeAllNow = this.adaptedRequest.body.outedAll() &&
+                bodyOut.length === this._originBodyEncoder.outputSize();
+            const bodyDescription = madeAllNow ? "the entire" : "a piece of the";
+            console.log(`will send ${bodyDescription} request body` + PrettyBody(logPrefix, bodyOut));
         }
+
+        if (out.length)
+            SendBytes(this.originSocket, out, "request");
     }
 
     adaptRequest() {
@@ -223,7 +235,7 @@ export default class Transaction {
             console.log("response parsing error:", error.message);
             this.ignoreOriginData = "response parsing error";
             // XXX: We might be writing or have written another adapted response already
-            SendBytes(this.userSocket, this.generateErrorResponse(502), "error response", "c< ");
+            SendBytes(this.userSocket, this.generateErrorResponse(502), "error response");
             this.userSocket.end();
             return;
         }
@@ -253,18 +265,31 @@ export default class Transaction {
             return;
         }
 
+        let out = "";
+        const logPrefix = "c< ";
+
         if (!this.responseHeadersSent) {
             this.adaptedResponse.finalize();
             this.responseHeadersSent = true;
-            SendBytes(this.userSocket, responsePrefix(this.adaptedResponse), "response header", "c< ");
+            const hdrOut = responsePrefix(this.adaptedResponse);
+            out += hdrOut;
+            console.log(`will send response header` + PrettyMime(logPrefix, hdrOut));
         }
 
         if (this.adaptedResponse.body) {
             if (!this._userBodyEncoder)
                 this._userBodyEncoder = bodyEncoder(this.adaptedResponse);
-            const out = this._userBodyEncoder.encodeBody(this.adaptedResponse.body);
-            SendBytes(this.userSocket, out, "response body", ">s ");
+            const bodyOut = this._userBodyEncoder.encodeBody(this.adaptedResponse.body);
+            out += bodyOut;
+
+            const madeAllNow = this.adaptedResponse.body.outedAll() &&
+                bodyOut.length === this._userBodyEncoder.outputSize();
+            const bodyDescription = madeAllNow ? "the entire" : "a piece of the";
+            console.log(`will send ${bodyDescription} response body` + PrettyBody(logPrefix, bodyOut));
         }
+
+        if (out.length)
+            SendBytes(this.userSocket, out, "response");
     }
 
     adaptResponse() {
@@ -305,12 +330,14 @@ export default class Transaction {
 
     generateErrorResponse(code) {
         Must(Config.HttpStatusCodes[code]);
-        return [
+        const errMsg = [
             "HTTP/1.1 " + code + " " + Config.HttpStatusCodes[code],
             "Server: " + Config.ProxySignature,
             "Connection: close",
             "\r\n"
         ].join("\r\n");
+        console.log(`will send error response` + PrettyMime("c< ", errMsg));
+        return errMsg;
     }
 
     destroyUserSocket() {

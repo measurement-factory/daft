@@ -5,6 +5,7 @@
 /* Pass-through "null" or "identity" decoder. Does not modify incoming data. */
 
 import Decoder from "./Decoder";
+import { Must } from "../../misc/Gadgets";
 
 export default class IdentityDecoder extends Decoder {
 
@@ -15,10 +16,6 @@ export default class IdentityDecoder extends Decoder {
 
     decodedAll() {
         return this._leftBytes === 0;
-    }
-
-    describeBytes(messagePart) {
-        return `${this._outSize} ${messagePart} bytes`;
     }
 
     _decode() {
@@ -32,6 +29,9 @@ export default class IdentityDecoder extends Decoder {
         const decodedData = this._raw.substring(0, len);
         this._raw = this._raw.substring(len);
         return decodedData;
+    }
+
+    _reportCompletion() {
     }
 
 }

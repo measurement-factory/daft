@@ -16,8 +16,6 @@ export default class IdentityEncoder extends Encoder {
         return data;
     }
 
-    describeBytes(messagePart) {
-        return `${this._outSize} ${messagePart} bytes`;
+    _reportCompletion() {
     }
-
 }
