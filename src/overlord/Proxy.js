@@ -89,6 +89,7 @@ export class DutConfig {
     make() {
         this._rememberListeningPort(3128);
         const kid = "kid${process_number}";
+        const logDir = "/usr/local/squid/var/logs/overlord";
         const cfg = `
             # Daft-generated configuration
             http_port 3128
@@ -102,10 +103,10 @@ export class DutConfig {
             negative_dns_ttl 1 second
             shutdown_lifetime 1 seconds
             visible_hostname ${kid}.squid.daft.test
-            coredump_dir /usr/local/squid/var/logs/overlord
+            coredump_dir ${logDir}
             logformat xsquid %err_code/%err_detail %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
             access_log stdio:access-${kid}.log xsquid
-            cache_log cache-${kid}.log
+            cache_log ${logDir}/cache-${kid}.log
         `;
         return this._trimCfg(cfg);
     }
