@@ -238,6 +238,11 @@ export class ProxyOverlord {
         }
     }
 
+    async restart() {
+        await this._remoteCall("/restart");
+        console.log("Proxy restarted");
+    }
+
     _remoteCall(urlPath, requestBody = null) {
         return new Promise((resolve) => {
             const requestHasBody = requestBody !== null;
