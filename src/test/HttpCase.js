@@ -8,6 +8,7 @@ import Promise from "bluebird";
 import Checker from "../test/Checker";
 import Client from "../client/Agent";
 import Server from "../server/Agent";
+import * as Http from "../http/Gadgets";
 import * as Lifetime from "../misc/Lifetime";
 import { Must } from "../misc/Gadgets";
 import assert from "assert";
@@ -161,6 +162,30 @@ export default class HttpCase {
 
     check(futureCheck) {
         this._checks.add(futureCheck);
+    }
+
+    // will test whether each client got the server's response
+    addMissCheck() {
+        return this.addReceivedResponseCheck(this._server.transaction().response);
+    }
+
+    // will test whether each client got the given response
+    addHitCheck(response) {
+        return this.addReceivedResponseCheck(response);
+    }
+
+    // will test whether each client got the given response
+    // for hits, use addHitCheck() for clarity sake
+    addReceivedResponseCheck(response) {
+        assert(this._clients.length); // "received" implies there was a client
+        for (const client of this._clients) {
+            client.checks.add(() => {
+                Http.AssertForwardedMessage(
+                    response,
+                    client.transaction().response,
+                    "response");
+            });
+        }
     }
 
     _doCheck() {

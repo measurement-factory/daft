@@ -10,7 +10,6 @@ import HttpTestCase from "../src/test/HttpCase";
 import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as Config from "../src/misc/Config";
-import * as Http from "../src/http/Gadgets";
 import * as AddressPool from "../src/misc/AddressPool";
 import Test from "../src/test/Test";
 import { DutConfig, ProxyOverlord } from "../src/overlord/Proxy";
@@ -60,23 +59,12 @@ export default class MyTest extends Test {
         missCase.server().serve(resource);
         missCase.server().response.forceEof = Config.ResponseEndsAtEof;
         missCase.client().request.for(resource);
-        missCase.client().checks.add((client) => {
-            client.expectStatusCode(200);
-            let virginResponse = missCase.server().transaction().response.body.whole();
-            let adaptedResponse = client.transaction().response.body.whole();
-            assert.equal(adaptedResponse, virginResponse, "preserved miss response body");
-        });
+        missCase.addMissCheck();
         await missCase.run();
 
         let hitCase = new HttpTestCase(`hit a ${Config.BodySize}-byte response`);
         hitCase.client().request.for(resource);
-        hitCase.check(() => {
-            hitCase.client().expectStatusCode(200);
-            //let virginResponse = missCase.server().transaction().response.body.whole();
-            //let adaptedResponse = hitCase.client().transaction().response.body.whole();
-            //assert.equal(adaptedResponse, virginResponse, "preserved hit response body");
-            Http.AssertForwardedMessage(missCase.server().transaction().response, hitCase.client().transaction().response, "preserved hit response");
-        });
+        hitCase.addHitCheck(missCase.server().transaction().response);
         await hitCase.run();
 
         AddressPool.ReleaseListeningAddress(resource.uri.address);
