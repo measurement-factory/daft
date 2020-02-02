@@ -5,6 +5,7 @@
 /* Anything addressable by a fragmentless URI. */
 
 import Uri from "../anyp/Uri";
+import Body from "../http/Body";
 import Header from "../http/Header";
 import * as Gadgets from "../misc/Gadgets";
 import * as FuzzyTime from "../misc/FuzzyTime";
@@ -18,7 +19,9 @@ export default class Resource {
         this.lastModificationTime = null;
         this.nextModificationTime = null;
         this.mime = new Header();
-        this.body = null;
+
+        // set (e.g., to null) to disable body generation in finalize()
+        this.body = undefined;
     }
 
     // do our best to persuade most caches to store this resource
@@ -31,6 +34,8 @@ export default class Resource {
     finalize() {
         this.uri.finalize();
         this.mime.finalize();
+        if (this.body === undefined)
+            this.body = new Body();
         if (this.body)
             this.body.finalize();
     }

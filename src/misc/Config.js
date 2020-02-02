@@ -47,8 +47,6 @@ export function isReverseProxy() {
     return ProxyingMode === ProxyingInReverse;
 }
 
-export const DefaultMessageBodyContent = "THIS.is.BODY";
-
 export const LogBodies = undefined; // whether to log bodies on console
 
 
@@ -67,6 +65,12 @@ let _CliOptions = [
         type: "{host: String, port: Number}",
         default: `{host: ${OriginAuthority.host}, port: ${OriginAuthority.port}}`,
         description: "ultimate request destination",
+    },
+    {
+        option: "body-size",
+        type: "Number",
+        default: "15",
+        description: "message body size (bytes)",
     },
 ];
 

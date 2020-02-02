@@ -4,7 +4,7 @@
 
 /* Manages raw (dechunked) HTTP message body buffer/pipeline. */
 
-import { Must } from "../misc/Gadgets";
+import { Must, RandomText } from "../misc/Gadgets";
 import * as Config from "../misc/Config";
 
 export default class Body {
@@ -31,7 +31,7 @@ export default class Body {
 
     finalize() {
         if (this._buf === null)
-            this.whole(Config.DefaultMessageBodyContent);
+            this.whole(RandomText("body-", Config.BodySize));
     }
 
     whole(...args) {

@@ -22,12 +22,6 @@ Config.Recognize([
         default: "false",
         description: "send unchunked response without Content-Length",
     },
-    {
-        option: "body-size",
-        type: "Number",
-        default: "1024",
-        description: "response body size (bytes)",
-    },
 ]);
 
 export default class MyTest extends Test {
@@ -52,7 +46,7 @@ export default class MyTest extends Test {
         let resource = new Resource();
         resource.makeCachable();
         resource.uri.address = AddressPool.ReserveListeningAddress();
-        resource.body = new Body("x".repeat(Config.BodySize));
+        resource.body = new Body();
         resource.finalize();
 
         let missCase = new HttpTestCase(`forward a ${Config.BodySize}-byte response`);

@@ -122,8 +122,25 @@ export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
     console.log(toLog);
 }
 
+// Returns a length-bytes string, including the prefix.
+// Besides the given prefix, the rest of the string is base-36 encoded.
+// Does not guarantee uniqueness, even within the same process.
+export function RandomText(prefix, length) {
+    let buf = prefix;
+    while (buf.length < length) {
+        if (length < 32)
+            buf += Math.random().toString(36).substr(2); // remove leading "0."
+        else
+            buf += "TeXt".repeat((length - buf.length)/4); // a faster branch?
+    }
+    return buf.substr(0, length); // remove any extra trailing characters
+}
+
+// returns the prefix and a random 10-characters length string
 export function UniqueId(prefix) {
-    return prefix + Math.floor(1.0 + 0xFFFFFFFF * Math.random()).toString(16);
+    // XXX: RandomString() does not guarantee uniqueness
+    // unlike RandomText(), we always return the whole namespace/prefix
+    return prefix + RandomText("", 10); // fixed length for ID consistency
 }
 
 export function DateSum(d1, d2) {
