@@ -2,6 +2,7 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import assert from "assert";
 import * as Config from "./Config";
 
 /* Assorted small handy global functions. */
@@ -122,18 +123,29 @@ export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
     console.log(toLog);
 }
 
+const _LongText = "TeXt".repeat(10240/4);
+
 // Returns a length-bytes string, including the prefix.
 // Besides the given prefix, the rest of the string is base-36 encoded.
 // Does not guarantee uniqueness, even within the same process.
 export function RandomText(prefix, length) {
-    let buf = prefix;
-    while (buf.length < length) {
-        if (length < 32)
-            buf += Math.random().toString(36).substr(2); // remove leading "0."
-        else
-            buf += "TeXt".repeat((length - buf.length)/4); // a faster branch?
+    let buf = "";
+
+    // random header (for all generated texts with short-enough prefixes)
+    while (buf.length < length && buf.length < 32) {
+        buf += Math.random().toString(36).substr(2); // remove leading "0."
     }
-    return buf.substr(0, length); // remove any extra trailing characters
+
+    // fast-growing body from fixed tokens (if needed)
+    if (buf.length < length) {
+        const remainingChars = length - buf.length;
+        buf += _LongText.repeat(remainingChars/_LongText.length + 1);
+    }
+
+    assert(buf.length >= length);
+
+    // remove any extra trailing characters
+    return (prefix + buf).substr(0, length);
 }
 
 // returns the prefix and a random 10-characters length string
