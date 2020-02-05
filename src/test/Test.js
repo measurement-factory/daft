@@ -5,31 +5,32 @@
 import assert from "assert";
 import { Must } from "../misc/Gadgets";
 
-// a checklist: an ordered sequence of checks (a.k.a. test cases),
-// usually revolving around validating some DUT feature or functionality
+// a (startup, test run(s), shutdown) sequence sharing the same global
+// configuration; the runs may be executed sequentially and/or in parallel
 export default class Test {
-    constructor(dut) {
-        assert.strictEqual(arguments.length, 1);
-        assert.notStrictEqual(dut, undefined);
-        this.dut = dut; // device under test; may be null
+    constructor() {
+        assert.strictEqual(arguments.length, 0);
     }
 
     // called once before any run() calls
     async startup() {
-        if (this.dut)
-            await this.dut.noteStartup();
     }
 
     // called once after all run()s complete
     async shutdown() {
-        if (this.dut)
-            await this.dut.noteShutdown();
     }
 
     // executes a sequence of checks
     // may be called multiple times when repeating/parallelizing test runs
     async run(/*testRun*/) {
         Must(false, `pure virtual: kids must override`);
+    }
+
+    // Kids "override" this method to return configuration customizations.
+    // A single Test will be generated for each returned configurator.
+    static Configurators() {
+        const customizeNothing = []; // no customization steps
+        return [ customizeNothing ];
     }
 
 }

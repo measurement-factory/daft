@@ -11,8 +11,7 @@ import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as Config from "../src/misc/Config";
 import * as AddressPool from "../src/misc/AddressPool";
-import Test from "../src/test/Test";
-import { DutConfig, ProxyOverlord } from "../src/overlord/Proxy";
+import Test from "../src/overlord/Test";
 
 // custom CLI options
 Config.Recognize([
@@ -26,13 +25,9 @@ Config.Recognize([
 
 export default class MyTest extends Test {
 
-    constructor(...args) {
-        // XXX: We should not be writing constructors to configure a DUT.
-        // TODO: Add virtual Test::configureDut() or a similar method.
-        const cfg = new DutConfig();
+    _configureDut(cfg) {
         cfg.memoryCaching(false); // TODO: Make Configurable.
         cfg.diskCaching(true); // TODO: Make Configurable.
-        super(new ProxyOverlord(cfg), ...args); // no DUT for now
     }
 
     async run(/*testRun*/) {

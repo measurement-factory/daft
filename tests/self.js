@@ -10,10 +10,6 @@ import Test from "../src/test/Test";
 import assert from "assert";
 
 export default class MyTest extends Test {
-    constructor(...args) {
-        super(null, ...args);
-    }
-
     async run() {
 
         {

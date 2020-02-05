@@ -65,8 +65,8 @@ async function main_() {
     if (!Config.Finalize(commandArgv))
         return;
 
-    const test = new CommandModule.default();
-    await RunTest(test);
+    const Test = CommandModule.default;
+    await RunTest(Test);
 }
 
 async function main() {
