@@ -7,7 +7,6 @@
 import assert from "assert";
 import TestRun from "./Run";
 import * as Config from "../misc/Config";
-import { DutConfig } from "../overlord/Proxy";
 
 Config.Recognize([
     {

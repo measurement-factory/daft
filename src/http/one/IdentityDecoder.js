@@ -5,7 +5,6 @@
 /* Pass-through "null" or "identity" decoder. Does not modify incoming data. */
 
 import Decoder from "./Decoder";
-import { Must } from "../../misc/Gadgets";
 
 export default class IdentityDecoder extends Decoder {
 
