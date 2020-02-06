@@ -5,13 +5,13 @@
   "author": "The Measurement Factory",
   "license": "Apache-2.0",
   "devDependencies": {
-    "babel-eslint": "^10.0.1",
-    "eslint": "^5.15.3"
+    "babel-eslint": "^10.0.3",
+    "eslint": "^5.16.0"
   },
   "dependencies": {
-    "bluebird": "^3.5.3",
-    "esm": "^3.2.20",
-    "optionator": "^0.8.2"
+    "bluebird": "^3.7.2",
+    "esm": "^3.2.25",
+    "optionator": "^0.8.3"
   },
   "files": [
     "Makefile",
