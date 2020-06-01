@@ -17,7 +17,7 @@ export default class Test extends BaseTest {
     async startup() {
         await super.startup();
         assert(!this.dut);
-        const cfg = new DutConfig();
+        const cfg = this._createDutConfig();
         this._configureDut(cfg);
         this.dut = new ProxyOverlord(cfg);
         await this.dut.noteStartup();
@@ -30,8 +30,13 @@ export default class Test extends BaseTest {
         await super.shutdown();
     }
 
-    // kids may overwrite to customize DUT configuration
-    // kids that overwrite do not need to call this method
+    // kids may override to customize creation of the DUT configuration
+    _createDutConfig() {
+        return new DutConfig();
+    }
+
+    // kids may override to customize DUT configuration
+    // kids that override do not need to call this method
     _configureDut(/* cfg */) {
     }
 
