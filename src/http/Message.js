@@ -8,6 +8,7 @@ import Authority from "../anyp/Authority";
 import Header from "./Header";
 import { Must } from "../misc/Gadgets";
 import * as Gadgets from "../misc/Gadgets";
+import * as Http from "../http/Gadgets";
 
 export default class Message {
 
@@ -118,7 +119,7 @@ export default class Message {
     }
 
     _daftFieldName(suffix) {
-        let kind = Object.getPrototypeOf(this).constructor.name;
-        return `X-Daft-${kind}-${suffix}`;
+        const kind = Object.getPrototypeOf(this).constructor.name;
+        return Http.DaftFieldName(`${kind}-${suffix}`);
     }
 }

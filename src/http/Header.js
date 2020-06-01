@@ -6,6 +6,7 @@
 
 import Field from "./Field";
 import { Must } from "../misc/Gadgets";
+import * as Http from "../http/Gadgets";
 
 
 export default class Header {
@@ -45,12 +46,22 @@ export default class Header {
     // returns null if the header does not have Content-Length field(s)
     // returns undefined if the Content-Length field(s) are malformed
     // returns the well-formed/supported Content-Length value otherwise
+    // supports overrides via a Daft-specific Content-Length field.
     contentLength() {
-        let name = 'Content-Length';
+        const stdName = 'Content-Length';
+        const overrideName = Http.DaftFieldName(stdName);
+        if (this.has(overrideName)) {
+            const result = this.contentLength_(overrideName);
+            console.log(`Warning: Using ${overrideName}: ${result}`);
+            return result;
+        }
+        if (this.has(stdName))
+            return this.contentLength_(stdName);
+        return null; // not specified at all
+    }
 
-        if (!this.has(name)) // not specified at all
-            return null;
-
+    // contentLength() helper; does not know about overriding standard names
+    contentLength_(name) {
         let values = this.values(name);
         let value = values.pop();
 

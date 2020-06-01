@@ -50,6 +50,10 @@ function IsControlledByCache(name) {
     return _ControlledByCacheHeaderNames.indexOf(name.toLowerCase()) >= 0;
 }
 
+export function DaftFieldName(suffix) {
+    return `X-Daft-${suffix}`;
+}
+
 // XXX: Flip our assert*(sent, received) arguments to match "official" order in
 // node::assert.equal(actual, expected). Check all node::assert*Equal() calls.
 
