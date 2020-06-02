@@ -46,6 +46,8 @@ export default class StatusLine {
 
     ReasonPhrase(codeInteger = undefined) {
         switch (codeInteger) {
+            case 101:
+                return "Switching Protocols";
             case 200:
                 return "OK";
             case 304:
