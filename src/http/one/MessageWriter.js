@@ -9,7 +9,7 @@ function rawStatusLine(statusLine) {
     return [
         statusLine.protocol,
         statusLine.protocolDelimiter,
-        statusLine.statusCode,
+        (statusLine.hasCode() ? statusLine.codeString() : null),
         statusLine.statusDelimiter,
         statusLine.reasonPhrase,
         statusLine.terminator

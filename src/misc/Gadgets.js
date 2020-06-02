@@ -163,6 +163,29 @@ export function DateDiff(d1, d2) {
     return new Date(d1.valueOf() - d2.valueOf());
 }
 
+// a stricter, simpler version of parseInt()
+// does not ignore leading whitespace and trailing garbage
+// does not accept '+' or '-' signs
+// returns raw input converted to a positive decimal Number or undefined
+export function ToUnsigned(input) {
+    if (input === null || input === undefined)
+        return undefined;
+
+    if (Number.isInteger(input))
+        return (Number.isSafeInteger(input) && input >= 0) ? input : undefined;
+
+    if (!/^\d*$/.test(input)) // not a non-negative integer without signs
+        return undefined;
+
+    if (/^0./.test(input)) // starts with 0 but not a "0"
+        return undefined;
+
+    const parsed = Number.parseInt(input, 10);
+    if (!Number.isSafeInteger(parsed)) // too big
+        return undefined;
+    return parsed;
+}
+
 // Converts "public" host:port address to something we can listen on.
 // Needs more work to detect IP addresses so that we can assume that everything
 // else is domain name that we can serve by listening on all IPs.

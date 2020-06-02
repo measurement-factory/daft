@@ -6,6 +6,7 @@
 
 import Field from "./Field";
 import { Must } from "../misc/Gadgets";
+import * as Misc from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
 
 
@@ -73,17 +74,7 @@ export default class Header {
                 return undefined; // multiple different values
         }
 
-        if (!/^\d*$/.test(value)) // not an integer
-            return undefined;
-
-        if (/^0./.test(value)) // starts with 0 but not a "0"
-            return undefined;
-
-        let len = Number.parseInt(value, 10);
-        if (!Number.isSafeInteger(len)) // too big
-            return undefined;
-
-        return len;
+        return Misc.ToUnsigned(value);
     }
 
     chunked() {

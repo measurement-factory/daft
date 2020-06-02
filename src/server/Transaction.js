@@ -55,7 +55,7 @@ export default class Transaction extends SideTransaction {
         assert(this.response);
         // XXX: do not add body to HEAD responses
         // XXX: add other bodyless status codes
-        if (!this.response.body && this.response.startLine.statusCode !== 304)
+        if (!this.response.body && this.response.startLine.codeInteger() !== 304)
             this.response.addBody(new Body());
 
         this.response.header.addByDefault("Server", "DaftServer/1.0");

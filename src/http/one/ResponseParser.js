@@ -38,13 +38,13 @@ export default class ResponseParser extends MessageParser {
 
         let statusLine = new StatusLine();
 
-        let match = /^(\S+)(\s+)(\d+)(\s+)(.*)(\r*\n)$/.exec(raw);
+        let match = /^(\S+)(\s+)(\S+)(\s+)(.*)(\r*\n)$/.exec(raw);
         if (!match)
             throw new Error("Unable to parse status-line: " + raw);
 
         statusLine.protocol = match[1];
         statusLine.protocolDelimiter = match[2];
-        statusLine.statusCode = match[3];
+        statusLine.code(match[3]);
         statusLine.statusDelimiter = match[4];
         if (match[5] !== undefined)
             statusLine.reasonPhrase = match[5];

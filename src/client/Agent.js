@@ -8,6 +8,7 @@ import assert from "assert";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
+import StatusLine from "../http/StatusLine";
 import SideAgent from "../side/Agent";
 
 export default class Agent extends SideAgent {
@@ -28,8 +29,8 @@ export default class Agent extends SideAgent {
     }
 
     expectStatusCode(expectedCode) {
-        const receivedCode = parseInt(this.transaction().response.startLine.statusCode, 10);
-        assert.strictEqual(receivedCode, expectedCode);
+        assert(StatusLine.IsNumericCode(expectedCode));
+        assert.strictEqual(this.transaction().response.startLine.codeInteger(), expectedCode);
     }
 
     start() {

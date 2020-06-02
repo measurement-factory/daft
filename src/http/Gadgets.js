@@ -75,12 +75,16 @@ export function AssertForwardedMessage(sent, received, kind) {
     assert(received);
 
     assert.equal(!sent.startLine, !received.startLine);
-    if (sent.startLine) {
-        assert.equal(!sent.startLine.statusCode, !received.startLine.statusCode);
-        if (sent.startLine.statusCode !== undefined) {
-            const scSent = parseInt(sent.startLine.statusCode, 10);
-            const scReceived = parseInt(received.startLine.statusCode, 10);
-            assert.equal(scSent, scReceived, "received status code matches the sent one");
+    // TODO: When both exist, let parts compare themselves. The rest can be
+    // handled by a generic comparison code.
+    // XXX: If startLine is a StatusLine, then codeString_ will be defined.
+    if (sent.startLine && sent.startLine.codeString_ !== undefined) {
+        assert.equal(sent.startLine.hasCode(), received.startLine.hasCode());
+        if (sent.startLine.hasCode()) {
+            // including (undefined === undefined) for two malformed values
+            // we can make this more complex if we need to check non-integer codes
+            assert.equal(sent.startLine.codeInteger(), received.startLine.codeInteger(),
+                "received status code matches the sent one");
         }
     }
 
