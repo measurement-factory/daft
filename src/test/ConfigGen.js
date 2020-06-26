@@ -64,7 +64,14 @@ export default class ConfigGen {
 
     // returns configurators that can generate all possible configurations
     generateConfigurators() {
-        const reducer = (total, group) => total * Math.max(1, group.length);
+        if (!this._groups.length) {
+            // either the Test suggested no option variations or all suggested
+            // variations were prohibited by explicitly configured options
+            const useConfigAsIs = [ () => {} ];
+            this._groups.push(useConfigAsIs);
+        }
+
+        const reducer = (total, group) => total * group.length;
         const expectedCount = this._groups.reduce(reducer, 1);
         const configurators = ConfigGen._GenerateConfigurators(this._groups);
         assert.strictEqual(configurators.length, expectedCount);

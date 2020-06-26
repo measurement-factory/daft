@@ -80,6 +80,8 @@ export default async function Run(Test) {
     const configurators = Test.Configurators();
     const totalConfigs = configurators.length;
     console.log("Planned test configurations:", totalConfigs);
+    // the Test module must provide at least one, possibly empty, configurator
+    assert.notStrictEqual(totalConfigs, 0);
 
     // by default, test each configuration once (concurrently if needed)
     const defaultTests = totalConfigs*Config.ConcurrencyLevel;
@@ -96,8 +98,6 @@ export default async function Run(Test) {
         leftoverTests = plannedTests % defaultTests;
     }
 
-    // the Test module must provide at least one, possibly empty, configurator
-    assert.notStrictEqual(totalConfigs, 0);
     let generatedConfigs = 0;
     for (const configurator of configurators) {
         // stop generating configurations if the test limit was reached
