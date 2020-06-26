@@ -30,12 +30,14 @@ Config.Recognize([
 
 let TestsStarted = 0; // the number of tests started (or being started)
 let TestsRunning = 0; // number of concurrent tests running now
+// the number of tests we want to run for the current test configuration
+let TestsForCurrentConfig = 0;
+// the number of tests started (or being started) for the current test config
+let TestsStartedForCurrentConfig = 0;
 
 async function TestThread(test, threadId) {
-    // by default, execute at least one test run per test configuration
-    const threadLimit = (Config.Tests === undefined) ?
-        (TestsStarted+1) : Config.Tests;
-    while (TestsStarted < threadLimit) {
+    while (TestsStartedForCurrentConfig < TestsForCurrentConfig) {
+        ++TestsStartedForCurrentConfig;
         const run = new TestRun(++TestsStarted, threadId);
         ++TestsRunning;
         console.log(`Starting ${run}. Concurrency level: ${TestsRunning}`);
@@ -46,6 +48,8 @@ async function TestThread(test, threadId) {
 }
 
 async function _Run(test) {
+
+    TestsStartedForCurrentConfig = 0;
 
     await test.startup();
 
@@ -66,7 +70,7 @@ async function _Run(test) {
         if (Config.ConcurrencyLevel > 1)
             console.log(`Finished all ${Config.ConcurrencyLevel} test threads.`);
     } finally {
-        console.log("Shutting down.");
+        console.log(`Shutting down DUT after ${TestsStartedForCurrentConfig} tests`);
         await test.shutdown();
     }
 }
@@ -76,13 +80,31 @@ export default async function Run(Test) {
     const configurators = Test.Configurators();
     const totalConfigs = configurators.length;
     console.log("Planned test configurations:", totalConfigs);
+
+    // by default, test each configuration once (concurrently if needed)
+    const defaultTests = totalConfigs*Config.ConcurrencyLevel;
+    const plannedTests = (Config.Tests === undefined) ? defaultTests : Config.Tests;
+
+    // tests that cannot be spread across all configurations evenly
+    let leftoverTests;
+    if (plannedTests < defaultTests) {
+        console.log(`Warning: --tests ${plannedTests} is too small; need ` +
+            `${totalConfigs}*${Config.ConcurrencyLevel} = ${defaultTests}` +
+            " tests to test each configuration once (concurrently if needed)");
+        leftoverTests = 0;
+    } else {
+        leftoverTests = plannedTests % defaultTests;
+    }
+
     // the Test module must provide at least one, possibly empty, configurator
     assert.notStrictEqual(totalConfigs, 0);
     let generatedConfigs = 0;
     for (const configurator of configurators) {
         // stop generating configurations if the test limit was reached
-        if (Config.Tests !== undefined && TestsStarted >= Config.Tests) {
-            console.log("Reached --tests limit:", TestsStarted, ">=", Config.Tests);
+        if (TestsStarted >= plannedTests) {
+            console.log("Warning: Reached --tests limit before testing all",
+                totalConfigs, "test configurations:",
+                TestsStarted, ">=", plannedTests);
             break;
         }
 
@@ -90,9 +112,25 @@ export default async function Run(Test) {
         ++generatedConfigs;
         console.log(`Test configuration #${generatedConfigs}:\n${Config.sprint()}`);
 
+        if (plannedTests < defaultTests) {
+            TestsForCurrentConfig = Config.ConcurrencyLevel;
+            if (TestsStarted + TestsForCurrentConfig > plannedTests)
+                TestsForCurrentConfig = plannedTests - TestsStarted;
+        } else {
+            TestsForCurrentConfig = Math.trunc(plannedTests / totalConfigs);
+            assert(TestsForCurrentConfig >= Config.ConcurrencyLevel);
+            if (leftoverTests > 0) {
+                ++TestsForCurrentConfig;
+                --leftoverTests;
+            }
+        }
+        console.log("Tests for this configuration:", TestsForCurrentConfig);
+        assert(TestsForCurrentConfig > 0);
+
         const test = new Test();
         await _Run(test);
 
         Config.reset(userConfig);
     }
+    console.log("Ran", TestsStarted, "tests.");
 }
