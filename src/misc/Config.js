@@ -155,6 +155,8 @@ export function Finalize(argv) {
     let options = null;
     try {
         options = optionator.parseArgv(argv);
+        if (options._.length)
+            throw Error(`unsupported anonymous option(s): ${options._}`);
     } catch (error) {
         process.exitCode = 1;
         console.log(optionator.generateHelp());
