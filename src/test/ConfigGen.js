@@ -11,6 +11,21 @@ export default class ConfigGen {
         this._groups = []; // groups of configuration-adjusting steps
     }
 
+    // adds a step to adjust configuration (shaped by previous steps)
+    addGlobalConfigAdjustment(name, adjustor) {
+        assert(adjustor);
+
+        // skip manually-configured options
+        if (Config.isExplicitlySet(name)) {
+            console.log(`suppressing ${name} configuration adjustment\n` +
+                `    option ${name} was explicitly set to ${Config.optionValue(name)}`);
+            return;
+        }
+
+        const group = [config => adjustor(config)];
+        this._groups.push(group);
+    }
+
     // adds a group of steps, each step adjusting the same Config option
     addGlobalConfigVariation(optionWithValues) {
         // the group has to focus on one Config option (for now)
