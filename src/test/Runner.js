@@ -7,6 +7,7 @@
 import assert from "assert";
 import TestRun from "./Run";
 import * as Config from "../misc/Config";
+import * as Gadgets from "../misc/Gadgets";
 
 Config.Recognize([
     {
@@ -21,6 +22,13 @@ Config.Recognize([
         description: "artificially limits or inflates the number of test runs",
     },
     {
+        option: "retries",
+        type: "Number",
+        default: "0",
+        description: "the number of consecutive test run attempt failures to retry; " +
+            "a retry is not counted as a new test run",
+    },
+    {
         option: "origin-port",
         type: "Number",
         default: Config.OriginAuthority.port.toString(),
@@ -28,6 +36,7 @@ Config.Recognize([
     },
 ]);
 
+let AttemptsStarted = 0; // the number of test attempts so far
 let TestsStarted = 0; // the number of tests started (or being started)
 let TestsRunning = 0; // number of concurrent tests running now
 // the number of tests we want to run for the current test configuration
@@ -35,15 +44,39 @@ let TestsForCurrentConfig = 0;
 // the number of tests started (or being started) for the current test config
 let TestsStartedForCurrentConfig = 0;
 
+/// repeats the given test until it succeeds or exhausts all attempts
+async function TestAttempts(test, run) {
+    const attemptsAllowed = 1 + Config.Retries;
+    for (let attempt = 0; attempt < attemptsAllowed; ++attempt) {
+        run.attempt(attempt);
+        ++AttemptsStarted;
+        ++TestsRunning;
+        console.log(`Starting ${run}. Concurrency level: ${TestsRunning}`);
+        const success = await test.run(run).
+            then(() => {
+                return true;
+            }).
+            catch(error => {
+                const progress = (attempt+1).toString() + "/" + attemptsAllowed;
+                console.log(`Test attempt failure (${progress}): ${error.message}`);
+                console.log("Error stack trace:\n    " + error.stack);
+                if (attempt + 1 < attemptsAllowed)
+                    return false; // will do another attempt
+                throw error;
+            });
+        --TestsRunning;
+        console.log(`Finished ${run}. Concurrency level: ${TestsRunning}`);
+        if (success)
+            return true;
+    }
+    return false;
+}
+
 async function TestThread(test, threadId) {
     while (TestsStartedForCurrentConfig < TestsForCurrentConfig) {
         ++TestsStartedForCurrentConfig;
         const run = new TestRun(++TestsStarted, threadId);
-        ++TestsRunning;
-        console.log(`Starting ${run}. Concurrency level: ${TestsRunning}`);
-        await test.run(run);
-        --TestsRunning;
-        console.log(`Finished ${run}. Concurrency level: ${TestsRunning}`);
+        await TestAttempts(test, run);
     }
 }
 
@@ -131,6 +164,13 @@ export default async function Run(Test) {
         await _Run(test);
 
         Config.reset(userConfig);
+    }
+
+    const attemptsFailed = AttemptsStarted - TestsStarted;
+    if (attemptsFailed) {
+        console.log("Made", AttemptsStarted, "test attempts to finish", TestsStarted, "tests");
+        console.log("Failures:", attemptsFailed);
+        console.log("Failure probability:", Gadgets.PrettyPercent(attemptsFailed, AttemptsStarted));
     }
     console.log("Ran", TestsStarted, "tests.");
 }

@@ -13,6 +13,20 @@ export function Must(condition, ...args) {
         throw new Error(`assertion failure: ${condition}${extraInfo}`);
 }
 
+// returns part/whole ratio as a percent with a given precision
+export function PrettyPercent(part, whole, decimals = undefined) {
+    if (!whole)
+        return "?";
+    const number = part/whole;
+    if (decimals === undefined)
+        decimals = number > 0.10 ? 0 : 2;
+    return number.toLocaleString('en-US', {
+        style: "percent",
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    });
+}
+
 // the always-present leading part of PrettyMime() and PrettyBody() output
 function _PrettyIntro(data) {
     return ` [${data.length} bytes]`;

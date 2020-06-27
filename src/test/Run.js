@@ -4,15 +4,27 @@
 
 /* A single test execution. */
 
+import assert from "assert";
+
 export default class Run {
 
     constructor(runId, threadId) {
         this.id = runId;
         this.thread = threadId;
+        this.attempt_ = null; // optional, set by attempt()
+    }
+
+    attempt(n) {
+        assert(n !== undefined);
+        assert(n !== null);
+        this.attempt_ = n;
     }
 
     toString() {
-        return "test run#" + this.id;
+        let description = "test run#" + this.id;
+        if (this.attempt_)
+            description += "+" + this.attempt_;
+        return description;
     }
 
 }
