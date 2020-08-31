@@ -8,6 +8,7 @@ import http from "http";
 import Promise from 'bluebird';
 import assert from "assert";
 import * as Config from "../misc/Config";
+import * as Gadgets from "../misc/Gadgets";
 
 Config.Recognize([
     {
@@ -27,8 +28,8 @@ Config.Recognize([
 ]);
 
 // TODO: Make worker port range configurable
-const FirstWorkerPort = 3130; // for _dedicatedWorkerPorts
-
+const FirstWorkerPort = 3130;
+const DedicatedPortPrefix = Math.trunc(FirstWorkerPort / 10);
 
 // Configuration (i.e. the set of tuning options) for the Device Under Test.
 // The current _implementation_ is Squid-specific.
@@ -119,12 +120,10 @@ export class DutConfig {
             host: Config.ProxyListeningAddress.host,
             port: Config.ProxyListeningAddress.port
         }];
-        // all workers listen on the primary port (e.g., 3128), but _dedicatedWorkerPorts
-        // adds a unique listening port to each worker (e.g., 3131, 3132, ...)
         for (let worker = 1; worker <= this._workers; ++worker) {
             addresses.push({
                 host: Config.ProxyListeningAddress.host,
-                port: FirstWorkerPort + worker
+                port: this._workerPort(worker),
             });
         }
         return addresses;
@@ -166,12 +165,10 @@ export class DutConfig {
 
         let cfg = `workers ${this._workers}\n`;
         if (this._dedicatedWorkerPorts) {
-            const dedicatedPortPrefix = Math.trunc(FirstWorkerPort / 10);
             const dedicatedPortSuffix = '${process_number}';
-            cfg += `http_port ${dedicatedPortPrefix}${dedicatedPortSuffix}\n`;
+            cfg += `http_port ${DedicatedPortPrefix}${dedicatedPortSuffix}\n`;
             for (var worker = 1; worker <= this._workers; ++worker) {
-                const port = dedicatedPortPrefix*10 + worker;
-                this._rememberListeningPort(port);
+                this._rememberListeningPort(this._workerPort(worker));
             }
         }
         return this._trimCfg(cfg);
@@ -184,7 +181,25 @@ export class DutConfig {
         return this._trimCfg(cfg);
     }
 
+    // all workers listen on the primary port (e.g., 3128), but
+    // _dedicatedWorkerPorts also enables a unique listening port for each
+    // worker by appending the worker number to DedicatedPortPrefix (e.g.,
+    // 3131, 3132, ..., 31310, ...)
+    _workerPort(worker) {
+        if (this._dedicatedWorkerPorts) {
+            assert(this._workers > 0);
+            assert(worker > 0);
+            const rawPort = `${DedicatedPortPrefix}${worker}`;
+            const port = Gadgets.ToUnsigned(rawPort);
+            return port;
+        } else {
+            return FirstWorkerPort;
+        }
+
+    }
+
     _rememberListeningPort(port) {
+        assert(port > 0);
         this._listeningPorts.push(port);
     }
 
