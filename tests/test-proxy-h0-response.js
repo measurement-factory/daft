@@ -9,41 +9,48 @@ import Response from "../src/http/Response";
 import Body from "../src/http/Body";
 import * as Config from "../src/misc/Config";
 import { responsePrefix } from "../src/http/one/MessageWriter";
-import StartTests from "../src/test/Runner";
+import Test from "../src/overlord/Test";
+import ConfigGen from "../src/test/ConfigGen";
 import assert from "assert";
 
-if (Config.LogBodies === undefined)
-    Config.LogBodies = 1;
+export default class MyTest extends Test {
 
-// use a regular response as an HTTP/0.9 body suffix to ease transaction
-// identification and make the test a bit harder for the proxy to pass
-let response = new Response();
-response.body = new Body();
-response.finalize();
-const zeroNineBody =
-    "<html><h1>garbage:1</h1>\n" +
-    "<h2>garbage:2</h2></html>\n" +
-    responsePrefix(response) +
-    response.body.whole();
+    static Configurators() {
+        const configGen = new ConfigGen();
 
+        configGen.addGlobalConfigVariation({bodySize: [
+            // XXX: Http::One::Decoder.decode() asserts, probably because
+            // decodedAll() becomes true even before the first decode() call.
+            // 0,
+            Config.DefaultBodySize(),
+            Config.LargeBodySize(),
+        ]});
 
-async function Test(testRun, callback) {
+        return configGen.generateConfigurators();
+    }
 
-    let testCase = new HttpTestCase('forward an HTTP/0.9 response');
-    testCase.client(); // defaults OK
-    testCase.server().response.startLine.protocol = "HTTP/0.9";
-    testCase.server().response.body = new Body(zeroNineBody);
-    testCase.check(() => {
-        testCase.expectStatusCode(200);
-        let virginResponse = testCase.server().transaction().response.body.whole();
-        let adaptedResponse = testCase.client().transaction().response.body.whole();
-        assert.equal(adaptedResponse, virginResponse, "preserved HTTP/0.9 response");
-    });
-    await testCase.run();
+    async run(/*testRun*/) {
+        // use a regular response as an HTTP/0.9 body suffix to ease transaction
+        // identification and make the test a bit harder for the proxy to pass
+        let response = new Response();
+        response.body = new Body();
+        response.finalize();
+        const zeroNineBody =
+            "<html><h1>garbage:1</h1>\n" +
+            "<h2>garbage:2</h2></html>\n" +
+            responsePrefix(response) +
+            response.body.whole();
 
-    console.log("Test result: success");
-    if (callback)
-        callback();
+        let testCase = new HttpTestCase('forward an HTTP/0.9 response');
+        testCase.client(); // defaults OK
+        testCase.server().response.startLine.protocol = "HTTP/0.9";
+        testCase.server().response.body = new Body(zeroNineBody);
+        testCase.check(() => {
+            testCase.expectStatusCode(200);
+            let virginResponse = testCase.server().transaction().response.body.whole();
+            let adaptedResponse = testCase.client().transaction().response.body.whole();
+            assert.equal(adaptedResponse, virginResponse, "preserved HTTP/0.9 response");
+        });
+        await testCase.run();
+    }
 }
-
-StartTests(Test);

@@ -50,6 +50,7 @@ export function isReverseProxy() {
     return ProxyingMode === ProxyingInReverse;
 }
 
+// TODO: Make configurable from the command-line.
 export const LogBodies = undefined; // whether to log bodies on console
 
 // smallest non-empty body that is large enough to be different from other
