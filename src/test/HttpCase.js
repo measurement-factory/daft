@@ -139,16 +139,16 @@ export default class HttpCase {
         return Promise.try(() => {
             let transactions = [];
             if (this._server) {
-                console.log("will wait for the origin transaction to end");
-                transactions.push(this._server.transactionDone);
+                console.log("will wait for the origin transactions to end");
+                transactions.push(this._server.transactionsDone);
             }
             if (this._proxy) {
-                console.log("will wait for the proxy transaction to end");
-                transactions.push(this._proxy.transactionDone);
+                console.log("will wait for the proxy transactions to end");
+                transactions.push(this._proxy.transactionsDone);
             }
             if (this._clients.length > 0) {
-                console.log(`will wait for ${this._clients.length} user agent transaction(s) to end`);
-                transactions.push(...this._clients.map(client => client.transactionDone));
+                console.log(`will wait for ${this._clients.length} user agent transactions to end`);
+                transactions.push(...this._clients.map(client => client.transactionsDone));
             }
             return Promise.all(transactions);
         });

@@ -27,7 +27,8 @@ export default class Agent extends SideAgent {
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
-                this._startTransaction(userSocket);
+                // TODO: Mimic server/Agent::start() for multi-transaction support
+                this._startTransaction(this._transaction, userSocket);
             });
 
             return this.server.listenAsync(Config.ProxyListeningAddress.port,

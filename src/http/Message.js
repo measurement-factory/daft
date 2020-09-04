@@ -23,6 +23,10 @@ export default class Message {
 
         this.body = null; // no body by default
         this.forceChunked = false; // force chunked Transfer-Encoding
+
+        // whether this to-be-sent message has auto-generated components such
+        // as unique message id() in the header; false for received messages
+        this._finalized = false;
     }
 
     // creates and returns an exact replica of this message
@@ -39,11 +43,17 @@ export default class Message {
         this.headerDelimiter = them.headerDelimiter;
         this.body = them.body ? them.body.clone() : null;
         this.forceChunked = them.forceChunked;
+        this._finalized = them._finalized;
         return this;
+    }
+
+    finalized() {
+        return this._finalized;
     }
 
     // unique ID of a _finalized_ message
     id(...args) {
+        // cannot assert(this.finalized()) for received messages
         Must(!args.length); // cannot set message ID
         return this.header.value(this._daftFieldName("ID"));
     }
@@ -72,6 +82,10 @@ export default class Message {
     }
 
     finalize() {
+        if (this.finalized())
+            return;
+        this._finalized = true;
+
         this.startLine.finalize();
 
         let idFieldName = this._daftFieldName("ID");

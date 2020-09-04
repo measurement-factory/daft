@@ -19,6 +19,8 @@ export default class Transaction {
         let myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`starting ${myType} transaction`);
 
+        this._started = false;
+
         this.userSocket = null;
         this.originSocket = null;
 
@@ -49,8 +51,16 @@ export default class Transaction {
             this.doneCallback(this);
     }
 
+    started() {
+        return this._started;
+    }
+
     start(userSocket) {
         assert.strictEqual(arguments.length, 1);
+
+        assert(!this._started);
+        this._started = true;
+
         assert(userSocket);
         assert(!this.userSocket);
         this.userSocket = userSocket;

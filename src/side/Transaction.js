@@ -59,6 +59,10 @@ export default class Transaction {
         this._bodyEncoder = null;
     }
 
+    started() {
+        return this._startTime !== null;
+    }
+
     startTime() {
         assert(this._startTime);
         return this._startTime;
@@ -137,6 +141,7 @@ export default class Transaction {
 
     start(socket) {
         assert.strictEqual(arguments.length, 1);
+        assert(!this.started());
 
         assert(!this._startTime);
         this._startTime = this.context.enter(`${this.ownerKind} transaction started`);

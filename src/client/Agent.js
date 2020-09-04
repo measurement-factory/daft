@@ -48,7 +48,7 @@ export default class Agent extends SideAgent {
                 Gadgets.PrettyAddress(this.localAddress),
                 Gadgets.PrettyAddress(this.remoteAddress));
         }).tap(() => {
-            this._startTransaction(this.socket);
+            this._startTransaction(this._transaction, this.socket);
         });
     }
 

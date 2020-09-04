@@ -11,12 +11,14 @@ export default class Agent {
         assert.strictEqual(arguments.length, 0);
 
         /* kids must set this */
-        this._transaction = undefined;
+        this._transaction = undefined; // the very first transaction
 
-        this.xCount = 0;
+        // transaction activity statistics
+        this._xStarted = 0;
+        this._xFinished = 0;
 
-        this.transactionDone = new Promise((resolve) => {
-            this._transactionDoneResolver = resolve;
+        this.transactionsDone = new Promise((resolve) => {
+            this._transactionsDoneResolver = resolve;
         });
 
         this.checks = new Checker();
@@ -38,18 +40,33 @@ export default class Agent {
         return Promise.resolve(this);
     }
 
-    _startTransaction(socket) {
-        assert.strictEqual(arguments.length, 1);
+    _startTransaction(transaction, socket) {
+        assert.strictEqual(arguments.length, 2);
+        assert(!transaction.started());
 
-        if (this._transaction.doneCallback) { // already started one transaction
-            console.log("ignoring an unexpected transaction");
-            socket.destroy();
-            return;
-        }
+        ++this._xStarted;
+        console.log("starting transaction number", this._xStarted);
 
-        ++this.xCount;
         socket.setEncoding('binary');
-        this._transaction.doneCallback = this._transactionDoneResolver;
-        this._transaction.start(socket);
+
+        assert(!transaction.doneCallback);
+        transaction.doneCallback = x => this._noteDoneTransaction(x);
+        transaction.start(socket);
+    }
+
+    _noteDoneTransaction(/*transaction*/) {
+        ++this._xFinished;
+
+        const xRemaining = this._xStarted - this._xFinished;
+        assert(xRemaining >= 0);
+        if (!xRemaining) { // all previously started transactions are done
+            // We may still come back here if another transaction starts
+            // before we are stopped but there is currently no mechanism to
+            // delay resolving our promise until more transactions finish.
+            console.log("finished all", this._xStarted, "previously started transactions");
+            this._transactionsDoneResolver(this);
+        } else {
+            console.log("keep waiting for the remaining", xRemaining, "transactions");
+        }
     }
 }

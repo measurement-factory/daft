@@ -4,6 +4,7 @@
 
 /* Manages an HTTP response message, including headers and body */
 
+import assert from "assert";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
 import { Must } from "../misc/Gadgets";
@@ -34,8 +35,14 @@ export default class Response extends Message {
 
         resource.mime.fields.forEach(field => this.header.add(field));
 
-        if (resource.body)
-            this.addBody(resource.body);
+        if (resource.body) {
+            // XXX: We cannot support dynamic resource.body updates because
+            // server transactions copy resource info at serve(resource) time,
+            // each using this.body to keep track of the outedSize() progress.
+            assert(resource.body.innedAll);
+            assert.strictEqual(resource.body.outedSize(), 0);
+            this.addBody(resource.body.clone());
+        }
     }
 
 

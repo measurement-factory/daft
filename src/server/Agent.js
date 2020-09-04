@@ -19,6 +19,8 @@ export default class Agent extends SideAgent {
         super();
         this._transaction = new Transaction();
 
+        this._originalResponse = null; // for subsequent transactions to mimic
+
         this.server = null; // TCP server to be created in start()
 
         // where to listen for requests (may contain wildcards like '::')
@@ -45,7 +47,24 @@ export default class Agent extends SideAgent {
             this.server = asyncNet.createServer();
 
             this.server.on('connection', userSocket => {
-                this._startTransaction(userSocket);
+                let transaction = null;
+                if (this._transaction.started()) {
+                    transaction = new Transaction();
+
+                    // reset() copies everything, so this cannot work well if
+                    // the original response has transaction-specific pieces
+                    assert(!this._originalResponse.finalized());
+                    transaction.response.reset(this._originalResponse);
+                } else {
+                    transaction = this._transaction;
+
+                    // see the reset(this._originalResponse) comments above
+                    assert(!transaction.response.finalized());
+                    assert(!this._originalResponse);
+                    this._originalResponse = transaction.response.clone();
+                }
+
+                this._startTransaction(transaction, userSocket);
             });
 
             const addr = Gadgets.FinalizeListeningAddress(this.address());
