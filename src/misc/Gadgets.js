@@ -143,6 +143,9 @@ const _LongText = "TeXt".repeat(10240/4);
 // Besides the given prefix, the rest of the string is base-36 encoded.
 // Does not guarantee uniqueness, even within the same process.
 export function RandomText(prefix, length) {
+    assert.strictEqual(arguments.length, 2);
+    assert(length >= 0);
+
     let buf = "";
 
     // random header (for all generated texts with short-enough prefixes)
