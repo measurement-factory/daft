@@ -9,6 +9,8 @@ import { Must } from "./Gadgets";
 
 export let Types = new TypeMap();
 
+export let ErrorsSeen = 0;
+
 export function DefaultSchemePort(scheme) {
     Must(scheme !== null);
     let defaultPorts = {

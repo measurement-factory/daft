@@ -3,6 +3,7 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from "assert";
+import * as Gadgets from "../misc/Gadgets";
 
 // A container of delayed function calls, each call performing some simple
 // post-test validation. The calls made in their registration order.
@@ -26,7 +27,14 @@ export default class Checker {
         const args = arguments;
         assert(!this.ran);
         this.ran = true;
-        this._checks.forEach(check => check(...args));
+        this._checks.forEach(check => {
+            try {
+                check(...args);
+            }
+            catch (error) {
+                Gadgets.KeepGoingOrThrow(error);
+            }
+        });
     }
 
 }

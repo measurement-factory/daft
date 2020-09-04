@@ -3,7 +3,8 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from "assert";
-import * as Config from "./Config";
+import * as Config from "../misc/Config";
+import * as Global from "../misc/Global";
 
 /* Assorted small handy global functions. */
 
@@ -11,6 +12,23 @@ export function Must(condition, ...args) {
     const extraInfo = args.length ? ' ' + args.join(' ') : "";
     if (!condition)
         throw new Error(`assertion failure: ${condition}${extraInfo}`);
+}
+
+Config.Recognize([
+    {
+        option: "keep-going",
+        type: "Boolean",
+        default: "false",
+        description: "continue despite test check failures",
+    },
+]);
+
+export function KeepGoingOrThrow(error) {
+    const count = ++Global.ErrorsSeen;
+    if (Config.KeepGoing)
+        console.log(`Warning: Ignoring failure #${count}:`, error);
+    else
+        throw error;
 }
 
 // returns part/whole ratio as a percent with a given precision

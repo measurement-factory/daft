@@ -1,5 +1,6 @@
 import Promise from "bluebird";
 import * as Config from "../misc/Config";
+import * as Global from "../misc/Global";
 import RunTest from "../test/Runner";
 import assert from "assert";
 import path from "path";
@@ -67,6 +68,11 @@ async function main_() {
 
     const Test = CommandModule.default;
     await RunTest(Test);
+
+    if (Global.ErrorsSeen) {
+        assert(Config.KeepGoing);
+        throw new Error(`ignored ${Global.ErrorsSeen} errors due to --keep-going`);
+    }
 }
 
 async function main() {
