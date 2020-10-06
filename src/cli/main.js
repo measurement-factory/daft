@@ -70,17 +70,22 @@ async function main_() {
     await RunTest(Test);
 
     if (Global.ErrorsSeen) {
-        assert(Config.KeepGoing);
-        throw new Error(`ignored ${Global.ErrorsSeen} errors due to --keep-going`);
+        assert(Config.KeepGoing || Config.Retries);
+        throw new Error(`There were ${Global.ErrorsSeen} errors`);
     }
 }
 
+// TODO: Remove "async", use top-level await, and rethrow (in the catch below)
+// after moving to node v14.3.0.
 async function main() {
     try {
         await main_();
     } catch (error) {
-        if (error !== help)
-            throw error;
+        if (error !== help) {
+            // re-throwing here causes "Quitting on a rejected promise..."
+            console.log(error);
+            process.exit(1);
+        }
     }
 }
 
