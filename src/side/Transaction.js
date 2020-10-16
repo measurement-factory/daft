@@ -167,6 +167,15 @@ export default class Transaction {
             this.context.exit();
         });
 
+        // we wrote everything
+        this.socket.on('drain', () => {
+            this.context.enter('wrote everything');
+            if (this.socket) // not finish()ed yet
+                this.checkpoint();
+            // else ignore post-finish() events
+            this.context.exit();
+        });
+
         this.send();
 
         this.context.exit();
