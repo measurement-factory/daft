@@ -34,7 +34,9 @@ export default class Transaction {
             body: null
         };
 
-        this.doneSending = null; // Date
+        // sending = producing + writing
+        this._doneProducing = false;
+        this._doneSending = null; // Date
         // a promise to send everything
         this._sentEverything = new Promise((resolve) => {
             this._sentEverythingResolver = resolve;
@@ -69,8 +71,8 @@ export default class Transaction {
     }
 
     sentTime() {
-        assert(this.doneSending);
-        return this.doneSending;
+        assert(this._doneSending);
+        return this._doneSending;
     }
 
     sentEverything() {
@@ -169,7 +171,7 @@ export default class Transaction {
 
         // we wrote everything
         this.socket.on('drain', () => {
-            this.context.enter('wrote everything');
+            this.context.enter('wrote everything produced so far');
             if (this.socket) // not finish()ed yet
                 this.checkpoint();
             // else ignore post-finish() events
@@ -197,18 +199,26 @@ export default class Transaction {
 
         let doing = [];
 
+        // discover achievement of this._doneSending state
+        if (!this._doneSending && this._doneProducing && !this._writing()) {
+            this._doneSending = this.context.log("done sending");
+            this._sentEverythingResolver(this);
+        }
+
+
         /* HTTP level */
 
         if (!this.doneReceiving)
             doing.push("receiving");
 
-        if (!this.doneSending)
-            doing.push("sending");
+        if (!this._doneProducing)
+            doing.push("expecting to send more");
 
         /*  socket level */
 
-        if (this.socket && this.socket.bufferSize)
+        if (this._writing())
             doing.push(`writing ${this.socket.bufferSize} bytes`);
+
 
         if (doing.length)
             this.context.log('still', doing.join(", "));
@@ -240,7 +250,7 @@ export default class Transaction {
     }
 
     send() {
-        if (this.doneSending)
+        if (this._doneProducing)
             return;
 
         if (!this._allowedToSend('headers'))
@@ -252,7 +262,7 @@ export default class Transaction {
 
         if (!this._finalizedMessage) {
             this.context.log(`not ready to send ${this.messageOutKind}`);
-            assert(!this.doneSending);
+            assert(!this._doneProducing);
             return;
         }
 
@@ -264,12 +274,12 @@ export default class Transaction {
             Gadgets.SendBytes(this.socket, out, this.messageOutKind);
 
         if (!this.messageOut.body) {
-            this.endSending(`sent a bodyless ${this.messageOutKind}`);
+            this._stopProducing(`produced a bodyless ${this.messageOutKind}`);
             return;
         }
 
         if (this.messageOut.body.outedAll()) {
-            this.endSending(`sent the entire ${this.messageOutKind} body`);
+            this._stopProducing(`produced the entire ${this.messageOutKind} body`);
             return;
         }
 
@@ -322,11 +332,17 @@ export default class Transaction {
         this.checkpoint();
     }
 
-    endSending(why) {
-        assert(!this.doneSending);
-        this.doneSending = this.context.log("done sending:", why);
-        this._sentEverythingResolver(this);
+    _stopProducing(why) {
+        assert(!this._doneProducing);
+        this._doneProducing = true;
+        this.context.log("done producing:", why);
         this.checkpoint();
+    }
+
+    // whether we are still writing already produced content
+    // more content may be produced later unless this._doneProducing
+    _writing() {
+        return this.socket && this.socket.bufferSize;
     }
 
     makeMessage() {
