@@ -194,8 +194,25 @@ export default class Transaction {
     }
 
     checkpoint() {
-        if (this.doneReceiving && this.doneSending && // HTTP level
-            (!this.socket || !this.socket.bufferSize)) // socket level
+
+        let doing = [];
+
+        /* HTTP level */
+
+        if (!this.doneReceiving)
+            doing.push("receiving");
+
+        if (!this.doneSending)
+            doing.push("sending");
+
+        /*  socket level */
+
+        if (this.socket && this.socket.bufferSize)
+            doing.push(`writing ${this.socket.bufferSize} bytes`);
+
+        if (doing.length)
+            this.context.log('still', doing.join(", "));
+        else
             this.finish();
     }
 
