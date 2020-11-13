@@ -26,7 +26,7 @@ export default class MyTest extends Test {
 
         {
             let testCase = this.makeCase('should forward chunked response');
-            testCase.server().response.forceChunked = true;
+            testCase.server().response.chunkBody(true);
             await testCase.run();
         }
 
@@ -34,7 +34,7 @@ export default class MyTest extends Test {
             let testCase = this.makeCase('should forward chunked request');
             testCase.client().request.startLine.method = 'POST';
             testCase.client().request.addBody(new Body());
-            testCase.client().request.forceChunked = true;
+            testCase.client().request.chunkBody(true);
             await testCase.run();
         }
 

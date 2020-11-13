@@ -7,8 +7,20 @@
 import Authority from "../anyp/Authority";
 import Header from "./Header";
 import { Must } from "../misc/Gadgets";
+import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
+
+import assert from "assert";
+
+Config.Recognize([
+    {
+        option: "chunk-bodies",
+        type: "Boolean",
+        default: "false",
+        description: "use chunked Transfer-Encoding when sending message bodies",
+    },
+]);
 
 export default class Message {
 
@@ -22,7 +34,7 @@ export default class Message {
         this.headerDelimiter = null;
 
         this.body = null; // no body by default
-        this.forceChunked = false; // force chunked Transfer-Encoding
+        this._chunkBody = Config.ChunkBodies;
 
         // whether this to-be-sent message has auto-generated components such
         // as unique message id() in the header; false for received messages
@@ -42,13 +54,23 @@ export default class Message {
         this.header = them.header.clone();
         this.headerDelimiter = them.headerDelimiter;
         this.body = them.body ? them.body.clone() : null;
-        this.forceChunked = them.forceChunked;
+        this._chunkBody = them._chunkBody;
         this._finalized = them._finalized;
         return this;
     }
 
     finalized() {
         return this._finalized;
+    }
+
+    chunkingBody() {
+        assert(!arguments.length);
+        return this._chunkBody;
+    }
+
+    chunkBody(doIt) {
+        assert.strictEqual(arguments.length, 1);
+        this._chunkBody = doIt;
     }
 
     // unique ID of a _finalized_ message
@@ -109,15 +131,14 @@ export default class Message {
     }
 
     syncContentLength() {
-        if (this.forceChunked) {
-            Must(this.body);
+        if (!this.body)
+            return;
+
+        if (this._chunkBody) {
             if (!this.header.chunked())
                 this.header.add("Transfer-Encoding", "chunked");
             this.header.prohibitNamed("Content-Length");
         }
-
-        if (this.body === null)
-            return;
 
         if (this.header.chunked() || this.header.has("Content-Length"))
             return;

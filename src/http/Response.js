@@ -49,7 +49,7 @@ export default class Response extends Message {
     syncContentLength() {
         if (this.forceEof) {
             Must(this.body);
-            Must(!this.forceChunked);
+            Must(!this.chunkingBody());
             this.header.prohibitNamed("Content-Length");
             this.header.prohibitNamed("Transfer-Encoding"); // XXX: "chunked"
         } else {
