@@ -42,7 +42,7 @@ export default class Transaction {
             this._sentEverythingResolver = resolve;
         });
 
-        this.doneReceiving = null; // Date
+        this._doneReceiving = null; // Date
         // a promise to receive headers
         this._receivedHeaders = new Promise((resolve) => {
             this._receivedHeadersResolver = resolve;
@@ -68,6 +68,11 @@ export default class Transaction {
     startTime() {
         assert(this._startTime);
         return this._startTime;
+    }
+
+    receivedEverythingTime() {
+        assert(this._doneReceiving);
+        return this._doneReceiving;
     }
 
     sentTime() {
@@ -163,7 +168,7 @@ export default class Transaction {
         this.socket.on('end', () => {
             this.context.enter();
             // assume all 'data' events always arrive before 'end'
-            if (!this.doneReceiving)
+            if (!this._doneReceiving)
                 this.endReceiving(`${this.peerKind} disconnected`);
             // else ignore post-message EOF; TODO: Clear this.socket?
             this.context.exit();
@@ -208,7 +213,7 @@ export default class Transaction {
 
         /* HTTP level */
 
-        if (!this.doneReceiving)
+        if (!this._doneReceiving)
             doing.push("receiving");
 
         if (!this._doneProducing)
@@ -324,8 +329,8 @@ export default class Transaction {
     }
 
     endReceiving(why) {
-        assert(!this.doneReceiving);
-        this.doneReceiving = this.context.log("done receiving:", why);
+        assert(!this._doneReceiving);
+        this._doneReceiving = this.context.log("done receiving:", why);
         this._receivedEverythingResolver(this);
         if (this._receivedHeadersResolver)
             this._endReceivingHeaders();
