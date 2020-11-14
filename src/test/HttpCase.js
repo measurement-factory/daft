@@ -10,6 +10,7 @@ import Client from "../client/Agent";
 import Server from "../server/Agent";
 import * as Http from "../http/Gadgets";
 import * as Lifetime from "../misc/Lifetime";
+import * as Gadgets from "../misc/Gadgets";
 import { Must } from "../misc/Gadgets";
 import assert from "assert";
 
@@ -27,8 +28,16 @@ export default class HttpCase {
         this._stopAgentsPromise = null;
         this._runPromise = null;
 
+        this._expectedRuntime = new Date(60*1000); // 1 minute
+
         this._startTime = null;
         this._finishTime = null;
+    }
+
+    // allow this test case to run longer than usual
+    expectLongerRuntime(/* Date */ extra) {
+        console.log(`will let the test case run ${Gadgets.PrettyTime(extra)} longer`);
+        this._expectedRuntime = Gadgets.DateSum(this._expectedRuntime, extra);
     }
 
     // add (and return) a client, assuming there may be more than one
@@ -127,8 +136,8 @@ export default class HttpCase {
     _begin() {
         Must(!this._startTime);
         this._startTime = new Date();
-        console.log(this._startTime.toISOString(), "Starting test case:", this.gist);
-        Lifetime.Extend();
+        console.log(Gadgets.PrettyDate(this._startTime), "Starting test case:", this.gist);
+        Lifetime.Extend(this._expectedRuntime);
     }
 
     _end() {
@@ -157,7 +166,7 @@ export default class HttpCase {
     _stopClock() {
         Must(!this._finishTime);
         this._finishTime = new Date();
-        console.log(`test case took ${this.runtime().getTime()}ms`);
+        console.log(`test case took ${Gadgets.PrettyTime(this.runtime())}`);
     }
 
     check(futureCheck) {

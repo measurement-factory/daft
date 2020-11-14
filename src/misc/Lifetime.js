@@ -4,43 +4,54 @@
 
 /* Manages program lifetime. */
 
+import assert from "assert";
+import { PrettyTime, PrettyDate, DateSum, DateDiff } from "../misc/Gadgets";
+
 // The default 60s delay is meant to be long enough for most single tests.
-const Lifetime_ = 60*1000;
+const Lifetime_ = new Date(60*1000);
 
 let _GlobalTimeout = null;
+let _ExpectedDeath = null; // _GlobalTimeout expiration Date
 
 function _ClearTimeout() {
+    assert(_GlobalTimeout);
     clearTimeout(_GlobalTimeout);
     _GlobalTimeout = null;
+    _ExpectedDeath = null;
 }
 
-function _SetTimeout(delay /* ms */) {
+function _SetTimeout(/* Date */ delay) {
+    assert(!_GlobalTimeout);
     _GlobalTimeout = setTimeout(function () {
-        throw new Error(`Global ${delay}ms timeout.`);
-    }, delay);
+        throw new Error(`Global ${PrettyTime(delay)} timeout`);
+    }, delay.getTime());
     _GlobalTimeout.unref(); // ignore if there are no other events left
+
+    const now = new Date();
+    _ExpectedDeath = DateSum(now, delay);
+    console.log(`Expecting death in ${PrettyTime(delay)} at ${PrettyDate(_ExpectedDeath)}`);
 }
 
-function _ResetTimeout(delay /* ms */, reason) {
-    if (_GlobalTimeout !== null) {
-        _ClearTimeout();
-        console.log(reason);
-    } else {
-        console.log(`Observing ${delay}ms global timeout.`);
+// gives the program (at least) `delay` more time to finish properly:
+// death = now + max(delay, remaining) or
+// death = max(old_death, now + delay)
+export function Extend(/* Date */ delay) {
+    assert(delay);
+
+    assert(_ExpectedDeath);
+    const now = new Date();
+    const remaining = (_ExpectedDeath - now).valueOf(); // ms
+    if (delay.valueOf() <= remaining) {
+        console.log(`Ignoring global timeout extension by ${PrettyTime(delay)} ` +
+            `because already waiting for ${PrettyTime(remaining)}`);
+        return;
     }
+
+    _ClearTimeout();
+    const diff = DateDiff(delay, remaining);
+    console.log(`Extending global timeout by ${PrettyTime(diff)}`);
     _SetTimeout(delay);
 }
 
-// Limits program lifetime by throwing an exception after the given delay.
-// TODO: To export this function, subtract the lifetime already spent.
-// Otherwise, we are not limiting the lifetime but Extend()ing it.
-function Limit(delay /* ms */) {
-    _ResetTimeout(delay, `Resetting active global timeout to ${delay}ms.`);
-}
-
-// Extends previously set lifetime (or sets the first lifetime limit).
-export function Extend(delay = Lifetime_ /* ms */) {
-    _ResetTimeout(delay, `Extending active global timeout to ${delay}ms from now.`);
-}
-
-Limit(Lifetime_);
+console.log(`Observing default ${PrettyTime(Lifetime_)} global timeout`);
+_SetTimeout(Lifetime_);

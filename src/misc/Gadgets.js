@@ -45,6 +45,22 @@ export function PrettyPercent(part, whole, decimals = undefined) {
     });
 }
 
+// convert a [floating point] milliseconds into a human-friendlier string
+export function PrettyTime(ms) {
+    if (ms < 1000)
+        return Number(ms).toFixed(0) + "ms";
+    if (ms < 90*1000) // 72s looks better than 1.2min?
+        return Number(ms/1000).toFixed(0) + "s";
+    if (ms < 60*60*1000)
+        return Number(ms/(60*1000)).toFixed(1) + "min";
+    return Number(ms/(60*60*1000)).toFixed(1) + "h";
+}
+
+// convert a Date object into a compact human-friendly string
+export function PrettyDate(date) {
+    return date.toISOString();
+}
+
 // the always-present leading part of PrettyMime() and PrettyBody() output
 function _PrettyIntro(data) {
     return ` [${data.length} bytes]`;

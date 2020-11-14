@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from 'assert';
-import { UniqueId } from "../misc/Gadgets";
+import { UniqueId, PrettyDate } from "../misc/Gadgets";
 
 export default class Context {
     constructor(label) {
@@ -13,7 +13,7 @@ export default class Context {
 
     enter(/* console log entries */) {
         this._entranceStamp = new Date();
-        console.log("{", this._entranceStamp.toISOString(), this.id, ...arguments);
+        console.log("{", PrettyDate(this._entranceStamp), this.id, ...arguments);
         return this._entranceStamp;
     }
 
@@ -28,7 +28,7 @@ export default class Context {
             const diff = new Date(now - this._entranceStamp);
             duration = `+${diff.valueOf()}ms`;
         }
-        console.log("}", now.toISOString(), this.id, duration);
+        console.log("}", PrettyDate(now), this.id, duration);
 
         // TODO: Remember this._entranceStamp to find contexts that do not exit?
         this._entranceStamp = null;
