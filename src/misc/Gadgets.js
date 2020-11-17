@@ -133,6 +133,18 @@ export function HostFamilyString(host) {
     return host.indexOf(":") >= 0 ? "IPv6" : "IPv4";
 }
 
+// Converts an integer into a string representing dotted IPv4 address.
+// Guarantees 1:1 mapping but may produce addresses with .255 octets.
+// Currently limited to localhost IPs to minimize test traffic leaking risks.
+export function Number2ipv4(n) {
+    assert(n >= 1); // or we could always add one
+    assert(n < 255*255*255);
+    return ('127.' +
+        ((n>>>16) & 255) + '.' +
+        ((n>>> 8) & 255) + '.' +
+        ((n>>> 0) & 255));
+}
+
 // returns msg framed by local and remote socket addresses
 export function DescribeSocketIo(socket, msg) {
     let buf = "";
