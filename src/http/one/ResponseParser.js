@@ -30,7 +30,7 @@ export default class ResponseParser extends MessageParser {
     determineDefaultBody() {
         // responses have bodies by default
         this.message.body = new Body();
-        console.log("Warning: Unknown [a priori] message length");
+        this._log("Warning: Unknown [a priori] message length");
     }
 
     parseStartLine(raw) {

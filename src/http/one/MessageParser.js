@@ -4,6 +4,7 @@
 
 /* Incrementally parses an HTTP message, including first-line, headers, and body */
 
+import assert from "assert";
 import Field from "../Field";
 import Header from "../Header";
 import Body from "../Body";
@@ -15,7 +16,9 @@ import * as Config from "../../misc/Config";
 export default class MessageParser {
 
     constructor(transaction) {
+        assert(transaction);
         this.transaction = transaction;
+
         this.message = null;
 
         /* kids must set these in their constructors */
@@ -39,7 +42,7 @@ export default class MessageParser {
             if (this.message.body)
                 this.parseBody();
             else
-                console.log(`parsed the entire bodyless ${this._messageKind}`);
+                this._log(`parsed the entire bodyless ${this._messageKind}`);
         }
 
         // TODO: complain about leftovers
@@ -49,7 +52,7 @@ export default class MessageParser {
         let messageRe = /^(.*\r*\n)([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
         let match = messageRe.exec(this._raw.toString());
         if (match === null) {
-            console.log(`no end of ${this._messageKind} headers yet`);
+            this._log(`no end of ${this._messageKind} headers yet`);
             return;
         }
 
@@ -60,7 +63,7 @@ export default class MessageParser {
         this._raw = match[4]; // body [prefix] or an empty string
 
         const parsed = match[1] + match[2] + match[3];
-        console.log(`parsed ${this._messageKind} header` + PrettyMime(this.logPrefix, parsed));
+        this._log(`parsed ${this._messageKind} header` + PrettyMime(this.logPrefix, parsed));
 
         this.determineBodyLength();
     }
@@ -82,7 +85,7 @@ export default class MessageParser {
             field.value = match[3]; // trimmed
             field.terminator = match[4];
         } else {
-            console.log(`Warning: Cannot parse ${raw.length}-byte header field: ${raw}`);
+            this._log(`Warning: Cannot parse ${raw.length}-byte header field: ${raw}`);
             field.name = raw;
             field.separator = "";
             field.value = "";
@@ -111,7 +114,7 @@ export default class MessageParser {
         }
 
         if (!header.fields.length)
-            console.log(`Warning: Found no headers in ${rawH}`);
+            this._log(`Warning: Found no headers in ${rawH}`);
 
         return header;
     }
@@ -133,17 +136,17 @@ export default class MessageParser {
         if (this.message.header.chunked()) { // overwrites Content-Length
             this._bodyDecoder = new ChunkedDecoder();
             this.message.body = new Body();
-            console.log("expecting chunked message body");
+            this._log("expecting chunked message body");
         } else {
             const len = this.message.header.contentLength();
             if (len === null) {
                 this.determineDefaultBody();
             } else if (len === undefined) {
                 this.message.body = new Body();
-                console.log("Warning: Cannot determine message length");
+                this._log("Warning: Cannot determine message length");
             } else {
                 this.message.body = new Body();
-                console.log("expecting %d message body bytes", len);
+                this._log(`expecting ${len} message body bytes`);
             }
             if (this.message.body && !this._bodyDecoder)
                 this._bodyDecoder = new IdentityDecoder(len === undefined ? null : len);
@@ -173,11 +176,15 @@ export default class MessageParser {
             const parsedThing = parsedAllNow ?
                 `the entire ${this._messageKind} body`:
                 `a piece of the ${this._messageKind} body`;
-            console.log(`parsed ${parsedThing}` + PrettyBody(this.logPrefix, decodedBody));
+            this._log(`parsed ${parsedThing}` + PrettyBody(this.logPrefix, decodedBody));
             reportedAll = parsedAllNow;
         }
 
         if (this.message.body.innedAll && !reportedAll)
-            console.log(`parsed the entire ${this._messageKind} body`);
+            this._log(`parsed the entire ${this._messageKind} body`);
+    }
+
+    _log(/* console log entries */) {
+        this.transaction.context.log(...arguments);
     }
 }

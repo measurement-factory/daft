@@ -21,7 +21,7 @@ Host: localhost
 
 `;
 
-        let parser = new RequestParser();
+        let parser = new RequestParser(this);
         parser.parse(raw);
 
         Must(parser.message);

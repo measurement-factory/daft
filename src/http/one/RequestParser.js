@@ -19,7 +19,7 @@ export default class RequestParser extends MessageParser {
 
     determineDefaultBody() {
         // do nothing: requests do not have bodies by default
-        console.log("no request body");
+        this._log("no request body");
     }
 
     parseStartLine(raw) {
