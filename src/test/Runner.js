@@ -117,24 +117,32 @@ export default async function Run(Test) {
     assert.notStrictEqual(totalConfigs, 0);
 
     // by default, test each configuration once (concurrently if needed)
+    const limitedTests = Config.Tests !== undefined;
+    // the two constants below are only meaningful if limitedTests
+    // XXX: Config.ConcurrencyLevel may depend on the test/configurators
+    // TODO: Replace function/step-based configurators with an array of
+    // configurations and then compute the exact defaultTests here. And
+    // consider switch to a simpler model where we pass through each config
+    // once before circling back to the first config!
     const defaultTests = totalConfigs*Config.ConcurrencyLevel;
-    const plannedTests = (Config.Tests === undefined) ? defaultTests : Config.Tests;
+    const plannedTests = Config.Tests; // may be undefined!
 
     // tests that cannot be spread across all configurations evenly
-    let leftoverTests;
-    if (plannedTests < defaultTests) {
-        console.log(`Warning: --tests ${plannedTests} is too small; need ` +
-            `${totalConfigs}*${Config.ConcurrencyLevel} = ${defaultTests}` +
-            " tests to test each configuration once (concurrently if needed)");
-        leftoverTests = 0;
-    } else {
-        leftoverTests = plannedTests % defaultTests;
+    let leftoverTests = 0;
+    if (limitedTests) {
+        if (plannedTests < defaultTests) {
+            console.log(`Warning: --tests ${plannedTests} is too small; need ` +
+                `${totalConfigs}*${Config.ConcurrencyLevel} = ${defaultTests}` +
+                " tests to test each configuration once (concurrently if needed)");
+        } else {
+            leftoverTests = plannedTests % defaultTests;
+        }
     }
 
     let generatedConfigs = 0;
     for (const configurator of configurators) {
         // stop generating configurations if the test limit was reached
-        if (TestsStarted >= plannedTests) {
+        if (limitedTests && TestsStarted >= plannedTests) {
             console.log("Warning: Reached --tests limit before testing all",
                 totalConfigs, "test configurations:",
                 TestsStarted, ">=", plannedTests);
@@ -145,11 +153,12 @@ export default async function Run(Test) {
         ++generatedConfigs;
         console.log(`Test configuration #${generatedConfigs}:\n${Config.sprint()}`);
 
-        if (plannedTests < defaultTests) {
+        if (!limitedTests || plannedTests < defaultTests) {
             TestsForCurrentConfig = Config.ConcurrencyLevel;
-            if (TestsStarted + TestsForCurrentConfig > plannedTests)
+            if (limitedTests && TestsStarted + TestsForCurrentConfig > plannedTests)
                 TestsForCurrentConfig = plannedTests - TestsStarted;
         } else {
+            assert(limitedTests);
             TestsForCurrentConfig = Math.trunc(plannedTests / totalConfigs);
             assert(TestsForCurrentConfig >= Config.ConcurrencyLevel);
             if (leftoverTests > 0) {
