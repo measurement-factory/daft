@@ -112,21 +112,107 @@ export function isExplicitlySet(camelName) {
     return _RecognizedOptions[camelName];
 }
 
-// a camelName:value map maintained by _force() and reset()
-let _ActiveOptions;
-
-// (re)sets the (parsed) option value, including defaults and generated ones
-export function _force(key, value) {
-    if (!(key in _RecognizedOptions))
-        throw new Error("Unrecognized Config option: " + key);
-    const uppedKey = key.charAt(0).toUpperCase() + key.slice(1);
-    _ActiveOptions[key] = value;
-    module.exports[uppedKey] = value; // legacy Config.Key access
-    // TODO: module.exports[key] = function() { return _ActiveOptions[key]; }; // Config.key()
+export function RecognizedOptionNames() {
+    assert(_RecognizedOptions); // Finalized() has been called
+    return Object.keys(_RecognizedOptions);
 }
 
-// Make each user-configurable option (explicitly set on the command
-// line and defaults) available as Config.Option
+// configuration options with dynamically-generated getters
+// This class separates configurable options from the rest of Config while
+// providing safe(r) by-name access to individual options. Eventually, it may
+// absorb the rest of Config and become Config.
+class ActiveOptions {
+    // accepts a camelName:value map
+    constructor(defaults) {
+        assert(defaults); // but may be empty
+        // we assume that shallow copy is safe for all configurable options
+        this._raw = {...defaults}; // shallow
+    }
+
+    clone() {
+        assert(this._raw);
+        return new ActiveOptions(this._raw);
+    }
+
+    // camelNames
+    names() {
+        return Object.keys(this._raw);
+    }
+
+    /* safe getter methods are dynamically added by Finalize() */
+
+    // dangerous access using a string-based camelName; meant for meta-code
+    // such as configuration generators (that do not use hard-coded strings)
+    value(camelName) {
+        _assertRecognition(camelName);
+        assert(camelName in this._raw);
+        return this._raw[camelName];
+    }
+
+    // dangerous access using a string-based camelName; meant for meta-code
+    // such as configuration generators (that do not use hard-coded strings)
+    resetOption(name, value) {
+        _assertRecognition(name);
+        assert.notStrictEqual(value, undefined);
+        // name is in ActiveOptions.prototype iff the option has a default value
+        // name may or may not be in this._raw, depending on defaults, history
+        this._raw[name] = value;
+    }
+
+    // prints (not) explicitly configured configuration options
+    _sprintGroup(title, explicits) {
+        const filter = key => isExplicitlySet(key) === explicits;
+        const keys = Object.keys(this._raw).filter(filter).sort();
+        if (!keys.length)
+            return "";
+        let image = util.format("    %s:\n", title);
+        for (const key of keys)
+            image += util.format("        %s: %O\n", key, this._raw[key]);
+        return image;
+    }
+
+    toString() {
+        let image = "";
+        image += this._sprintGroup("explicitly configured options", true);
+        image += this._sprintGroup("options with generated and default values", false);
+        return image;
+    }
+}
+
+// current configuration options
+let _ActiveOptions = null;
+
+// (re)sets the legacy Config.Key value, including defaults and generated ones
+function _force(key, value) {
+    _assertRecognition(key);
+    const uppedKey = key.charAt(0).toUpperCase() + key.slice(1);
+    module.exports[uppedKey] = value; // legacy Config.Key access
+}
+
+// change a few global options, leaving the rest as is
+// Options are a camelName:value map. TODO: Replace with (camelName, value).
+export function use(options) {
+    assert(options instanceof Object);
+    assert(!(options instanceof ActiveOptions));
+    assert(_ActiveOptions);
+    for (const key of Object.keys(options)) {
+        _force(key, options[key]);
+        _ActiveOptions.resetOption(key, options[key]);
+    }
+}
+
+// change all global options to the given ones
+export function reset(newOptions) {
+    assert(newOptions instanceof ActiveOptions);
+    _ActiveOptions = newOptions;
+    for (const key of newOptions.names()) {
+        _force(key, newOptions.value(key));
+    }
+}
+
+// Make all explicitly set on the command line options and all option defaults
+// available as Config.option() (and legacy Config.Option). Also records which
+// options were configured explicitly (so that config generators skip them).
 function _Import(options, optionsWithoutDefaults) {
     assert(!_RecognizedOptions);
     _RecognizedOptions = {};
@@ -134,12 +220,25 @@ function _Import(options, optionsWithoutDefaults) {
         const dashName = option.option;
         const camelName = dashName.replace(/-(.)/gi, m => m[1].toUpperCase());
         _RecognizedOptions[camelName] = camelName in optionsWithoutDefaults;
+
+        // create ActiveOptions.camelName()
+        ActiveOptions.prototype[camelName] = function () {
+            assert(camelName in this._raw);
+            const result = this._raw[camelName];
+            assert.notStrictEqual(result, undefined);
+            return result;
+        };
+
+        // create Config.camelName()
+        module.exports[camelName] = function () {
+            assert(_ActiveOptions);
+            assert(_ActiveOptions instanceof ActiveOptions);
+            return ActiveOptions.prototype[camelName].call(_ActiveOptions);
+        };
     }
 
     assert(!_ActiveOptions);
-    _ActiveOptions = {};
-    for (const key of Object.keys(options))
-        _force(key, options[key]);
+    reset(new ActiveOptions(options));
 }
 
 // Import CLI options. On --help and misconfiguration errors, print usage and
@@ -182,51 +281,18 @@ export function Finalize(argv) {
     return true;
 }
 
-// returns a copy of the given options
-function _cloneOptions(options) {
-    // we assume that shallow copy is safe for all configurable options
-    return {...options};
-}
-
-// all global options as one opaque object suitable for feeding reset()
+// all global options as one object suitable for feeding reset()
 export function clone() {
-    return _cloneOptions(_ActiveOptions);
-}
-
-// change all global options to the given ones
-export function reset(newOptions) {
-    _ActiveOptions = _cloneOptions(newOptions);
-}
-
-// prints (not) explicitly configured configuration options
-function _sprintGroup(title, explicits) {
-    const filter = key => isExplicitlySet(key) === explicits;
-    const keys = Object.keys(_ActiveOptions).filter(filter).sort();
-    if (!keys.length)
-        return "";
-    let image = util.format("    %s:\n", title);
-    for (const key of keys)
-        image += util.format("        %s: %O\n", key, _ActiveOptions[key]);
-    return image;
+    return _ActiveOptions.clone();
 }
 
 // cannot export toString() for some reason
 export function sprint() {
-    let image = "";
-    image += _sprintGroup("explicitly configured options", true);
-    image += _sprintGroup("options with generated and default values", false);
-    return image;
+    return _ActiveOptions.toString();
 }
 
+// TODO: Refactor using key() getters?
 export function optionValue(camelName) {
-    _assertRecognition(camelName);
-    return _ActiveOptions[camelName];
-}
-
-// change a few global options, leaving the rest as is
-export function use(options) {
-    for (const key of Object.keys(options)) {
-        assert(!isExplicitlySet(key));
-        _force(key, options[key]);
-    }
+    assert(_ActiveOptions);
+    return _ActiveOptions.value(camelName);
 }

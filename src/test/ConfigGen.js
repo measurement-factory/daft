@@ -6,6 +6,7 @@ import assert from "assert";
 import * as Config from "../misc/Config";
 
 // generates configurators after accumulating configuration-adjustment steps
+// TODO: Replace with FlexibleConfigGen
 export default class ConfigGen {
     constructor() {
         this._groups = []; // groups of configuration-adjusting steps
@@ -93,4 +94,126 @@ export default class ConfigGen {
         return configurators;
     }
 
+}
+
+// extends value generation to also include the (defined) final/returned value
+// as if that value was yielded during the extra last generation step
+class YieldReturn {
+    constructor(iterator) {
+        assert(iterator);
+        this._iterator = iterator;
+    }
+
+    // the iterable protocol
+    [Symbol.iterator]() {
+        return this;
+    }
+
+    // the iterator protocol
+    next() {
+        if (!this._iterator)
+            return { value: undefined, done: true };
+
+        const iteration = this._iterator.next();
+        if (iteration.done) {
+            this._iterator = null;
+            if (iteration.value !== undefined)
+                return { value: iteration.value, done: false }; // extra yield
+        }
+
+        return iteration;
+    }
+}
+
+// Generators yield or return this value to preserve the configuration object
+// given to them, so that it can be passed to the next generator. Otherwise,
+// if a generator does not yield or return something, then the configuration
+// object is discarded.
+export const KeepConfig = {};
+
+// Returning this value avoids consistent-return lint warnings
+// when the generator already returns KeepConfig. In all other use cases,
+// returning nothing (i.e. writing "return;") is perfectly fine, of course.
+export const DropConfig = undefined;
+
+// A sketch for using FlexibleConfigGen object to enumerate values for testing
+// some configuration option X:
+// configGen.configurationOptionX(function *(cfg) {
+//     if (!cfg.compatibleWithX())
+//         return KeepConfig; // cfg = cfg   (1)
+//
+//     yield "a"; // cfg.x = a               (2)
+//
+//     if (!cfg.testUsingConsonants())
+//         return DropConfig; // drop this cfg; just use cfgs from (1) and (2)
+//
+//     yield "b";
+// });
+
+// prevents multiple AddMethods() calls
+// TODO: Perhaps we should register with Configure::Finalize() instead.
+let FlexibleConfigGenFinalized = false;
+
+// generates configurators after a series of configuration-yielding steps
+// where each next step yields a new sequence of configurations by cloning
+// configurations yielded during the previous step and adjusting the clones
+// [ { a=a1, b=?, c=? } ] // start: user configuration and defaults
+// [ { a=a1, b=b1, c=?}, { a=a1, b=b2, c=?}, ... ] // step adds b values
+// [ { a=a1, b=b1, c=c1}, { a=a1, b=b1, c=c2}, ... ] // step adds c values
+export class FlexibleConfigGen {
+    // adds individual option-specific getter/setter methods
+    static AddMethods(optionNames) {
+        optionNames.forEach(optionName => {
+            //Object.defineProperty(FlexibleConfigGen, optionName, {
+            FlexibleConfigGen.prototype[optionName] = function (gen) {
+                if (Config.isExplicitlySet(optionName))
+                    return; // automated variation disabled
+
+                assert.notEqual(this._configs.length, 0);
+                let newConfigs = [];
+                for (const oldConfig of this._configs) {
+                    let keptConfigs = 0;
+                    for (const newValue of new YieldReturn(gen(oldConfig))) {
+                        const newConfig = oldConfig.clone();
+                        if (newValue === KeepConfig) {
+                            if (!keptConfigs++)
+                                newConfigs.push(newConfig);
+                        } else {
+                            newConfig.resetOption(optionName, newValue);
+                            newConfigs.push(newConfig);
+                        }
+                    }
+                }
+                // If the option is not supposed to be used due to other,
+                // previously set options, then gen yields nothing, and we
+                // leave the configuration as it was.
+                if (newConfigs.length)
+                    this._configs = newConfigs;
+                assert.notEqual(this._configs.length, 0);
+            };
+        });
+    }
+
+    constructor() {
+        // configurations yielded so far
+        this._configs = [ Config.clone() ];
+
+        if (!FlexibleConfigGenFinalized) {
+            FlexibleConfigGen.AddMethods(Config.RecognizedOptionNames());
+            FlexibleConfigGenFinalized = true;
+        }
+    }
+
+    // returns configurators that can generate all possible configurations
+    generateConfigurators() {
+        if (!this._configs.length) {
+            // either the Test suggested no option variations or all suggested
+            // variations were prohibited by explicitly configured options
+            const useConfigAsIs = [ () => {} ];
+            return useConfigAsIs;
+        }
+
+        // convert a sequence of configs into a sequence of config-setting functions
+        return this._configs.map(cfg => [ function (C) { C.reset(cfg); } ]);
+    }
 }
