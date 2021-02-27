@@ -16,6 +16,13 @@ export default class Header {
         this.fields = []; // parsed or manually added Fields, in appearance/addition order
         this._raw = null; // set to received bytes; reset to null on any change
         this.filters = []; // functions that decide which fields are removed by finalize()
+
+        // prohibitNamed() allows a test case to delete fields added by
+        // lower-level code. These fields allow a test case to add fields that
+        // cannot be overwritten (or even seen!) by the low-level code.
+        // Usually, the two mechanisms are used together in order to customize
+        // a value of the field used by the lower-level code.
+        this._extraFields = [];
     }
 
     clone() {
@@ -23,6 +30,8 @@ export default class Header {
         dupe._raw = this._raw;
         for (let field of this.fields)
             dupe.fields.push(field.clone());
+        for (let field of this._extraFields)
+            dupe._extraFields.push(field.clone());
         // we cannot clone a filter but can and should clone the array
         dupe.filters = this.filters.slice(0);
         return dupe;
@@ -33,6 +42,8 @@ export default class Header {
         this.fields = this.fields.filter(field => this._wantedField(field));
         // finalize each wanted field
         this.fields.forEach(field => field.finalize());
+        // finalize each overwriting field
+        this._extraFields.forEach(field => field.finalize());
     }
 
     // Is this field allowed by all the filters?
@@ -145,6 +156,15 @@ export default class Header {
         let field = this._argsToField(...args);
         if (!this.has(field.name))
             this.add(field);
+    }
+
+    // adds a field that will overwrite any regular same-name field, even if
+    // that regular field is added later
+    addOverwrite(...args) {
+        const field = this._argsToField(...args);
+        this.prohibitNamed(field.name);
+        this._extraFields.push(field);
+        this._raw = null;
     }
 
     deleteAllNamed(name) {

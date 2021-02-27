@@ -36,7 +36,9 @@ function rawHeader(header) {
             field.value + field.terminator;
     }
 
-    return header.fields.map(rawField).join("");
+    // TODO: Hide Header::fields and stop violating Header boundaries.
+    return header.fields.map(rawField).join("") +
+        header._extraFields.map(rawField).join("");
 }
 
 export function requestPrefix(message) {
