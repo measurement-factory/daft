@@ -18,6 +18,19 @@ const _HopByHopHeaderNames = [
     "Upgrade"
 ].map(name => name.toLowerCase());
 
+// Headers that a proxy may remove/add to control message framing
+// TODO: EOF-based framing should be sanctioned by the test case!
+const _FramingHeaderNames = [
+    "Content-Length",
+    "Transfer-Encoding" // also in _HopByHopHeaderNames
+].map(name => name.toLowerCase());
+
+// Message headers that may differ because of legitimate proxy actions.
+const _ControlledByProxyHeaderNames = [
+    "Via",
+    "X-Proxy-Worker-ID"
+].map(name => name.toLowerCase());
+
 // Response headers that may differ between a cache miss sent to the
 // cache and the later corresponding cache hit received from the cache.
 // TODO: Only enable for cases where caching is allowed/expected?
@@ -29,8 +42,6 @@ const _HopByHopHeaderNames = [
 // "New-Field"
 const _ControlledByCacheHeaderNames = [
     "Age",
-    "Via",
-    "X-Proxy-Worker-ID"
 ].map(name => name.toLowerCase());
 
 export function IsHopByHop(name /*, header */) {
@@ -44,6 +55,14 @@ export function IsHopByHop(name /*, header */) {
 
 export function IsEndToEnd(name, header) {
     return !IsHopByHop(name, header);
+}
+
+function IsFraming(name) {
+    return _FramingHeaderNames.indexOf(name.toLowerCase()) >= 0;
+}
+
+function IsControlledByProxy(name) {
+    return _ControlledByProxyHeaderNames.indexOf(name.toLowerCase()) >= 0;
 }
 
 function IsControlledByCache(name) {
@@ -93,7 +112,11 @@ export function AssertForwardedMessage(sent, received, kind) {
         let name = field.name;
         if (!IsEndToEnd(name, sent))
             continue;
+        if (IsControlledByProxy(name))
+            continue;
         if (IsControlledByCache(name))
+            continue;
+        if (IsFraming(name) && !received.header.has(name))
             continue;
         assert(received.header.has(name), `received ${kind} has ${name}`);
         AssertForwardedHeaderFieldValue(
