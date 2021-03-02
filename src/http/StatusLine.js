@@ -6,6 +6,7 @@
 
 import { Must } from "../misc/Gadgets";
 import * as Misc from "../misc/Gadgets";
+import assert from "assert";
 
 export default class StatusLine {
 
@@ -75,6 +76,16 @@ export default class StatusLine {
     code(value) {
         Must(value !== undefined);
         this.codeString_ = (value === null) ? null : `${value}`;
+    }
+
+    code1xx() {
+        const scode = this.codeInteger();
+        return scode !== undefined && (100 <= scode && scode <= 199);
+    }
+
+    codeMatches(...codes) {
+        const scode = this.codeInteger();
+        return scode !== undefined && codes.includes(scode);
     }
 
     // reject string, infinity, NaN, approximate, and negative values
