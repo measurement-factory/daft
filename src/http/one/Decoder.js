@@ -16,6 +16,8 @@ export default class Decoder {
         this._outSize = 0; // number of decoded bytes we gave back to the caller
 
         this._raw = ""; // unparsed (encoded) content
+
+        this._reachedCompletion = false; // called _reportCompletion()
     }
 
     decodedAll() {
@@ -27,15 +29,17 @@ export default class Decoder {
     }
 
     decode(data) {
-        Must(!this.decodedAll());
+        Must(!this._reachedCompletion);
 
         this._inSize += data.length;
         this._raw += data;
         const decoded = this._decode();
         this._outSize += decoded.length;
 
-        if (this.decodedAll())
+        if (this.decodedAll()) {
+            this._reachedCompletion = true;
             this._reportCompletion();
+        }
 
         return decoded;
     }
