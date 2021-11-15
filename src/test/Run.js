@@ -27,4 +27,11 @@ export default class Run {
         return description;
     }
 
+    // useful for DNS labels and other IDs with restrictive character sets
+    toWord() {
+        let word = this.id;
+        if (this.attempt_)
+            word += "a" + this.attempt_;
+        return word;
+    }
 }
