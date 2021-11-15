@@ -14,10 +14,13 @@ import assert from "assert";
 
 export default class Transaction {
 
-    constructor() {
-        assert.strictEqual(arguments.length, 0);
+    constructor(agent) {
+        assert.strictEqual(arguments.length, 1);
         let myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`starting ${myType} transaction`);
+
+        assert(agent)
+        this._agent = agent;
 
         this._started = false;
 

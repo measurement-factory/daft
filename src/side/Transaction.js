@@ -11,8 +11,11 @@ import assert from "assert";
 // a process of sending and receiving a (request, response) tuple
 // kids define which of those two messages is sent and which is received
 export default class Transaction {
-    constructor() {
-        assert.strictEqual(arguments.length, 0);
+    constructor(agent) {
+        assert.strictEqual(arguments.length, 1);
+
+        assert(agent)
+        this._agent = agent; // transaction creator
 
         /* kids must set these */
         this.ownerKind = undefined;
@@ -24,6 +27,7 @@ export default class Transaction {
 
         this._startTime = null;
         this.socket = null;
+        this._savedSocket = null; // post-finish() pconn
 
         this.messageIn = null; // e.g., Request for server transactions
         this.messageOut = null; // e.g., Request for client transactions
@@ -146,6 +150,16 @@ export default class Transaction {
         return this._receivedEverything;
     }
 
+    persistent() {
+        // TODO: When is it OK to ask this question?
+        assert(this.messageIn);
+        assert(this.messageOut);
+        assert(this._finalizedMessage);
+        this.context.log(`messageIn.persistent ${this.messageIn.persistent()}`);
+        this.context.log(`messageOut.persistent ${this.messageOut.persistent()}`);
+        return this.messageIn.persistent() && this.messageOut.persistent();
+    }
+
     start(socket) {
         assert.strictEqual(arguments.length, 1);
         assert(!this.started());
@@ -192,7 +206,7 @@ export default class Transaction {
         this.context.log(`${this.ownerKind} transaction ended`);
 
         if (this.socket) {
-            this.socket.destroy();
+            this._agent.absorbTransactionSocket(this, this.socket);
             this.socket = null;
         }
 

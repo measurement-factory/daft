@@ -25,7 +25,6 @@ export default class HttpCase {
         this._checks = new Checker();
 
         this._startAgentsPromise = null;
-        this._stopAgentsPromise = null;
         this._runPromise = null;
 
         this._expectedRuntime = new Date(60*1000); // 1 minute
@@ -236,13 +235,10 @@ export default class HttpCase {
         return this._startAgentsPromise;
     }
 
-    stopAgents() {
-        if (this._stopAgentsPromise)
-            return this._stopAgentsPromise;
-
+    async stopAgents() {
         let agents = this._agents().reverse();
-        this._stopAgentsPromise = Promise.map(agents, agent => agent.stop());
-        return this._stopAgentsPromise;
+        console.log("waiting for agents to stop: ", agents.length);
+        await Promise.map(agents, agent => agent.stop());
     }
 
     // returns all active agents in their start order (i.e., servers first)

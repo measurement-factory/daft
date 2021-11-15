@@ -16,12 +16,13 @@ export default class Agent extends SideAgent {
         assert.strictEqual(arguments.length, 0);
 
         super();
-        this._transaction = new Transaction();
 
         this.socket = null; // connection to be established in start()
         this.localAddress = null;
         this.remoteAddress = null;
         this.nextHopAddress = Config.ProxyListeningAddress;
+
+        this._transaction = new Transaction(this);
     }
 
     get request() {
@@ -52,7 +53,8 @@ export default class Agent extends SideAgent {
         });
     }
 
-    _stop() {
+    async stop() {
+        assert(!this._keepConnections); // no pconn support yet
         if (this.socket) {
             this.socket.destroy(); // XXX: what if a transaction does it too?
             this.socket = null;
@@ -60,6 +62,5 @@ export default class Agent extends SideAgent {
                 Gadgets.PrettyAddress(this.localAddress),
                 Gadgets.PrettyAddress(this.remoteAddress));
         }
-        return super._stop();
     }
 }

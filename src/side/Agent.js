@@ -22,12 +22,19 @@ export default class Agent {
         });
 
         this.checks = new Checker();
+
+        // 1. require persistent connections
+        // 2. do not close persistent connections when stopping
+        // 3. save persistent connections for other.reuseConnectionsFrom(this)
+        this._keepConnections = false;
+
+        // A presumably open socket of a finish()ed transaction. Saved only if
+        // requested by this._keepConnections.
+        this._savedSocket = null;
     }
 
-    stop() {
-        return Promise.try(() => {
-            return this._stop();
-        });
+    async stop() {
+        assert(false, `pure virtual: kids must override`);
     }
 
     transaction() {
@@ -35,9 +42,9 @@ export default class Agent {
         return this._transaction;
     }
 
-    _stop() {
-        // TODO: and kill all pending transactions?
-        return Promise.resolve(this);
+    keepConnections() {
+        console.log("will require and reuse persistent connections");
+        this._keepConnections = true; // may already be true
     }
 
     _startTransaction(transaction, socket) {
@@ -68,5 +75,51 @@ export default class Agent {
         } else {
             console.log("keep waiting for the remaining", xRemaining, "transactions");
         }
+    }
+
+    // keeps or closes the socket of a finish()ing transaction
+    absorbTransactionSocket(transaction, socket) {
+
+        if (this._keepConnections) {
+            // those who set this._keepConnections require a pconn
+            assert(transaction.persistent());
+            assert(socket);
+
+            // no support for saving multiple sockets
+            assert(!this._savedSocket);
+            this._savedSocket = socket;
+
+            transaction.context.log("saved connection instead of closing it");
+
+            this._savedSocket.unref();
+
+            // We are done monitoring this socket; remove our event handlers.
+            // The new transaction will register its own handlers.
+            // TODO: Remove just the handlers that _we_ added (explicitly)?
+            // Nodejs says we should not "remove listeners added elsewhere".
+            this._savedSocket.removeAllListeners();
+
+            return;
+        }
+
+        if (socket) {
+            socket.destroy();
+            transaction.context.log("closed socket");
+        }
+    }
+
+    // absorbs existing (presumably persistent) connection(s) from another
+    // instance of (presumably) same-side agent
+    reuseConnectionsFrom(agent) {
+        assert(this !== agent);
+
+        // most likely, our caller requires a pconn reuse
+        assert(agent._savedSocket);
+
+        console.log("reusing saved connection");
+        this._savedSocket = agent._savedSocket;
+        agent._savedSocket = null;
+        this._savedSocket.ref();
+        // and wait for start()
     }
 }

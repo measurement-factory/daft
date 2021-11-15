@@ -17,7 +17,6 @@ export default class Agent extends SideAgent {
         assert.strictEqual(arguments.length, 0);
 
         super();
-        this._transaction = new Transaction();
 
         this._originalResponse = null; // for subsequent transactions to mimic
 
@@ -27,6 +26,8 @@ export default class Agent extends SideAgent {
         this._requestedListeningAddress = null; // caller-managed, if any
         this._reservedListeningAddress = null; // doled from the pool for our use
         this._actualListeningAddress = null; // used (and fully resolved)
+
+        this._transaction = new Transaction(this);
     }
 
     address() {
@@ -43,46 +44,66 @@ export default class Agent extends SideAgent {
 
     start() {
         return Promise.try(() => {
-            // start a TCP server
-            this.server = asyncNet.createServer();
-
-            this.server.on('connection', userSocket => {
-                let transaction = null;
-                if (this._transaction.started()) {
-                    transaction = new Transaction();
-
-                    // reset() copies everything, so this cannot work well if
-                    // the original response has transaction-specific pieces
-                    assert(!this._originalResponse.finalized());
-                    transaction.response.reset(this._originalResponse);
-                } else {
-                    transaction = this._transaction;
-
-                    // see the reset(this._originalResponse) comments above
-                    assert(!transaction.response.finalized());
-                    assert(!this._originalResponse);
-                    this._originalResponse = transaction.response.clone();
-                }
-
-                this._startTransaction(transaction, userSocket);
-            });
-
-            const addr = Gadgets.FinalizeListeningAddress(this.address());
-            return this.server.listenAsync(addr.port, addr.host).
-                bind(this).
-                tap(this._startedListening);
+            if (this._savedSocket) {
+                const socket = this._savedSocket
+                this._savedSocket = null;
+                this._startServing(socket);
+            } else {
+                this._startListening();
+            }
         });
     }
 
-    _stop() {
-        if (this.server && this.server.address()) {
-            return this.server.closeAsync().
-                bind(this).
-                finally(this._stoppedListening).
-                finally(super._stop);
+    // start a TCP server
+    _startListening() {
+        this.server = asyncNet.createServer();
+
+        this.server.on('connection', userSocket => this._startServing(userSocket));
+
+        const addr = Gadgets.FinalizeListeningAddress(this.address());
+        return this.server.listenAsync(addr.port, addr.host).
+            bind(this).
+            tap(this._startedListening);
+    }
+
+    // Take care of the given accepted connection.
+    // The connection may have been accepted by another Agent instance.
+    _startServing(userSocket) {
+        let transaction = null;
+        if (this._transaction.started()) {
+            transaction = new Transaction(this);
+
+            // reset() copies everything, so this cannot work well if
+            // the original response has transaction-specific pieces
+            assert(!this._originalResponse.finalized());
+            transaction.response.reset(this._originalResponse);
+        } else {
+            transaction = this._transaction;
+
+            // see the reset(this._originalResponse) comments above
+            assert(!transaction.response.finalized());
+            assert(!this._originalResponse);
+            this._originalResponse = transaction.response.clone();
         }
+
+        this._startTransaction(transaction, userSocket);
+    }
+
+    async stop() {
+        if (this.server && this.server.address()) {
+            const promiseToClose = this.server.closeAsync(); // unconditionally
+            if (this._keepConnections) {
+                assert(this._savedSocket);
+                console.log("not waiting for (persistent) server connections to close");
+            } else {
+                await promiseToClose;
+            }
+
+            this._stoppedListening();
+            return;
+        }
+
         this._releaseListeningAddress();
-        return super._stop();
     }
 
     serve(resource) {

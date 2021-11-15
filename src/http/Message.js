@@ -153,6 +153,11 @@ export default class Message {
         this.header.add(this._daftFieldName(relationship + "-Resource"), resource.id);
     }
 
+    persistent() {
+        // XXX: Honor HTTP version default.
+        return this.header.has("Connection", "keep-alive") !== null;
+    }
+
     _daftFieldName(suffix) {
         const kind = Object.getPrototypeOf(this).constructor.name;
         return Http.DaftFieldName(`${kind}-${suffix}`);

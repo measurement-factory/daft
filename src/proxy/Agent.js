@@ -16,9 +16,10 @@ export default class Agent extends SideAgent {
         assert.strictEqual(arguments.length, 0);
 
         super();
-        this._transaction = new Transaction();
 
         this.server = null; // TCP server to be created in start()
+
+        this._transaction = new Transaction(this);
     }
 
     start() {
@@ -38,13 +39,11 @@ export default class Agent extends SideAgent {
         });
     }
 
-    _stop() {
+    async stop() {
         if (this.server && this.server.address()) {
-            let savedAddress = this.server.address();
-            return this.server.closeAsync().tap(() => {
-                console.log("Proxy stopped listening on %O", savedAddress);
-            }).then(super._stop);
+            const savedAddress = this.server.address();
+            await this.server.closeAsync();
+            console.log("Proxy stopped listening on %O", savedAddress);
         }
-        return super._stop();
     }
 }
