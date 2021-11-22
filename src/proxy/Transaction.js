@@ -8,11 +8,12 @@ import net from "net";
 import RequestParser from "../http/one/RequestParser";
 import ResponseParser from "../http/one/ResponseParser";
 import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter";
+import Context from "../misc/Context";
 import * as Config from "../misc/Config";
 import { Must, SendBytes, ReceivedBytes, PrettyMime, PrettyBody } from "../misc/Gadgets";
 import assert from "assert";
 
-export default class Transaction {
+export default class Transaction { // XXX: extends SideTransaction
 
     constructor(agent) {
         assert.strictEqual(arguments.length, 1);
@@ -21,6 +22,8 @@ export default class Transaction {
 
         assert(agent);
         this._agent = agent;
+
+        this.context = new Context("xact");
 
         this._started = false;
 
