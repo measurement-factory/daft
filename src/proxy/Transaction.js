@@ -19,7 +19,7 @@ export default class Transaction {
         let myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`starting ${myType} transaction`);
 
-        assert(agent)
+        assert(agent);
         this._agent = agent;
 
         this._started = false;

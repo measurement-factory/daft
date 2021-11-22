@@ -45,7 +45,7 @@ export default class Agent extends SideAgent {
     start() {
         return Promise.try(() => {
             if (this._savedSocket) {
-                const socket = this._savedSocket
+                const socket = this._savedSocket;
                 this._savedSocket = null;
                 this._startServing(socket);
             } else {

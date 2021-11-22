@@ -6,7 +6,6 @@
 
 import { Must } from "../misc/Gadgets";
 import * as Misc from "../misc/Gadgets";
-import assert from "assert";
 
 export default class StatusLine {
 

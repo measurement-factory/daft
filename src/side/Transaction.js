@@ -14,7 +14,7 @@ export default class Transaction {
     constructor(agent) {
         assert.strictEqual(arguments.length, 1);
 
-        assert(agent)
+        assert(agent);
         this._agent = agent; // transaction creator
 
         /* kids must set these */
