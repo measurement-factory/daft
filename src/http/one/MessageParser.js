@@ -166,11 +166,9 @@ export default class MessageParser {
 
         let reportedAll = false;
 
-        // log body parsing progress, distinguishing Config.LogBodies
-        // default/undefined value (log overall progress but not body contents)
-        // from its zero value (do not log overall progress either).
+        // log body parsing progress
         const parsedLength = decodedBody.length;
-        if (parsedLength && Config.LogBodies !== 0) {
+        if (parsedLength && Config.logBodyProgress(this.message.body.innedSize())) {
             const parsedAllNow = this.message.body.innedAll &&
                 decodedBody.length === this._bodyDecoder.outputSize();
             const parsedThing = parsedAllNow ?

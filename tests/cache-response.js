@@ -34,10 +34,6 @@ export default class MyTest extends Test {
 
         assert(Config.BodySize >= 0, "positive body-size"); // TODO: Add Size option type
 
-        // do not log large body handling details by default
-        if (Config.LogBodies === undefined && Config.BodySize > 1*1024*1024)
-            Config.LogBodies = 0;
-
         let resource = new Resource();
         resource.makeCachable();
         resource.uri.address = AddressPool.ReserveListeningAddress();

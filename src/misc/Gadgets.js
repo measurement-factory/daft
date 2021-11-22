@@ -89,7 +89,7 @@ export function PrettyMime(prefix, data) {
 
 // currently abusing PrettyMime() to format bodies, but that may change
 export function PrettyBody(prefix, rawBody) {
-    if (!Config.LogBodies)
+    if (!Config.logBodyContents(rawBody.length))
         return _PrettyIntro(rawBody);
     return PrettyMime(prefix, rawBody);
 }

@@ -68,6 +68,26 @@ export function LargeBodySize() {
     return 2*blockSize + extras;
 }
 
+// whether to log overall body handling progress
+export function logBodyProgress(bodySize) {
+    // by default, report progress except for huge bodies
+    if (LogBodies === undefined) {
+        const suspectedSize = bodySize === undefined ? Config.BodySize : bodySize;
+        return suspectedSize <= 1*1024*1024;
+    }
+    return LogBodies > 0;
+}
+
+// whether to log body contents
+export function logBodyContents(bodySize) {
+    // by default, log contents of small non-default bodies only
+    if (LogBodies === undefined) {
+        const suspectedSize = bodySize === undefined ? Config.BodySize : bodySize;
+        return suspectedSize <= 100 && suspectedSize != DefaultBodySize();
+    }
+    return LogBodies > 0;
+}
+
 /* Command-line options handling */
 
 // accumulates recognized CLI options
