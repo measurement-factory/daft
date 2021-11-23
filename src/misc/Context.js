@@ -6,8 +6,8 @@ import assert from 'assert';
 import { UniqueId, PrettyDate } from "../misc/Gadgets";
 
 export default class Context {
-    constructor(label) {
-        this.id = UniqueId(label);
+    constructor(label, counter = undefined) {
+        this.id = counter === undefined ? UniqueId(label) : `${label}${counter}`;
         this._entranceStamp = null;
     }
 

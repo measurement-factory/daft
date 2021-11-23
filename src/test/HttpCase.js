@@ -11,14 +11,18 @@ import Server from "../server/Agent";
 import * as Http from "../http/Gadgets";
 import * as Lifetime from "../misc/Lifetime";
 import * as Gadgets from "../misc/Gadgets";
+import Context  from "../misc/Context";
 import { Must } from "../misc/Gadgets";
 import assert from "assert";
 
+let HttpCases = 0;
 
 export default class HttpCase {
 
     constructor(gist) {
+        this.context = new Context("case", ++HttpCases);
         this.gist = gist;
+
         this._clients = [];
         this._server = null;
         this._proxy = null;
@@ -35,7 +39,7 @@ export default class HttpCase {
 
     // allow this test case to run longer than usual
     expectLongerRuntime(/* Date */ extra) {
-        console.log(`will let the test case run ${Gadgets.PrettyTime(extra)} longer`);
+        this.context.log(`will let the test case run ${Gadgets.PrettyTime(extra)} longer`);
         this._expectedRuntime = Gadgets.DateSum(this._expectedRuntime, extra);
     }
 
@@ -133,29 +137,29 @@ export default class HttpCase {
     }
 
     _begin() {
+        const now = this.context.log('starting:', this.gist);
         Must(!this._startTime);
-        this._startTime = new Date();
-        console.log(Gadgets.PrettyDate(this._startTime), "Starting test case:", this.gist);
+        this._startTime = now;
         Lifetime.Extend(this._expectedRuntime);
     }
 
     _end() {
-        console.log("Ending test case:", this.gist);
+        this.context.log('ending:', this.gist);
     }
 
     _promiseTransactions() {
         return Promise.try(() => {
             let transactions = [];
             if (this._server) {
-                console.log("will wait for the origin transactions to end");
+                this.context.log("will wait for the origin transactions to end");
                 transactions.push(this._server.transactionsDone);
             }
             if (this._proxy) {
-                console.log("will wait for the proxy transactions to end");
+                this.context.log("will wait for the proxy transactions to end");
                 transactions.push(this._proxy.transactionsDone);
             }
             if (this._clients.length > 0) {
-                console.log(`will wait for ${this._clients.length} user agent transactions to end`);
+                this.context.log(`will wait for ${this._clients.length} user agent transactions to end`);
                 transactions.push(...this._clients.map(client => client.transactionsDone));
             }
             return Promise.all(transactions);
@@ -165,7 +169,7 @@ export default class HttpCase {
     _stopClock() {
         Must(!this._finishTime);
         this._finishTime = new Date();
-        console.log(`test case took ${Gadgets.PrettyTime(this.runtime())}`);
+        this.context.log(`took ${Gadgets.PrettyTime(this.runtime())}`);
     }
 
     check(futureCheck) {
@@ -237,7 +241,7 @@ export default class HttpCase {
 
     async stopAgents() {
         let agents = this._agents().reverse();
-        console.log("waiting for agents to stop: ", agents.length);
+        this.context.log(`waiting for ${agents.length} agents to stop`);
         await Promise.map(agents, agent => agent.stop());
     }
 
