@@ -3,6 +3,7 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from "assert";
+import Promise from 'bluebird';
 import * as Config from "../misc/Config";
 import * as Global from "../misc/Global";
 
@@ -256,4 +257,11 @@ export function FinalizeListeningAddress(addr) {
     return (addr.host === 'localhost') ?
         { host: '::', port: addr.port } : // listen on all available IPs
         { host: addr.host, port: addr.port };
+}
+
+/// a promise to sleep for the given amount of milliseconds
+export function SleepMs(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
 }
