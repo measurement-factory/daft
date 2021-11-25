@@ -37,13 +37,15 @@ export default class Context {
     }
 
     // logs a message without changing the context state
-    log(/* console log entries */) {
+    log(format, ...rest) {
         const now = new Date();
         if (arguments.length) {
-            if (!this._entranceStamp)
-                console.log("|", now, this.id, ...arguments);
-            else
-                console.log("   ", ...arguments);
+            if (!this._entranceStamp) {
+                const stamp = PrettyDate(now);
+                console.log(`|${stamp} ${this.id} ${format}`, ...rest);
+            } else {
+                console.log(`   ${format}`, ...rest);
+            }
         }
         return now;
     }
