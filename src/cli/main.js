@@ -1,6 +1,7 @@
 import Promise from "bluebird";
 import * as Config from "../misc/Config";
 import * as Global from "../misc/Global";
+import * as Gadgets from "../misc/Gadgets";
 import RunTest from "../test/Runner";
 import assert from "assert";
 import path from "path";
@@ -69,9 +70,10 @@ async function main_() {
     const Test = CommandModule.default;
     await RunTest(Test);
 
-    if (Global.ErrorsSeen) {
+    const errorsSwallowed = Gadgets.ErrorsSwallowed();
+    if (errorsSwallowed) {
         assert(Config.KeepGoing || Config.Retries);
-        throw new Error(`There were ${Global.ErrorsSeen} errors`);
+        throw new Error(`There were ${errorsSwallowed} errors`);
     }
 }
 

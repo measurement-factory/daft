@@ -24,12 +24,19 @@ Config.Recognize([
     },
 ]);
 
+// the number of times KeepGoingOrThrow() was called but did not (re)throw
+let _ErrorsSwallowed = 0;
+
 export function KeepGoingOrThrow(error) {
-    const count = ++Global.ErrorsSeen;
-    if (Config.KeepGoing)
-        console.log(`Warning: Ignoring failure #${count}:`, error);
-    else
+    if (!Config.KeepGoing)
         throw error;
+
+    const count = ++_ErrorsSwallowed;
+    console.log(`Warning: Keep going despite failure #${count}:`, error);
+}
+
+export function ErrorsSwallowed() {
+    return _ErrorsSwallowed;
 }
 
 // returns part/whole ratio as a percent with a given precision
