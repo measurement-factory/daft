@@ -5,6 +5,7 @@
 import syncNet from "net";
 import Promise from 'bluebird';
 import assert from "assert";
+import Context from "../misc/Context";
 import * as Gadgets from "../misc/Gadgets";
 import * as AddressPool from "../misc/AddressPool";
 import Transaction from "./Transaction";
@@ -12,11 +13,13 @@ import SideAgent from "../side/Agent";
 
 let asyncNet = Promise.promisifyAll(syncNet);
 
+let Servers = 0;
+
 export default class Agent extends SideAgent {
     constructor() {
         assert.strictEqual(arguments.length, 0);
 
-        super();
+        super(new Context("server", ++Servers));
 
         this._originalResponse = null; // for subsequent transactions to mimic
 
@@ -86,10 +89,10 @@ export default class Agent extends SideAgent {
             this._originalResponse = transaction.response.clone();
         }
 
-        this._startTransaction(transaction, userSocket);
+        return this._runTransaction(transaction, userSocket);
     }
 
-    async stop() {
+    async _stop() {
         if (this.server && this.server.address()) {
             const promiseToClose = this.server.closeAsync(); // unconditionally
             if (this._keepConnections) {

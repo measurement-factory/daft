@@ -44,7 +44,10 @@ export default class Transaction { // XXX: extends SideTransaction
 
         this.responseHeadersSent = null;
 
-        this.doneCallback = null; // set by the initiator if needed
+        // a promise to (do as much as possible and) end
+        this._finished = new Promise((resolve) => {
+            this._finishedResolver = resolve;
+        });
 
         this._userBodyEncoder = null;
         this._originBodyEncoder = null;
@@ -53,15 +56,14 @@ export default class Transaction { // XXX: extends SideTransaction
     destructor() {
         let myType = Object.getPrototypeOf(this).constructor.name;
         console.log(`ending ${myType} transaction`);
-        if (this.doneCallback)
-            this.doneCallback(this);
+        this._finishedResolver(this);
     }
 
     started() {
         return this._started;
     }
 
-    start(userSocket) {
+    async run(userSocket) {
         assert.strictEqual(arguments.length, 1);
 
         assert(!this._started);
@@ -75,6 +77,8 @@ export default class Transaction { // XXX: extends SideTransaction
         this.sendRequest();
         // for the case when test plot wants to simulate an "early" response
         this.sendResponse();
+
+        await this._finished;
     }
 
     startServingUser() {

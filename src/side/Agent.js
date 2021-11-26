@@ -7,8 +7,11 @@ import Checker from "../test/Checker";
 import assert from "assert";
 
 export default class Agent {
-    constructor() {
-        assert.strictEqual(arguments.length, 0);
+    constructor(context) {
+        assert.strictEqual(arguments.length, 1);
+
+        assert(context);
+        this.context = context;
 
         /* kids must set this */
         this._transaction = undefined; // the very first transaction
@@ -17,8 +20,8 @@ export default class Agent {
         this._xStarted = 0;
         this._xFinished = 0;
 
-        this.transactionsDone = new Promise((resolve) => {
-            this._transactionsDoneResolver = resolve;
+        this._stopped = new Promise((resolve) => {
+            this._stoppedResolver = resolve;
         });
 
         this.checks = new Checker();
@@ -33,8 +36,15 @@ export default class Agent {
         this._savedSocket = null;
     }
 
+    // a promise to stop doing anything; must be safe to call multiple times
     async stop() {
-        assert(false, `pure virtual: kids must override`);
+        if (!this._stoppedResolver)
+            return this._stopped; // may not be satisfied yet
+
+        const stoppedResolver = this._stoppedResolver;
+        this._stoppedResolver = null;
+        await this._stop();
+        stoppedResolver(this); // satisfy after cleanup in _stop()
     }
 
     transaction() {
@@ -47,31 +57,28 @@ export default class Agent {
         this._keepConnections = true; // may already be true
     }
 
-    _startTransaction(transaction, socket) {
+    async _runTransaction(transaction, socket) {
         assert.strictEqual(arguments.length, 2);
         assert(!transaction.started());
 
         ++this._xStarted;
         console.log("starting transaction number", this._xStarted);
 
+        socket.removeAllListeners(); // e.g., we may have an 'error' handler
         socket.setEncoding('binary');
 
-        assert(!transaction.doneCallback);
-        transaction.doneCallback = x => this._noteDoneTransaction(x);
-        transaction.start(socket);
-    }
+        await transaction.run(socket);
 
-    _noteDoneTransaction(/*transaction*/) {
         ++this._xFinished;
 
         const xRemaining = this._xStarted - this._xFinished;
         assert(xRemaining >= 0);
         if (!xRemaining) { // all previously started transactions are done
-            // We may still come back here if another transaction starts
-            // before we are stopped but there is currently no mechanism to
-            // delay resolving our promise until more transactions finish.
+            // XXX: We may still come back here if another transaction starts
+            // and finishes before we are stopped; there is currently no
+            // mechanism to detect whether more transactions may start.
             console.log("finished all", this._xStarted, "previously started transactions");
-            this._transactionsDoneResolver(this);
+            await this.stop();
         } else {
             console.log("keep waiting for the remaining", xRemaining, "transactions");
         }

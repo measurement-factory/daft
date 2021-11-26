@@ -56,7 +56,10 @@ export default class Transaction {
             this._receivedEverythingResolver = resolve;
         });
 
-        this.doneCallback = null; // set by the initiator if needed
+        // a promise to (do as much as possible and) end
+        this._finished = new Promise((resolve) => {
+            this._finishedResolver = resolve;
+        });
 
         // Whether this.messageOut has all the details except body content.
         // That content is expected iff this.messageOut.body is not nil.
@@ -160,7 +163,7 @@ export default class Transaction {
         return this.messageIn.persistent() && this.messageOut.persistent();
     }
 
-    start(socket) {
+    async run(socket) {
         assert.strictEqual(arguments.length, 1);
         assert(!this.started());
 
@@ -172,6 +175,16 @@ export default class Transaction {
         this.socket = socket;
 
         /* setup event listeners */
+
+        this.socket.once('error', error => {
+            this.context.enter();
+            this.context.log("aborting on I/O error:", error);
+            // TODO: this.reportWhatWeAreDoing("were"); see checkpoint()
+            this.socket.destroy();
+            this.socket = null;
+            this.finish(); // without checkpoint()
+            this.context.exit();
+        });
 
         this.socket.on('data', data => {
             this.context.enter();
@@ -200,6 +213,8 @@ export default class Transaction {
         this.send();
 
         this.context.exit();
+
+        await this._finished;
     }
 
     finish() {
@@ -210,8 +225,7 @@ export default class Transaction {
             this.socket = null;
         }
 
-        if (this.doneCallback)
-            this.doneCallback(this);
+        this._finishedResolver(this);
     }
 
     checkpoint() {

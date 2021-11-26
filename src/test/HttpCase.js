@@ -28,8 +28,7 @@ export default class HttpCase {
         this._proxy = null;
         this._checks = new Checker();
 
-        this._startAgentsPromise = null;
-        this._runPromise = null;
+        this._stopAgentsPromise = null;
 
         this._expectedRuntime = new Date(60*1000); // 1 minute
 
@@ -46,7 +45,7 @@ export default class HttpCase {
     // add (and return) a client, assuming there may be more than one
     // single-client test cases should use the client() method instead
     addClient() {
-        assert(!this._runPromise); // do not create agents after run()
+        assert(!this._started()); // do not create agents after run()
         let client = new Client();
         this._clients.push(client);
         return client;
@@ -77,7 +76,7 @@ export default class HttpCase {
 
     server() {
         if (!this._server) {
-            assert(!this._runPromise); // do not create agents after run()
+            assert(!this._started()); // do not create agents after run()
             this._server = new Server();
         }
         return this._server;
@@ -87,7 +86,7 @@ export default class HttpCase {
     // * to get the previously set proxy, call without an argument
     proxy(aProxy = undefined) {
         if (!this._proxy) {
-            assert(!this._runPromise); // do not create agents after run()
+            assert(!this._started()); // do not create agents after run()
             assert(arguments.length === 1); // do not ask before setting
             assert(aProxy);
             this._proxy = aProxy;
@@ -97,24 +96,43 @@ export default class HttpCase {
         return this._proxy;
     }
 
-    run() {
-        return Promise.try(() => {
-            if (this._runPromise)
-                return this._runPromise;
+    async run() {
+        assert(!this._started());
 
-            // Relying on .finally() to wait for the asynchronous cleanup!
-            // And checking expectations only if that cleanup was successful.
-            this._runPromise = Promise.resolve(this).bind(this).
-                tap(this._begin).
-                tap(this.startAgents).
-                then(this._promiseTransactions).
-                tap(this._stopClock).
-                finally(this.stopAgents).
-                tap(this._doCheck).
-                finally(this._end);
+        const now = this.context.log('starting:', this.gist);
+        try {
+            this._startClock(now);
+            await this._run();
+        } finally {
+            this.context.log('ending:', this.gist);
+        }
+    }
 
-            return this._runPromise;
-        });
+    async _run() {
+        Lifetime.Extend(this._expectedRuntime);
+
+        this._setDefaults();
+
+        const agents = this._agents();
+        assert(agents.length); // a test case cannot work without an agent
+        this.context.log(`starting ${agents.length} concurrent agents`);
+
+        try {
+            if (this._server)
+                await this._server.start();
+
+            if (this._proxy)
+                await this._proxy.start();
+
+            await Promise.map(this._clients, client => client.run());
+        } finally {
+            this._stopClock();
+            await this._stopAgents(); // some or all may already be stopped
+        }
+
+        // all agents are stopped here
+        // check only after a successful run
+        await this._doCheck();
     }
 
     startTime() {
@@ -136,34 +154,14 @@ export default class HttpCase {
         return Promise.all(this._clients.map(client => client.transaction().sentEverything()));
     }
 
-    _begin() {
-        const now = this.context.log('starting:', this.gist);
-        Must(!this._startTime);
-        this._startTime = now;
-        Lifetime.Extend(this._expectedRuntime);
+    _started() {
+        return this._startTime != null;
     }
 
-    _end() {
-        this.context.log('ending:', this.gist);
-    }
-
-    _promiseTransactions() {
-        return Promise.try(() => {
-            let transactions = [];
-            if (this._server) {
-                this.context.log("will wait for the origin transactions to end");
-                transactions.push(this._server.transactionsDone);
-            }
-            if (this._proxy) {
-                this.context.log("will wait for the proxy transactions to end");
-                transactions.push(this._proxy.transactionsDone);
-            }
-            if (this._clients.length > 0) {
-                this.context.log(`will wait for ${this._clients.length} user agent transactions to end`);
-                transactions.push(...this._clients.map(client => client.transactionsDone));
-            }
-            return Promise.all(transactions);
-        });
+    _startClock(when) {
+        assert(when);
+        assert(!this._startTime);
+        this._startTime = when;
     }
 
     _stopClock() {
@@ -219,10 +217,7 @@ export default class HttpCase {
         }
     }
 
-    startAgents() {
-        if (this._startAgentsPromise)
-            return this._startAgentsPromise;
-
+    _setDefaults() {
         for (const client of this._clients) {
             // the client (if any) probably wants to reach the server (if any)
             if (client && this._server && !client.request.startLine.uri.address)
@@ -232,17 +227,16 @@ export default class HttpCase {
             if (client && !client.request.startLine.uri.hasPath())
                 client.request.startLine.uri.makeUnique();
         }
-
-        let agents = this._agents();
-        assert(agents.length); // a test case cannot work without any agents
-        this._startAgentsPromise = Promise.mapSeries(agents, agent => agent.start());
-        return this._startAgentsPromise;
     }
 
-    async stopAgents() {
+    _stopAgents() {
+        if (this._stopAgentsPromise)
+            return this._stopAgentsPromise;
+
         let agents = this._agents().reverse();
         this.context.log(`waiting for ${agents.length} agents to stop`);
-        await Promise.map(agents, agent => agent.stop());
+        this._stopAgentsPromise = Promise.map(agents, agent => agent.stop());
+        return this._stopAgentsPromise;
     }
 
     // returns all active agents in their start order (i.e., servers first)

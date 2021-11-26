@@ -5,19 +5,22 @@
 import net from "net";
 import Promise from 'bluebird';
 import assert from "assert";
+import Context from "../misc/Context";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import Transaction from "./Transaction";
 import StatusLine from "../http/StatusLine";
 import SideAgent from "../side/Agent";
 
+let Clients = 0;
+
 export default class Agent extends SideAgent {
     constructor() {
         assert.strictEqual(arguments.length, 0);
 
-        super();
+        super(new Context("client", ++Clients));
 
-        this.socket = null; // connection to be established in start()
+        this.socket = null; // connection to be established in _run()
         this.localAddress = null;
         this.remoteAddress = null;
         this.nextHopAddress = Config.ProxyListeningAddress;
@@ -34,33 +37,59 @@ export default class Agent extends SideAgent {
         assert.strictEqual(this.transaction().response.startLine.codeInteger(), expectedCode);
     }
 
-    start() {
-        let savedReject = null;
-        return new Promise((resolve, reject) => {
-            this.socket = new net.Socket();
-            this.socket.once('error', savedReject = reject);
-            // open a TCP connection to the proxy
-            this.socket.connect(this.nextHopAddress, resolve);
-        }).tap(() => {
-            this.socket.removeListener('error', savedReject);
-            this.localAddress = { host: this.socket.localAddress, port: this.socket.localPort };
-            this.remoteAddress = { host: this.socket.remoteAddress, port: this.socket.remotePort };
-            console.log("Client at %s connected to %s",
-                Gadgets.PrettyAddress(this.localAddress),
-                Gadgets.PrettyAddress(this.remoteAddress));
-        }).tap(() => {
-            this._startTransaction(this._transaction, this.socket);
-        });
+    // a promise to either do "everything" (except stopping) or be stopped
+    async run() {
+        // Promise.race() documentation claims any() is better than race(),
+        // but, unlike race(), any() gets stuck here when this._run() throws
+        // because any() must then wait for this._stopped to fulfill.
+        await Promise.race([ this._run(), this._stopped ]);
     }
 
-    async stop() {
+    async _run() {
+        this.socket = await this._connect();
+        this.localAddress = { host: this.socket.localAddress, port: this.socket.localPort };
+        this.remoteAddress = { host: this.socket.remoteAddress, port: this.socket.remotePort };
+        this.context.log("connected %s to %s",
+            Gadgets.PrettyAddress(this.localAddress),
+            Gadgets.PrettyAddress(this.remoteAddress));
+
+        await this._runTransaction(this._transaction, this.socket);
+    }
+
+    async _stop() {
         assert(!this._keepConnections); // no pconn support yet
         if (this.socket) {
             this.socket.destroy(); // XXX: what if a transaction does it too?
             this.socket = null;
-            console.log("Client at %s disconnected from %s",
+            this.context.log("disconnected %s from %s",
                 Gadgets.PrettyAddress(this.localAddress),
                 Gadgets.PrettyAddress(this.remoteAddress));
         }
+    }
+
+    // (a promise to) open a TCP connection to the next hop
+    _connect() {
+        let resolver;
+        let rejecter;
+        const connected = new Promise((resolve, reject) => {
+            resolver = resolve;
+            rejecter = reject;
+        });
+
+        const socket = new net.Socket();
+        socket.once('error', e => {
+            //this.context.log("socket connect error:", e);
+            socket.destroy();
+            rejecter(e);
+        });
+        socket.once('connect', () => {
+            this.context.log("socket connected");
+            resolver(socket);
+        });
+
+        // Do not be tempted to promisifyAll and use connectAsync() because
+        // net.Socket.connect() does not have a promisifyAll-compatible API!
+        socket.connect(this.nextHopAddress);
+        return connected;
     }
 }
