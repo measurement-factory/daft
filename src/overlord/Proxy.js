@@ -108,8 +108,6 @@ export class DutConfig {
             logformat xsquid %err_code/%err_detail %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
             access_log stdio:access-${kid}.log xsquid
             cache_log ${logDir}/cache-${kid}.log
-
-            debug_options ALL,9
         `;
         return this._trimCfg(cfg);
     }
