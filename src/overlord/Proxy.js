@@ -256,8 +256,14 @@ export class ProxyOverlord {
     }
 
     async restart() {
+        console.log("Proxy restarting");
         await this._remoteCall("/restart");
         console.log("Proxy restarted");
+    }
+
+    async finishCaching() {
+        await this._remoteCall("/finishCaching");
+        console.log("Proxy finished any pending caching transactions");
     }
 
     _remoteCall(urlPath, requestBody = null) {
@@ -270,7 +276,8 @@ export class ProxyOverlord {
                 port: 13128,
                 path: urlPath,
                 headers: {
-                }
+                    'Pop-Version': 2,
+                },
             };
 
             options.headers['Overlord-Listening-Ports'] =
