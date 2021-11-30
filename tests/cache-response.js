@@ -47,6 +47,8 @@ export default class MyTest extends Test {
         missCase.addMissCheck();
         await missCase.run();
 
+        await this.dut.finishCaching();
+
         let hitCase = new HttpTestCase(`hit a ${Config.BodySize}-byte response`);
         hitCase.client().request.for(resource);
         hitCase.addHitCheck(missCase.server().transaction().response);
