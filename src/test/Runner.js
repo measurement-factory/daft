@@ -58,8 +58,7 @@ async function TestAttempts(test, run) {
             }).
             catch(error => {
                 const progress = (attempt+1).toString() + "/" + attemptsAllowed;
-                console.log(`Test attempt failure (${progress}): ${error.message}`);
-                console.log("Error stack trace:\n    " + error.stack);
+                console.log(`Test attempt failure (${progress}):`, error);
                 if (attempt + 1 < attemptsAllowed)
                     return false; // will do another attempt
                 throw error;
