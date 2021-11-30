@@ -73,16 +73,13 @@ export function DaftFieldName(suffix) {
     return `X-Daft-${suffix}`;
 }
 
-// XXX: Flip our assert*(sent, received) arguments to match "official" order in
-// node::assert.equal(actual, expected). Check all node::assert*Equal() calls.
-
 // assert if HTTP header field values differ
 export function AssertForwardedHeaderFieldValue(sent, received, context) {
-    assert.equal(sent.length, received.length, `same number of sent and received ${context} values`);
+    assert.equal(received.length, sent.length, `same number of sent and received ${context} values`);
     for (let i = 0; i < sent.length; ++i) {
         // trim while comparing but show failed assert using raw values
         if (sent[i].trim() !== received[i].trim()) {
-            assert.equal(sent[i], received[i], `same ${context} value #${i}: ${sent[i]} is not ${received[i]}`);
+            assert.equal(received[i], sent[i], `same ${context} value #${i}: ${sent[i]} is not ${received[i]}`);
             assert(false, `unreachable code: ${sent[i]} is not ${received[i]}`);
         }
     }
@@ -93,16 +90,18 @@ export function AssertForwardedMessage(sent, received, kind) {
     assert(sent);
     assert(received);
 
-    assert.equal(!sent.startLine, !received.startLine);
+    assert.equal(!received.startLine, !sent.startLine);
     // TODO: When both exist, let parts compare themselves. The rest can be
     // handled by a generic comparison code.
     // XXX: If startLine is a StatusLine, then codeString_ will be defined.
     if (sent.startLine && sent.startLine.codeString_ !== undefined) {
-        assert.equal(sent.startLine.hasCode(), received.startLine.hasCode());
+        assert.equal(received.startLine.hasCode(), sent.startLine.hasCode());
         if (sent.startLine.hasCode()) {
             // including (undefined === undefined) for two malformed values
             // we can make this more complex if we need to check non-integer codes
-            assert.equal(sent.startLine.codeInteger(), received.startLine.codeInteger(),
+            assert.equal(
+                received.startLine.codeInteger(),
+                sent.startLine.codeInteger(),
                 "received status code matches the sent one");
         }
     }
@@ -125,13 +124,13 @@ export function AssertForwardedMessage(sent, received, kind) {
             `${kind} ${name} field`);
     }
 
-    assert.equal(!sent.body, !received.body);
+    assert.equal(!received.body, !sent.body);
     if (sent.body) {
-        assert.equal(sent.body.whole().length, received.body.whole().length);
+        assert.equal(received.body.whole().length, sent.body.whole().length);
         // TODO: assert.equal() detects but does not show the suffix difference
         // of long strings (e.g., 17MB bodies with different last few bytes).
-        assert.equal(sent.body.whole(), received.body.whole());
+        assert.equal(received.body.whole(), sent.body.whole());
     } else {
-        assert.equal(null, received.body);
+        assert.equal(received.body, null);
     }
 }
