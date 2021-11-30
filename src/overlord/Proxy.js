@@ -7,6 +7,7 @@
 import http from "http";
 import Promise from 'bluebird';
 import assert from "assert";
+import Command from "../overlord/Command";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 
@@ -233,7 +234,9 @@ export class ProxyOverlord {
             return;
         }
 
-        this._start = this._remoteCall("/reset", this._dutConfig.make());
+        const command = new Command("/reset");
+        command.setConfig(this._dutConfig.make());
+        this._start = this._remoteCall(command);
 
         await this._start;
         console.log("Proxy is listening");
@@ -264,28 +267,28 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    _remoteCall(urlPath, requestBody = null) {
+    _remoteCall(commandOrString) {
         return new Promise((resolve) => {
-            const requestHasBody = requestBody !== null;
-            const options = {
-                method: requestHasBody ? "POST" : "GET",
+
+            const command = ((typeof commandOrString) === 'string') ?
+                new Command(commandOrString) : commandOrString;
+            assert(command instanceof Command);
+
+            const httpOptions = {
                 family: 4,
                 host: "127.0.0.1",
                 port: 13128,
-                path: urlPath,
                 headers: {
-                    'Pop-Version': 2,
+                    'Pop-Version': 4,
                 },
             };
 
-            options.headers['Overlord-Listening-Ports'] =
+            httpOptions.headers['Overlord-Listening-Ports'] =
                 this._dutConfig.listeningPorts().join(",");
 
-            // disable request chunking
-            if (requestHasBody)
-                options.headers['Content-Length'] = requestBody.length;
+            const requestBody = command.toHttp(httpOptions);
 
-            const request = http.request(options, (response) => {
+            const request = http.request(httpOptions, (response) => {
                 const responseBodyChunks = [];
                 response.on('data', chunk => responseBodyChunks.push(chunk));
                 response.on('end', () => {
@@ -308,7 +311,7 @@ export class ProxyOverlord {
                 throw new Error(err);
             });
 
-            if (requestHasBody)
+            if (requestBody !== null)
                 request.write(requestBody);
 
             request.end();
