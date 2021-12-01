@@ -5,6 +5,7 @@
 /* Proxy Overlord Protocol client for controlling a (possibly remote) proxy. */
 
 import http from "http";
+import util from "util";
 import Promise from 'bluebird';
 import assert from "assert";
 import Command from "../overlord/Command";
@@ -292,9 +293,20 @@ export class ProxyOverlord {
                 const responseBodyChunks = [];
                 response.on('data', chunk => responseBodyChunks.push(chunk));
                 response.on('end', () => {
-                    assert.strictEqual(response.statusCode, 200);
-
                     const rawBody = responseBodyChunks.join('');
+
+                    if (response.statusCode !== 200) {
+                        throw new Error(`Proxy Overlord communication failure (${response.statusCode}):\n` +
+                            util.format('%O\n', response.headers) +
+                            rawBody);
+                    }
+
+                    if (!response.complete) {
+                        throw new Error(`Truncated Proxy Overlord response:\n` +
+                            util.format('%O\n', response.headers) +
+                            rawBody);
+                    }
+
                     const health = JSON.parse(rawBody);
                     const oldProblems = this._oldHealth ? this._oldHealth.problems : "";
                     const newProblems = health.problems.startsWith(oldProblems) ?
