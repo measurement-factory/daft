@@ -98,6 +98,7 @@ export class DutConfig {
             http_port 3128
             ${this._workersCfg()}
             ${this._collapsedForwardingCfg()}
+            ${this._anyCachingCfg()}
             ${this._memoryCachingCfg()}
             ${this._diskCachingCfg()}
             ${this._customCfg()}
@@ -131,15 +132,36 @@ export class DutConfig {
         return addresses;
     }
 
+    _anyCachingCfg() {
+        if (!this._memoryCaching && !this._diskCaching)
+            return;
+
+        // allow caching of responses configured to exceed default 4MB
+        // maximum_object_size but do not lower that limit below its default
+        const defaultObjectSizeMax = 64*1024*1024; // 4MB default
+        const maxResponseHeaderSize = 64*1024;
+        const maxResponseSize = maxResponseHeaderSize + Config.bodySize();
+        let cfg = ``;
+        if (maxResponseSize > defaultObjectSizeMax)
+            cfg += `maximum_object_size ${maxResponseSize} bytes\n`;
+
+        // Avoid "WARNING: disk-cache maximum object size is too large for
+        // mem-cache". TODO: The proxy should not warn about its own defaults!
+        // Also allow caching of responses configured to exceed default 512KB
+        // maximum_object_size_in_memory limit.
+        const defaultObjectSizeInMemoryMax = 512*1024; // 512KB default
+        const sizeToAllow = Math.max(defaultObjectSizeMax, maxResponseSize);
+        if (this._memoryCaching && sizeToAllow > defaultObjectSizeInMemoryMax)
+            cfg += `maximum_object_size_in_memory ${sizeToAllow} bytes`;
+
+        return this._trimCfg(cfg);
+    }
+
     _memoryCachingCfg() {
         const cacheSize = this._memoryCaching ? "100 MB" : "0";
         let cfg = `
             cache_mem ${cacheSize}
         `;
-        // Avoid "WARNING: disk-cache maximum object size is too large for mem-cache"
-        // TODO: The proxy should not warn about its own defaults!
-        if (this._memoryCaching)
-            cfg += `maximum_object_size_in_memory 4 MB`;
         return this._trimCfg(cfg);
     }
 
