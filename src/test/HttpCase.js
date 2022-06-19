@@ -176,6 +176,9 @@ export default class HttpCase {
 
     // will test whether each client got the server's response
     addMissCheck() {
+        // XXX: this._server.transaction().response is undefined before the
+        // test unless the caller has configured it explicitly already. This
+        // should add check-time code instead.
         return this.addReceivedResponseCheck(this._server.transaction().response);
     }
 
