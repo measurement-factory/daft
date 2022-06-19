@@ -6,6 +6,7 @@
 
 import { Must } from "./Gadgets";
 import * as Config from "./Config";
+import assert from "assert";
 
 // a member of the address pool
 class AddressMapItem {
@@ -75,14 +76,17 @@ class AddressPool {
     }
 }
 
-let _AddressPool = new AddressPool();
+let _AddressPool = null;
 
 export function ReserveListeningAddress(requestedAddr) {
+    if (!_AddressPool)
+        _AddressPool = new AddressPool();
     return requestedAddr ?
         _AddressPool.reserveGiven(requestedAddr) :
         _AddressPool.reserveAny();
 }
 
 export function ReleaseListeningAddress(addr) {
+    assert(_AddressPool);
     _AddressPool.release(addr);
 }
