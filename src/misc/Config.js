@@ -24,11 +24,8 @@ export const ProxyListeningAddress = { // TODO: Make configurable
     port: 3128
 };
 
-// Used to form request URLs.
-export const OriginAuthority = {
-    host: 'localhost',
-    port: !process.getuid || process.getuid() ? 8080 : 80, // 80 when root
-};
+// Used to form request URLs (set via --origin-authority).
+export const OriginAuthority = null;
 
 export const HttpStatusCodes = {
     400: 'Bad Request',
@@ -90,6 +87,11 @@ export function logBodyContents(bodySize) {
 
 /* Command-line options handling */
 
+function _DefaultOriginAuthorityPort()
+{
+    return (!process.getuid || process.getuid()) ? 8080 : 80; // 80 when root
+}
+
 // accumulates recognized CLI options
 let _CliOptions = [
     {
@@ -101,7 +103,7 @@ let _CliOptions = [
     {
         option: "origin-authority",
         type: "{host: String, port: Number}",
-        default: `{host: ${OriginAuthority.host}, port: ${OriginAuthority.port}}`,
+        default: `{host: localhost, port: ${_DefaultOriginAuthorityPort()}}`,
         description: "ultimate request destination",
     },
     {
