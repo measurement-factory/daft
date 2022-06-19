@@ -28,12 +28,6 @@ Config.Recognize([
         description: "the number of consecutive test run attempt failures to retry; " +
             "a retry is not counted as a new test run",
     },
-    {
-        option: "origin-port",
-        type: "Number",
-        default: Config.OriginAuthority.port.toString(),
-        description: "where origin servers listen for requests",
-    },
 ]);
 
 let AttemptsStarted = 0; // the number of test attempts so far
