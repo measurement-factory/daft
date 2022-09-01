@@ -27,26 +27,12 @@ function rawRequestLine(requestLine) {
     ].filter(item => item !== null).join("");
 }
 
-function rawHeader(header) {
-    if (header._raw !== null)
-        return header._raw;
-
-    function rawField(field) {
-        return field.name + field.separator +
-            field.value + field.terminator;
-    }
-
-    // TODO: Hide Header::fields and stop violating Header boundaries.
-    return header.fields.map(rawField).join("") +
-        header._extraFields.map(rawField).join("");
-}
-
 export function requestPrefix(message) {
     if (message.startLine.protocol === "HTTP/0.9")
         return "";
 
     return rawRequestLine(message.startLine) +
-        rawHeader(message.header) +
+        message.header.raw() +
         message.headerDelimiter;
 }
 
@@ -55,7 +41,7 @@ export function responsePrefix(message) {
         return "";
 
     return rawStatusLine(message.startLine) +
-        rawHeader(message.header) +
+        message.header.raw() +
         message.headerDelimiter;
 }
 

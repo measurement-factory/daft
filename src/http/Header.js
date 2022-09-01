@@ -8,6 +8,7 @@ import Field from "./Field";
 import { Must } from "../misc/Gadgets";
 import * as Misc from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
+import assert from "assert";
 
 
 export default class Header {
@@ -23,6 +24,8 @@ export default class Header {
         // Usually, the two mechanisms are used together in order to customize
         // a value of the field used by the lower-level code.
         this._extraFields = [];
+
+        this.expandTo = null;
     }
 
     clone() {
@@ -44,6 +47,23 @@ export default class Header {
         this.fields.forEach(field => field.finalize());
         // finalize each overwriting field
         this._extraFields.forEach(field => field.finalize());
+
+        if (this.expandTo !== null)
+            this._addStuffing();
+    }
+
+    _addStuffing() {
+        assert(this.expandTo);
+        const total = this.raw().length;
+        if (total < this.expandTo) {
+            const extra = this.expandTo - total;
+            let extraField = this._argsToField(Http.DaftFieldName("Stuffing"), "");
+            extraField.finalize();
+            const extraMin = extraField.raw().length;
+            const valueLength = extra > extraMin ? extra - extraMin : 1;
+            extraField.value = 'x'.repeat(valueLength);
+            this.add(extraField);
+        }
     }
 
     // Is this field allowed by all the filters?
@@ -86,6 +106,15 @@ export default class Header {
         }
 
         return Misc.ToUnsigned(value);
+    }
+
+    raw() {
+        if (this._raw !== null)
+            return this._raw;
+
+        // TODO: Hide Header::fields and stop violating Header boundaries.
+        return this.fields.map(f => f.raw()).join("") +
+            this._extraFields.map(f => f.raw()).join("");
     }
 
     chunked() {
