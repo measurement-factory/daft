@@ -8,7 +8,6 @@ import Field from "./Field";
 import { Must } from "../misc/Gadgets";
 import * as Misc from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
-import assert from "assert";
 
 
 export default class Header {
