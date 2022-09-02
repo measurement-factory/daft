@@ -24,8 +24,6 @@ export default class Header {
         // Usually, the two mechanisms are used together in order to customize
         // a value of the field used by the lower-level code.
         this._extraFields = [];
-
-        this.expandTo = null;
     }
 
     clone() {
@@ -47,23 +45,16 @@ export default class Header {
         this.fields.forEach(field => field.finalize());
         // finalize each overwriting field
         this._extraFields.forEach(field => field.finalize());
-
-        if (this.expandTo !== null)
-            this._addStuffing();
     }
 
-    _addStuffing() {
-        assert(this.expandTo);
-        const total = this.raw().length;
-        if (total < this.expandTo) {
-            const extra = this.expandTo - total;
-            let extraField = this._argsToField(Http.DaftFieldName("Stuffing"), "");
-            extraField.finalize();
-            const extraMin = extraField.raw().length;
-            const valueLength = extra > extraMin ? extra - extraMin : 1;
-            extraField.value = 'x'.repeat(valueLength);
-            this.add(extraField);
-        }
+    // adds a custom header field of length>13 bytes
+    addStuffing(length) {
+        let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing"), 'x');
+        stuffingField.finalize();
+        const stuffingMin = stuffingField.raw().length;
+        if (length > stuffingMin)
+            stuffingField.value += 'x'.repeat(length - stuffingMin);
+        this.add(stuffingField);
     }
 
     // Is this field allowed by all the filters?

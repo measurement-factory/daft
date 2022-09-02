@@ -39,6 +39,9 @@ export default class Message {
         // whether this to-be-sent message has auto-generated components such
         // as unique message id() in the header; false for received messages
         this._finalized = false;
+
+        // The minimum size (in bytes) for this message prefix.
+        this.minimumPrefixSize = null;
     }
 
     // creates and returns an exact replica of this message
@@ -56,6 +59,7 @@ export default class Message {
         this.body = them.body ? them.body.clone() : null;
         this._chunkBody = them._chunkBody;
         this._finalized = them._finalized;
+        this.minimumPrefixSize = them.minimumPrefixSize;
         return this;
     }
 
@@ -123,6 +127,12 @@ export default class Message {
         this.syncContentLength();
 
         this.header.finalize(); // after syncContentLength() adds headers
+
+        if (this.minimumPrefixSize !== null) {
+            const total = (this.startLine.raw() + this.header.raw() + this.headerDelimiter).length;
+            if (total < this.minimumPrefixSize)
+                this.header.addStuffing(this.minimumPrefixSize - total);
+        }
     }
 
     addBody(body) {

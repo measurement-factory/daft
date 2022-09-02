@@ -41,4 +41,15 @@ export default class RequestLine {
         if (this.terminator === null)
             this.terminator = "\r\n";
     }
+
+    raw() {
+        return [
+            this.method,
+            this.methodDelimiter,
+            this.uri.raw(),
+            this.uriDelimiter,
+            this.protocol,
+            this.terminator
+        ].filter(item => item !== null).join("");
+    }
 }

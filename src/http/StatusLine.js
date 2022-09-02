@@ -44,6 +44,17 @@ export default class StatusLine {
             this.terminator = "\r\n";
     }
 
+    raw() {
+        return [
+            this.protocol,
+            this.protocolDelimiter,
+            (this.hasCode() ? this.codeString() : null),
+            this.statusDelimiter,
+            this.reasonPhrase,
+            this.terminator
+        ].filter(item => item !== null).join("");
+    }
+
     ReasonPhrase(codeInteger = undefined) {
         switch (codeInteger) {
             case 101:
