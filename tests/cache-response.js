@@ -11,7 +11,6 @@ import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
 import * as Config from "../src/misc/Config";
 import * as AddressPool from "../src/misc/AddressPool";
-import * as Http from "../src/http/Gadgets";
 import Test from "../src/overlord/Test";
 
 // custom CLI options
@@ -21,12 +20,6 @@ Config.Recognize([
         type: "Boolean",
         default: "false",
         description: "send unchunked response without Content-Length",
-    },
-    {
-        option: "large-header-size",
-        type: "Number",
-        default: "6144",
-        description: "the value of a large header (in bytes)",
     },
 ]);
 
@@ -50,7 +43,6 @@ export default class MyTest extends Test {
         let missCase = new HttpTestCase(`forward a ${Config.BodySize}-byte response`);
         missCase.server().serve(resource);
         missCase.server().response.forceEof = Config.ResponseEndsAtEof;
-        missCase.server().response.header.add(Http.DaftFieldName("Large-Header"), 'x'.repeat(Config.LargeHeaderSize));
         missCase.client().request.for(resource);
         missCase.addMissCheck();
         await missCase.run();
