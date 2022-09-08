@@ -112,6 +112,12 @@ let _CliOptions = [
         default: DefaultBodySize().toString(),
         description: "message body size (bytes)",
     },
+    {
+        option: "prefix-size",
+        type: "Number",
+        default: 0, // unspecified
+        description: "minimum message prefix size (bytes)",
+    },
 ];
 
 // a camelName:is-explicit map configured by Finalize()
