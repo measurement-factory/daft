@@ -65,6 +65,28 @@ export default class Header {
         this.filters.push(field => field.name !== name);
     }
 
+    // returns an array of range pairs
+    ranges() {
+        const name = 'Range';
+        if (!this.has(name))
+            return [];
+
+        let result = [];
+        const stringValue = this.values(name);
+        const stringPairs = value.split(',');
+        for (let stringPair of stringPairs) {
+            const stringValues = stringPair.split('-');
+            assert(stringValues.length == 2);
+            let values = [];
+            for (let stringValue of stringValues) {
+                const value = Number.parseInt(stringValue, 10);
+                values.push(isNaN(value) ? null : value);
+            }
+            result.push(values);
+        }
+        return result;
+    }
+
     // returns null if the header does not have Content-Length field(s)
     // returns undefined if the Content-Length field(s) are malformed
     // returns the well-formed/supported Content-Length value otherwise

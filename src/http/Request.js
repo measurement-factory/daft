@@ -6,6 +6,7 @@
 
 import Message from "./Message";
 import RequestLine from "./RequestLine";
+import * as Config from "../misc/Config";
 
 export default class Request extends Message {
 
@@ -31,5 +32,12 @@ export default class Request extends Message {
 
     prefix(messageWriter) {
         return messageWriter.requestPrefix(this);
+    }
+
+    // adds 'Range' header according to the configuration
+    setRanges() {
+        if (Config.Range) {
+            this.header.add("Range", `bytes=${Config.Range}`);
+        }
     }
 }

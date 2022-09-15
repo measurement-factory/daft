@@ -118,6 +118,12 @@ let _CliOptions = [
         default: 0, // unspecified
         description: "minimum message prefix size (bytes)",
     },
+    {
+        option: "range",
+        type: "String",
+        default: '', // unspecified
+        description: "the range of the Range request in the 'firstByte-lastByte' format",
+    },
 ];
 
 // a camelName:is-explicit map configured by Finalize()
