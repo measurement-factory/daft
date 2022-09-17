@@ -138,7 +138,7 @@ export class DutConfig {
 
         // allow caching of responses configured to exceed default 4MB
         // maximum_object_size but do not lower that limit below its default
-        const defaultObjectSizeMax = 64*1024*1024; // 4MB default
+        const defaultObjectSizeMax = 4*1024*1024; // 4MB default
         const maxResponseHeaderSize = 64*1024;
         const maxResponseSize = maxResponseHeaderSize + Config.bodySize();
         let cfg = ``;
