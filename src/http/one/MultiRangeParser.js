@@ -32,7 +32,6 @@ export default class MultiRangeParser {
     _parseOneRange() {
         const rangeRe = /^(.*\r*\n)([\s\S]*?\n)(\r*\n)([\s\S]*)$/;
         const match = rangeRe.exec(this._remaining.toString());
-        debugger;
         if (!match) {
             console.log(`Warning: Cannot parse multi-range body`);
             return false;

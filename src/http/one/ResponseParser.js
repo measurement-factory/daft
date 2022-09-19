@@ -66,10 +66,13 @@ export default class ResponseParser extends MessageParser {
         const multiRangeBoundary = this.message.header.multiRangeBoundary();
         const whole = this.message.body.whole();
         if (multiRangeBoundary) {
-            this._multiRangeParser = new MultiRangeParser(multiRangeBoundary);
-            this._multiRangeParser.parse(whole);
-            this.message.body.rangeBlocks = this._multiRangeParser.blocks;
-            this.message.body.ranges = this._multiRangeParser.ranges;
+            let multiRangeParser = new MultiRangeParser(multiRangeBoundary);
+            if (!multiRangeParser.parse(whole)) {
+                this._log(`Warning: Cannot parse multi-range body`);
+                return;
+            }
+            this.message.body.rangeBlocks = multiRangeParser.blocks;
+            this.message.body.ranges = multiRangeParser.ranges;
         } else {
             const parsedRange = MultiRangeParser.ParseContentRange(this.message.header);
             this.message.body.rangeBlocks = [whole];
