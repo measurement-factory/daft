@@ -65,6 +65,8 @@ export function LargeBodySize() {
     return 2*blockSize + extras;
 }
 
+export const ContentRangeBoundary = ProxySignature + "-123456789";
+
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
     // by default, report progress except for huge bodies
@@ -121,8 +123,8 @@ let _CliOptions = [
     {
         option: "range",
         type: "String",
-        default: '', // unspecified
-        description: "the range of the Range request in the 'firstByte-lastByte' format",
+        enum: ["none", "low", "med", "high", "any"],
+        description: "the part of the body used in Range requests",
     },
 ];
 

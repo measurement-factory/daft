@@ -8,6 +8,7 @@ import Field from "./Field";
 import { Must } from "../misc/Gadgets";
 import * as Misc from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
+import * as Config from "../misc/Config";
 
 
 export default class Header {
@@ -65,26 +66,40 @@ export default class Header {
         this.filters.push(field => field.name !== name);
     }
 
-    // returns an array of range pairs
+    // returns an array of range pairs, extracted from the 'Range' header value
     ranges() {
         const name = 'Range';
         if (!this.has(name))
             return [];
 
-        let result = [];
-        const stringValue = this.values(name);
-        const stringPairs = value.split(',');
-        for (let stringPair of stringPairs) {
-            const stringValues = stringPair.split('-');
-            assert(stringValues.length == 2);
-            let values = [];
-            for (let stringValue of stringValues) {
-                const value = Number.parseInt(stringValue, 10);
-                values.push(isNaN(value) ? null : value);
-            }
-            result.push(values);
+        const value = this.value(name);
+        const pairs = value.substring(value.indexOf('=') + 1).split(',');
+        return pairs.map(v => v.split('-')).map(v => [Number.parseInt(v[0]), Number.parseInt(v[1])]);
+    }
+
+    // creates request 'Range' header field from an array of range pairs
+    setRequestRanges(ranges) {
+        Must(ranges);
+        Must(ranges.length);
+        const value = 'bytes=' + ranges.map(v => `${v[0]}-${v[1]}`).join(', ');
+        this.add("Range", value);
+    }
+
+    // Creates response header field from an array of range pairs.
+    // For a single range - 'Content-Range' is created.
+    // For multiple ranges - 'Content-Type' is created with 'multipart/byteranges' value.
+    setResponseRanges(ranges, length) {
+        Must(ranges);
+        Must(length);
+        Must(ranges.length);
+        if (ranges.length === 1) {
+            const range = ranges[0];
+            const value = `bytes ${range[0]}-${range[1]}/${length}`;
+            this.add('Content-Range', value);
+        } else {
+           const value = 'multipart/byteranges; boundary=' + Config.ContentRangeBoundary;
+           this.add('Content-Type', value);
         }
-        return result;
     }
 
     // returns null if the header does not have Content-Length field(s)
@@ -136,6 +151,32 @@ export default class Header {
 
         let codings = this.values('Transfer-Encoding');
         return codings.indexOf("chunked") >= 0; // XXX: imprecise!
+    }
+
+    hasResponseRanges() {
+        if (this.has('Content-Range'))
+            return true;
+        if (this.has('Content-Type')) {
+            const value = this.value('Content-Type');
+            return value.includes('multipart/byteranges');
+        }
+        return false;
+    }
+
+    // returns the extracted multirange boundary string (or null)
+    multiRangeBoundary() {
+        const name = 'Content-Type';
+        if (!this.has(name))
+            return null;
+        const value = this.value(name);
+        if (!value.includes('multipart/byteranges'))
+            return null;
+        const token = value.split(';').map(el => el.trim()).find(el => el.startsWith('boundary'));
+        if (!token)
+            return null;
+        const boundary = token.substring(token.indexOf('=')+1).trim();
+        // remove extra quotes, added, e.g., by Squid
+        return boundary.replace(/^"(.*)"$/, '$1');
     }
 
     addWarning(code, text = "warning text") {

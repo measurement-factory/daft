@@ -7,6 +7,7 @@ import StatusLine from "../StatusLine";
 import Body from "../Body";
 import MessageParser from "./MessageParser";
 import assert from "assert";
+import MultiRangeParser from "./MultiRangeParser";
 
 export default class ResponseParser extends MessageParser {
 
@@ -52,4 +53,28 @@ export default class ResponseParser extends MessageParser {
 
         return statusLine;
     }
+
+    parseBody() {
+        super.parseBody();
+        if (this.message.body.innedAll) {
+            if (this.message.header.hasResponseRanges())
+                this.parseBodyRanges();
+        }
+    }
+
+    parseBodyRanges() {
+        const multiRangeBoundary = this.message.header.multiRangeBoundary();
+        const whole = this.message.body.whole();
+        if (multiRangeBoundary) {
+            this._multiRangeParser = new MultiRangeParser(multiRangeBoundary);
+            this._multiRangeParser.parse(whole);
+            this.message.body.rangeBlocks = this._multiRangeParser.blocks;
+            this.message.body.ranges = this._multiRangeParser.ranges;
+        } else {
+            const parsedRange = MultiRangeParser.ParseContentRange(this.message.header);
+            this.message.body.rangeBlocks = [whole];
+            this.message.body.ranges = [[parsedRange.low, parsedRange.high]];
+        }
+    }
 }
+
