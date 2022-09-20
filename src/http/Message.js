@@ -39,6 +39,8 @@ export default class Message {
         // whether this to-be-sent message has auto-generated components such
         // as unique message id() in the header; false for received messages
         this._finalized = false;
+
+        this.ranges = null; // array of range pairs
     }
 
     // creates and returns an exact replica of this message
@@ -117,8 +119,7 @@ export default class Message {
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
 
-        if (this.body)
-            this.body.finalize();
+        this.finalizeBody();
 
         this.syncContentLength();
 
@@ -131,9 +132,16 @@ export default class Message {
         }
     }
 
+    addRanges(ranges) { assert(false); }
+
     addBody(body) {
         Must(!this.body); // not a reset; we do not remove old Content-Length
         this.body = body;
+    }
+
+    finalizeBody() {
+        if (this.body)
+            this.body.finalize();
     }
 
     syncContentLength() {

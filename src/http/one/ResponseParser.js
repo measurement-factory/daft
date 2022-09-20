@@ -57,7 +57,7 @@ export default class ResponseParser extends MessageParser {
     parseBody() {
         super.parseBody();
         if (this.message.body.innedAll) {
-            if (this.message.header.hasResponseRanges())
+            if (this.message.hasRanges())
                 this.parseBodyRanges();
         }
     }
@@ -71,12 +71,12 @@ export default class ResponseParser extends MessageParser {
                 this._log(`Warning: Cannot parse multi-range body`);
                 return;
             }
-            this.message.body.rangeBlocks = multiRangeParser.blocks;
-            this.message.body.ranges = multiRangeParser.ranges;
+            this.message.rangeBlocks = multiRangeParser.blocks;
+            this.message.ranges = multiRangeParser.ranges;
         } else {
             const parsedRange = MultiRangeParser.ParseContentRange(this.message.header);
-            this.message.body.rangeBlocks = [whole];
-            this.message.body.ranges = [[parsedRange.low, parsedRange.high]];
+            this.message.rangeBlocks = [whole];
+            this.message.ranges = [[parsedRange.low, parsedRange.high]];
         }
     }
 }

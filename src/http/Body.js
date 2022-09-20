@@ -9,19 +9,15 @@ import * as Config from "../misc/Config";
 
 export default class Body {
 
-    constructor(content, responseRanges) {
+    constructor(content) {
         this._buf = null; // the entire body (for now)
         this._in = 0;
         this._out = 0;
 
         this.innedAll = false; // whether to expect more in() calls
 
-        this.rangeBlocks = null; // array of range data blocks
-
-        this.responseRanges = null; // array of range pairs
-
         if (content !== undefined)
-            this.whole(this._applyResponseRanges(content, responseRanges));
+            this.whole(content);
     }
 
     clone() {
@@ -36,45 +32,6 @@ export default class Body {
     finalize() {
         if (this._buf === null)
             this.whole(RandomText("body-", Config.BodySize));
-    }
-
-    _applyResponseRanges(content, responseRanges) {
-        if (!responseRanges)
-            return content; // the entire payload, no ranges
-
-        this.responseRanges = responseRanges;
-
-        if (this.responseRanges.length === 1) { // a single range
-            const range = this.responseRanges[0];
-            const low = range[0];
-            const high = range[1];
-            return content.substring(low, high+1);
-        }
-
-        // payload in "multipart/byteranges" format (RFC7233)
-
-        Must(this.responseRanges.length > 1);
-
-        const terminator = "\r\n";
-        const length = content.length;
-        let part = "";
-        for (let range of this.responseRanges) {
-            const low = range[0];
-            const high = range[1];
-            Must(low !== null && low !== undefined); // TODO: support 'half-closed' ranges
-            Must(high !== null && high !== undefined);
-            part += terminator + "--" + Config.ContentRangeBoundary;
-            part += terminator + 'Content-Type: text/html';
-            part += terminator + `Content-Range: bytes ${low}-${high}/${length}`;
-            part += terminator;
-            const block = content.substring(low, high+1);
-            if (!this.rangeBlocks)
-                this.rangeBlocks = [];
-            this.rangeBlocks.push(block);
-            part += terminator + block;
-        }
-        part += terminator + "--" + Config.ContentRangeBoundary + "--" + terminator;
-        return part;
     }
 
     whole(...args) {

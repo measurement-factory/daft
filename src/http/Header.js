@@ -66,42 +66,6 @@ export default class Header {
         this.filters.push(field => field.name !== name);
     }
 
-    // returns an array of range pairs, extracted from the 'Range' header value
-    ranges() {
-        const name = 'Range';
-        if (!this.has(name))
-            return [];
-
-        const value = this.value(name);
-        const pairs = value.substring(value.indexOf('=') + 1).split(',');
-        return pairs.map(v => v.split('-')).map(v => [Number.parseInt(v[0]), Number.parseInt(v[1])]);
-    }
-
-    // creates request 'Range' header field from an array of range pairs
-    setRequestRanges(ranges) {
-        Must(ranges);
-        Must(ranges.length);
-        const value = 'bytes=' + ranges.map(v => `${v[0]}-${v[1]}`).join(', ');
-        this.add("Range", value);
-    }
-
-    // Creates response header field from an array of range pairs.
-    // For a single range - 'Content-Range' is created.
-    // For multiple ranges - 'Content-Type' is created with 'multipart/byteranges' value.
-    setResponseRanges(ranges, length) {
-        Must(ranges);
-        Must(length);
-        Must(ranges.length);
-        if (ranges.length === 1) {
-            const range = ranges[0];
-            const value = `bytes ${range[0]}-${range[1]}/${length}`;
-            this.add('Content-Range', value);
-        } else {
-           const value = 'multipart/byteranges; boundary=' + Config.ContentRangeBoundary;
-           this.add('Content-Type', value);
-        }
-    }
-
     // returns null if the header does not have Content-Length field(s)
     // returns undefined if the Content-Length field(s) are malformed
     // returns the well-formed/supported Content-Length value otherwise
@@ -151,16 +115,6 @@ export default class Header {
 
         let codings = this.values('Transfer-Encoding');
         return codings.indexOf("chunked") >= 0; // XXX: imprecise!
-    }
-
-    hasResponseRanges() {
-        if (this.has('Content-Range'))
-            return true;
-        if (this.has('Content-Type')) {
-            const value = this.value('Content-Type');
-            return value.includes('multipart/byteranges');
-        }
-        return false;
     }
 
     // returns the extracted multirange boundary string (or null)

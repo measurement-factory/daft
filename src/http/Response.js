@@ -7,7 +7,9 @@
 import assert from "assert";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
+import Body from "./Body";
 import { Must } from "../misc/Gadgets";
+import * as Config from "../misc/Config";
 
 export default class Response extends Message {
 
@@ -16,6 +18,8 @@ export default class Response extends Message {
 
         // force the sender to close the connection to mark the end of response
         this.forceEof = false;
+
+        this.rangeBlocks = null; // array of parsed range body blocks
     }
 
     // makes us an exact replica of them
@@ -45,6 +49,77 @@ export default class Response extends Message {
         }
     }
 
+    finalizeBody() {
+        super.finalizeBody();
+        if (this.hasRanges() && this.body) {
+            Must(this.ranges.length > 0);
+            this.body = new Body(this._applyRanges(this.body.whole(), this.ranges));
+        }
+    }
+
+    hasRanges() {
+        if (this.header.has('Content-Range'))
+            return true;
+        if (this.header.has('Content-Type')) {
+            const value = this.header.value('Content-Type');
+            return value.includes('multipart/byteranges');
+        }
+        return false;
+    }
+
+    _applyRanges(content, ranges) {
+        if (!ranges)
+            return content; // the entire payload, no ranges
+
+        if (ranges.length === 1) { // a single range
+            const range = ranges[0];
+            const low = range[0];
+            const high = range[1];
+            return content.substring(low, high+1);
+        }
+
+        // payload in "multipart/byteranges" format (RFC7233)
+
+        Must(ranges.length > 1);
+
+        const terminator = "\r\n";
+        const length = content.length;
+        let part = "";
+        for (let range of ranges) {
+            const low = range[0];
+            const high = range[1];
+            Must(low !== null && low !== undefined); // TODO: support 'half-closed' ranges
+            Must(high !== null && high !== undefined);
+            part += terminator + "--" + Config.ContentRangeBoundary;
+            part += terminator + 'Content-Type: text/html';
+            part += terminator + `Content-Range: bytes ${low}-${high}/${length}`;
+            part += terminator;
+            const block = content.substring(low, high+1);
+            part += terminator + block;
+        }
+        part += terminator + "--" + Config.ContentRangeBoundary + "--" + terminator;
+        return part;
+    }
+
+    // Creates response header field from an array of range pairs.
+    // For a single range - 'Content-Range' is created.
+    // For multiple ranges - 'Content-Type' is created with 'multipart/byteranges' value.
+    addRanges(ranges, length) {
+        Must(ranges);
+        Must(length);
+        Must(ranges.length);
+        this.ranges = ranges;
+        if (ranges.length === 1) {
+            Must(!this.header.has('Content-Range'));
+            const range = ranges[0];
+            const value = `bytes ${range[0]}-${range[1]}/${length}`;
+            this.header.add('Content-Range', value);
+        } else {
+            Must(!this.header.has('Content-Type'));
+            const value = 'multipart/byteranges; boundary=' + Config.ContentRangeBoundary;
+            this.header.add('Content-Type', value);
+        }
+    }
 
     syncContentLength() {
         if (this.forceEof) {

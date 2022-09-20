@@ -4,6 +4,7 @@
 
 /* Manages an HTTP request message, including headers and body */
 
+import { Must } from "../misc/Gadgets";
 import Message from "./Message";
 import RequestLine from "./RequestLine";
 import * as Config from "../misc/Config";
@@ -34,10 +35,25 @@ export default class Request extends Message {
         return messageWriter.requestPrefix(this);
     }
 
-    // adds 'Range' header according to the configuration
-    setRanges() {
-        if (Config.Range) {
-            this.header.add("Range", `bytes=${Config.Range}`);
-        }
+    // creates request 'Range' header field from an array of range pairs
+    addRanges(ranges) {
+        Must(ranges);
+        Must(ranges.length);
+        Must(!this.header.has('Range'));
+        const value = 'bytes=' + ranges.map(v => `${v[0]}-${v[1]}`).join(', ');
+        this.header.add("Range", value);
+        this.ranges = ranges;
     }
+
+    // returns an array of range pairs, extracted from the 'Range' header value
+    parseRangeHeader() {
+        const name = 'Range';
+        if (!this.header.has(name))
+            return [];
+
+        const value = this.header.value(name);
+        const pairs = value.substring(value.indexOf('=') + 1).split(',');
+        return pairs.map(v => v.split('-')).map(v => [Number.parseInt(v[0]), Number.parseInt(v[1])]);
+    }
+
 }
