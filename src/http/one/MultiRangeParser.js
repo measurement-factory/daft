@@ -2,9 +2,8 @@
  * Copyright (C) 2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import Header from "../Header";
-import Field from "../Field";
 import assert from "assert";
+import { parseHeader } from "./HeaderParser"
 import { Must } from "../../misc/Gadgets";
 
 // parses body in the "multipart/byteranges" format (RFC7233)
@@ -41,7 +40,7 @@ export default class MultiRangeParser {
             console.log(`Warning: Invalid multi-range boundary: ${firstLine}`);
             return false;
         }
-        const header = this.parseHeader(match[2]);
+        const header = parseHeader(match[2]);
         const parsedRange = MultiRangeParser.ParseContentRange(header);
         this.ranges.push([parsedRange.low, parsedRange.high]);
         const rangeLength = parsedRange.high - parsedRange.low + 1;
@@ -68,55 +67,6 @@ export default class MultiRangeParser {
         assert(low < high);
         assert(high < whole);
         return {low: low, high: high, whole: whole};
-    }
-
-    // XXX: copied from MessageParser.js
-    parseHeader(raw) {
-        let header = new Header();
-
-        Must(raw !== null && raw !== undefined);
-        header._raw = raw;
-
-        // replace obs-fold with a single space
-        let rawH = raw.replace(/\r*\n\s+/, ' ');
-
-        let rawFields = rawH.split('\n');
-        Must(rawFields.length); // our caller requires CRLF at the headers end
-        Must(!rawFields.pop().length); // the non-field after the last CRLF
-        for (let rawField of rawFields) {
-            let field = this.parseField(rawField + "\n");
-            Must(field);
-            header.fields.push(field);
-        }
-
-        if (!header.fields.length)
-            console.log(`Warning: Found no headers in ${rawH}`);
-
-        return header;
-    }
-
-    // XXX: copied from MessageParser.js
-    parseField(raw) {
-        let fieldRe = /^(.*?)([\t ]*:[\t ]*)(.*?)([\t \r]*\n)$/;
-        const match = fieldRe.exec(raw);
-
-        let field = new Field();
-
-        if (match) {
-            Must(match.length === 5);
-            field.name = match[1]; // right-trimmed
-            field.separator = match[2];
-            field.value = match[3]; // trimmed
-            field.terminator = match[4];
-        } else {
-            console.log(`Warning: Cannot parse ${raw.length}-byte header field: ${raw}`);
-            field.name = raw;
-            field.separator = "";
-            field.value = "";
-            field.terminator = "";
-        }
-
-        return field;
     }
 }
 
