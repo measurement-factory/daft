@@ -193,7 +193,7 @@ export default class Transaction {
         });
 
         this.socket.on('end', () => {
-            this.context.enter();
+            this.context.enter(`received EOF from ${this.peerKind}`);
             // assume all 'data' events always arrive before 'end'
             if (!this._doneReceiving)
                 this.endReceiving(`${this.peerKind} disconnected`);

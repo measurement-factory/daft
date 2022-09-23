@@ -99,7 +99,10 @@ export default class Agent extends SideAgent {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
             } else {
+                this.context.log("waiting for connections to close");
+                this.context.log("currently open connections: ", await this.server.getConnectionsAsync());
                 await promiseToClose;
+                this.context.log("done waiting for connections to close");
             }
 
             this._stoppedListening();
