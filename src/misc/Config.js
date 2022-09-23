@@ -65,6 +65,12 @@ export function LargeBodySize() {
     return 2*blockSize + extras;
 }
 
+// largest body that can still be cached in a reasonable amount of time/space
+export function HugeCachableBodySize() {
+    // 1000-base is easier for quick checks when reading logs than 1024-base
+    return 10 * 1000*1000;
+}
+
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
     // by default, report progress except for huge bodies

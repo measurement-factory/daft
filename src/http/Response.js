@@ -8,6 +8,17 @@ import assert from "assert";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
 import { Must } from "../misc/Gadgets";
+import * as Config from "../misc/Config";
+
+// custom CLI options
+Config.Recognize([
+    {
+        option: "response-ends-at-eof",
+        type: "Boolean",
+        default: "false",
+        description: "send unchunked response without Content-Length",
+    },
+]);
 
 export default class Response extends Message {
 
@@ -15,7 +26,7 @@ export default class Response extends Message {
         super(new StatusLine(), ...args);
 
         // force the sender to close the connection to mark the end of response
-        this.forceEof = false;
+        this.forceEof = null; // use Config.responseEndAtEof by default
     }
 
     // makes us an exact replica of them
@@ -45,9 +56,9 @@ export default class Response extends Message {
         }
     }
 
-
     syncContentLength() {
-        if (this.forceEof) {
+        const forceEof = this.forceEof === null ? Config.responseEndsAtEof() : this.forceEof;
+        if (forceEof) {
             Must(this.body);
             Must(!this.chunkingBody());
             this.header.prohibitNamed("Content-Length");
