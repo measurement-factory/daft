@@ -123,13 +123,14 @@ export default class Message {
 
         this.syncContentLength();
 
-        this.header.finalize(); // after syncContentLength() adds headers
-
         if (Config.PrefixSize !== 0) {
-            const total = (this.startLine.raw() + this.header.raw() + this.headerDelimiter).length;
-            if (total < Config.PrefixSize)
-                this.header.addStuffing(Config.PrefixSize - total);
+            const surroundingsSize = (this.startLine.raw() + this.headerDelimiter).length;
+            if (Config.PrefixSize > surroundingsSize)
+                this.header.enforceMinimumLength(Config.PrefixSize - surroundingsSize);
         }
+
+        // after syncContentLength() and this.header.enforceMinimumLength()
+        this.header.finalize();
     }
 
     addRanges(ranges) { assert(false); }

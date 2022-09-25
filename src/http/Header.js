@@ -9,6 +9,7 @@ import { Must } from "../misc/Gadgets";
 import * as Misc from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
 import * as Config from "../misc/Config";
+import assert from "assert";
 
 
 export default class Header {
@@ -24,6 +25,10 @@ export default class Header {
         // Usually, the two mechanisms are used together in order to customize
         // a value of the field used by the lower-level code.
         this._extraFields = [];
+
+        // minimum raw() length of a finalized header
+        // set via enforceMinimumLength()
+        this._minimumLength = null;
     }
 
     clone() {
@@ -45,10 +50,24 @@ export default class Header {
         this.fields.forEach(field => field.finalize());
         // finalize each overwriting field
         this._extraFields.forEach(field => field.finalize());
+
+        if (this._minimumLength !== null) {
+            const bareLength = this.raw().length;
+            if (bareLength < this._minimumLength)
+                this._stuff(this._minimumLength - bareLength);
+
+            assert(this.raw().length >= this._minimumLength);
+        }
     }
 
-    // adds a custom header field of length>13 bytes
-    addStuffing(length) {
+    // ensures that the finalized header is at least n bytes long
+    enforceMinimumLength(n) {
+        assert(n >= 0);
+        this._minimumLength = n;
+    }
+
+    // adds a custom field that is at least length bytes long
+    _stuff(length) {
         let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing"), 'x');
         stuffingField.finalize();
         const stuffingMin = stuffingField.raw().length;
