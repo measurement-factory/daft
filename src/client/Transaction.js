@@ -44,11 +44,13 @@ export default class Transaction extends SideTransaction {
         this.request.header.addByDefault("Connection", "close");
         // no request body by default
 
-        this.request.finalize();
+        this.request.startLine.finalize();
 
-        // A finalized request should have uri.authority set.
+        // A finalized start line should have uri.authority set.
         // Callers should use that for request target, even if uri.relative.
         this.request.header.addByDefault("Host", this.request.startLine.uri.authority.raw());
+
+        this.request.finalize();
 
         this.messageParser.request(this.request);
 
