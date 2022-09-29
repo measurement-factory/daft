@@ -134,7 +134,7 @@ export class DutConfig {
 
     _anyCachingCfg() {
         if (!this._memoryCaching && !this._diskCaching)
-            return;
+            return '';
 
         // allow caching of responses configured to exceed default 4MB
         // maximum_object_size but do not lower that limit below its default
@@ -230,7 +230,7 @@ export class DutConfig {
     // makes cfg text pretty
     _trimCfg(cfg) {
         // TODO: Support rudimentary configuration parsing instead?
-        cfg = cfg.replace(/^\s+$/, ""); // remove leading empty line
+        cfg = cfg.replace(/^\s+$/mg, ""); // remove whitespace-only lines
         cfg = cfg.replace(/^\s+/, ""); // remove leading empty space
         cfg = cfg.replace(/\s+$/mg, ""); // remove trailing whitespace
         cfg = cfg.replace(/^\s{12}/mg, ""); // trim indentation
