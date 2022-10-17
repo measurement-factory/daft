@@ -84,6 +84,8 @@ export default class Agent {
         }
     }
 
+    finishedTransactions() { return this._xFinished; }
+
     // keeps or closes the socket of a finish()ing transaction
     absorbTransactionSocket(transaction, socket) {
 

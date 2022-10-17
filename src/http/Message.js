@@ -6,6 +6,7 @@
 
 import Authority from "../anyp/Authority";
 import Header from "./Header";
+import Field from "./Field";
 import { Must } from "../misc/Gadgets";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
@@ -123,6 +124,29 @@ export default class Message {
         this.syncContentLength();
 
         this.header.finalize(); // after syncContentLength() adds headers
+    }
+
+    // copy the 'ID' field from other message
+    copyID(other) {
+        const otherFieldName = other._daftFieldName("ID");
+        if (other.header.has(otherFieldName))
+            this.header.add(otherFieldName, other.header.value(otherFieldName));
+    }
+
+    // returns the 'ID' field value of other message copied to this message (if any)
+    otherID(other) {
+        debugger;
+        const otherFieldName = other._daftFieldName("ID");
+        if (this.header.has(otherFieldName))
+            return this.header.value(otherFieldName);
+        return null;
+    }
+
+    // returns the 'ID' field value of this message
+    id() {
+        const fieldName = this._daftFieldName("ID");
+        if (this.header.has(fieldName))
+            return this.header.value(fieldName);
     }
 
     addBody(body) {
