@@ -31,6 +31,8 @@ export default class Agent extends SideAgent {
         this._actualListeningAddress = null; // used (and fully resolved)
 
         this._transaction = new Transaction(this);
+
+        this._promiseToClose = null;
     }
 
     address() {
@@ -61,10 +63,14 @@ export default class Agent extends SideAgent {
     _startListening() {
         this.server = asyncNet.createServer();
 
-        this.server.on('connection', userSocket => this._startServing(userSocket));
+        this.server.once('connection', userSocket =>  {
+            this._startServing(userSocket);
+            this._promiseToClose = this.server.closeAsync();
+        });
+
 
         const addr = Gadgets.FinalizeListeningAddress(this.address());
-        return this.server.listenAsync(addr.port, addr.host).
+        return this.server.listenAsync(addr.port, addr.host, 1).
             bind(this).
             tap(this._startedListening);
     }
@@ -93,15 +99,15 @@ export default class Agent extends SideAgent {
     }
 
     async _stop() {
-        if (this.server && this.server.address()) {
-            const promiseToClose = this.server.closeAsync(); // unconditionally
+        if (this._promiseToClose) {
             if (this._keepConnections) {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
+                this._promiseToClose = null;
             } else {
                 this.context.log("waiting for connections to close");
                 this.context.log("currently open connections: ", await this.server.getConnectionsAsync());
-                await promiseToClose;
+                await this._promiseToClose;
                 this.context.log("done waiting for connections to close");
             }
 
