@@ -33,6 +33,8 @@ export default class Agent extends SideAgent {
         this._transaction = new Transaction(this);
 
         this._promiseToClose = null;
+
+        this._serverSocket = null; // server transaction socket
     }
 
     address() {
@@ -50,9 +52,9 @@ export default class Agent extends SideAgent {
     start() {
         return Promise.try(() => {
             if (this._savedSocket) {
-                const socket = this._savedSocket;
+                this._serverSocket = this._savedSocket;
                 this._savedSocket = null;
-                this._startServing(socket);
+                this._startServing();
             } else {
                 this._startListening();
             }
@@ -63,11 +65,16 @@ export default class Agent extends SideAgent {
     _startListening() {
         this.server = asyncNet.createServer();
 
-        this.server.once('connection', userSocket =>  {
-            this._startServing(userSocket);
-            this._promiseToClose = this.server.closeAsync();
+        this.server.on('connection', userSocket =>  {
+            if (!this._serverSocket) {
+                this._serverSocket = userSocket;
+                this._startServing();
+                this._promiseToClose = this.server.closeAsync();
+            } else { // get here only if closeAsync() has not yet made server stop listening
+                console.log("does not support more than one server connection");
+                userSocket.destroy();
+            }
         });
-
 
         const addr = Gadgets.FinalizeListeningAddress(this.address());
         return this.server.listenAsync(addr.port, addr.host, 1).
@@ -77,7 +84,7 @@ export default class Agent extends SideAgent {
 
     // Take care of the given accepted connection.
     // The connection may have been accepted by another Agent instance.
-    _startServing(userSocket) {
+    _startServing() {
         let transaction = null;
         if (this._transaction.started()) {
             transaction = new Transaction(this);
@@ -95,11 +102,13 @@ export default class Agent extends SideAgent {
             this._originalResponse = transaction.response.clone();
         }
 
-        return this._runTransaction(transaction, userSocket);
+        return this._runTransaction(transaction, this._serverSocket);
     }
 
     async _stop() {
-        if (this._promiseToClose) {
+        if (this.server && this.server.address()) {
+            if (!this._promiseToClose)
+                this._promiseToClose = this.server.closeAsync(); // no accepted connections yet
             if (this._keepConnections) {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
@@ -114,7 +123,6 @@ export default class Agent extends SideAgent {
             this._stoppedListening();
             return;
         }
-
         this._releaseListeningAddress();
     }
 
