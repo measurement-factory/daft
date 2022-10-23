@@ -111,8 +111,6 @@ export class DutConfig {
             logformat xsquid %err_code/%err_detail %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
             access_log stdio:access-${kid}.log xsquid
             cache_log ${logDir}/cache-${kid}.log
-
-            debug_options ALL,1
         `;
         return this._trimCfg(cfg);
     }
@@ -132,6 +130,23 @@ export class DutConfig {
             });
         }
         return addresses;
+    }
+
+    // the number of kidN processes Squid instance is supposed to have running
+    kidsExpected() {
+        let kidsExpected = 0;
+        if (this._workers) {
+            if (this._workers === 1) {
+                kidsExpected = 1;
+                // and no Coordinator or diskers
+            } else {
+                kidsExpected += this._workers;
+                if (this._diskCaching)
+                    kidsExpected += 1; // disker
+                kidsExpected += 1; // SMP Coordinator process
+            }
+        }
+        return kidsExpected;
     }
 
     _anyCachingCfg() {
@@ -304,12 +319,15 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 4,
+                    'Pop-Version': 5,
                 },
             };
 
             httpOptions.headers['Overlord-Listening-Ports'] =
                 this._dutConfig.listeningPorts().join(",");
+
+            httpOptions.headers['Overlord-kids-expected'] =
+                this._dutConfig.kidsExpected();
 
             const requestBody = command.toHttp(httpOptions);
 
