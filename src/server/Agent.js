@@ -32,7 +32,7 @@ export default class Agent extends SideAgent {
 
         this._transaction = new Transaction(this);
 
-        this._promiseToClose = null;
+        this._serverClosed = null; // a promise to close this.server
 
         this._serverSocket = null; // server transaction socket
     }
@@ -69,7 +69,7 @@ export default class Agent extends SideAgent {
             if (!this._serverSocket) {
                 this._serverSocket = userSocket;
                 this._startServing();
-                this._promiseToClose = this.server.closeAsync();
+                this._serverClosed = this.server.closeAsync();
             } else { // get here only if closeAsync() has not yet made server stop listening
                 console.log("does not support more than one server connection");
                 userSocket.destroy();
@@ -77,7 +77,7 @@ export default class Agent extends SideAgent {
         });
 
         const addr = Gadgets.FinalizeListeningAddress(this.address());
-        return this.server.listenAsync(addr.port, addr.host, 1).
+        return this.server.listenAsync(addr.port, addr.host);
             bind(this).
             tap(this._startedListening);
     }
@@ -107,22 +107,23 @@ export default class Agent extends SideAgent {
 
     async _stop() {
         if (this.server && this.server.address()) {
-            if (!this._promiseToClose)
-                this._promiseToClose = this.server.closeAsync(); // no accepted connections yet
+            if (!this._serverClosed)
+                this._serverClosed = this.server.closeAsync(); // no accepted connections yet
             if (this._keepConnections) {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
-                this._promiseToClose = null;
+                this._serverClosed = null;
             } else {
                 this.context.log("waiting for connections to close");
                 this.context.log("currently open connections: ", await this.server.getConnectionsAsync());
-                await this._promiseToClose;
+                await this._serverClosed;
                 this.context.log("done waiting for connections to close");
             }
 
             this._stoppedListening();
             return;
         }
+
         this._releaseListeningAddress();
     }
 
