@@ -290,7 +290,12 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    _remoteCall(commandOrString) {
+    waitCollapsed(path, count) {
+        let options = {'Overlord-request-path': path, 'Overlord-collapsed-count': count};
+        return this._remoteCall("/waitCollapsed", options);
+    }
+
+    _remoteCall(commandOrString, options) {
         return new Promise((resolve) => {
 
             const command = ((typeof commandOrString) === 'string') ?
@@ -305,6 +310,9 @@ export class ProxyOverlord {
                     'Pop-Version': 4,
                 },
             };
+
+            if (options)
+                httpOptions.headers = { ...httpOptions.headers, ...options };
 
             httpOptions.headers['Overlord-Listening-Ports'] =
                 this._dutConfig.listeningPorts().join(",");
