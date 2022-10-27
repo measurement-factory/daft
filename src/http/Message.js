@@ -135,7 +135,6 @@ export default class Message {
 
     // returns the 'ID' field value of other message copied to this message (if any)
     otherID(other) {
-        debugger;
         const otherFieldName = other._daftFieldName("ID");
         if (this.header.has(otherFieldName))
             return this.header.value(otherFieldName);
