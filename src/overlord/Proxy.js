@@ -307,9 +307,11 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    waitCollapsed(path, count) {
-        let options = {'Overlord-request-path': path, 'Overlord-collapsed-count': count};
-        return this._remoteCall("/waitCollapsed", options);
+    // count - the number of collapsed requests
+    allCollapsed(path, count) {
+        const allRequests = count + 1; // including the parent request
+        let options = {'Overlord-request-path': path, 'Overlord-active-requests-count': allRequests};
+        return this._remoteCall("/waitActiveRequests", options);
     }
 
     _remoteCall(commandOrString, options) {
