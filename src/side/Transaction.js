@@ -92,6 +92,11 @@ export default class Transaction {
         return this._sentEverything;
     }
 
+    finished() {
+        assert(this._finished); // but may not be resolved yet
+        return this._finished;
+    }
+
     blockSendingUntil(externalEvent, waitingFor) {
         this._blockSending('headers', externalEvent, waitingFor);
     }
@@ -316,6 +321,11 @@ export default class Transaction {
             return;
         }
 
+        if (this.messageOut.body.doneOuting()) {
+            this._stopProducing(`cannot produce any more ${this.messageOutKind} body bytes`);
+            return;
+        }
+
         if (!this._allowedToSend('body'))
             return;
 
@@ -340,10 +350,18 @@ export default class Transaction {
 
             const madeAllNow = this.messageOut.body.outedAll() &&
                 bodyOut.length === this._bodyEncoder.outputSize();
-            const madeThing = madeAllNow ?
-                `the entire ${this.messageOutKind} body`:
-                `a piece of the ${this.messageOutKind} body`;
-            console.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
+            const finishedEncoding = this._bodyEncoder.finished();
+            // Cases using "entire" wording below assume that the encoder may
+            // not output some trailing metadata but always outputs all the
+            // body.out() bytes we feed it with. Also, we use unnecessarily
+            // spelled out conditions below to better document each case.
+            const madeThing =
+                madeAllNow && finishedEncoding ? `the entire ${this.messageOutKind} body`:
+                madeAllNow && !finishedEncoding ? `an incomplete encoding of the entire resource content`:
+                !madeAllNow && finishedEncoding ? `the final piece of the ${this.messageOutKind} body`:
+                !madeAllNow && !finishedEncoding ? `a piece of the ${this.messageOutKind} body`:
+                assert(false);
+            this.context.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
         }
 
         return out;

@@ -20,6 +20,12 @@ Config.Recognize([
         default: "false",
         description: "use chunked Transfer-Encoding when sending message bodies",
     },
+    {
+        option: "withhold-last-chunk",
+        type: "Boolean",
+        default: "false",
+        description: "when sending a chunked message, do not send last-chunk",
+    },
 ]);
 
 export default class Message {
@@ -35,6 +41,7 @@ export default class Message {
 
         this.body = null; // no body by default
         this._chunkBody = Config.ChunkBodies;
+        this._withholdLastChunk = Config.WithholdLastChunk;
 
         // whether this to-be-sent message has auto-generated components such
         // as unique message id() in the header; false for received messages
@@ -55,6 +62,7 @@ export default class Message {
         this.headerDelimiter = them.headerDelimiter;
         this.body = them.body ? them.body.clone() : null;
         this._chunkBody = them._chunkBody;
+        this._withholdLastChunk = them._withholdLastChunk;
         this._finalized = them._finalized;
         return this;
     }
@@ -71,6 +79,16 @@ export default class Message {
     chunkBody(doIt) {
         assert.strictEqual(arguments.length, 1);
         this._chunkBody = doIt;
+    }
+
+    withholdingLastChunk() {
+        assert(!arguments.length);
+        return this._withholdLastChunk;
+    }
+
+    withholdLastChunk(doIt) {
+        assert.strictEqual(arguments.length, 1);
+        this._withholdLastChunk = doIt;
     }
 
     // unique ID of a _finalized_ message

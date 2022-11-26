@@ -61,7 +61,7 @@ export function responsePrefix(message) {
 
 export function bodyEncoder(message) {
     return message.header.chunked() ?
-        new ChunkedEncoder() : new IdentityEncoder();
+        new ChunkedEncoder(message) : new IdentityEncoder();
 }
 
 // does the recipient needs EOF to tell where the response ends?
