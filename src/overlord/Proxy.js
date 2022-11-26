@@ -281,11 +281,13 @@ export class ProxyOverlord {
         assert(!this._start);
 
         if (Config.DutAtStartup !== "reset") {
+            console.log("Checking proxy state");
             assert.strictEqual(Config.DutAtStartup, "as-is");
             await this._remoteCall("/check");
             return;
         }
 
+        console.log("Resetting proxy");
         const command = new Command("/reset");
         command.setConfig(this._dutConfig.make());
         this._start = this._remoteCall(command);
