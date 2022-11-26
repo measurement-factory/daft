@@ -37,7 +37,12 @@ export default class Transaction extends SideTransaction {
     }
 
     _stopProducing(why) {
-        if (forcesEof(this.messageIn, this.messageOut) && this.socket) {
+        let forceEof = this.socket && forcesEof(this.messageIn, this.messageOut);
+        if (forceEof && this._closeLast) {
+            this.context.log("avoiding connection [half-]closure:", this._closeLast);
+            forceEof = false;
+        }
+        if (forceEof) {
             this.context.log("will [half-]close the connection to mark the end of response");
             this.socket.endAsync().then(() => {
                 this.context.enter("wrote everything");
@@ -48,6 +53,7 @@ export default class Transaction extends SideTransaction {
             });
             // we might still be writing here
         }
+
         super._stopProducing(why);
     }
 

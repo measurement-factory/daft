@@ -66,6 +66,9 @@ export default class Transaction {
         this._finalizedMessage = false;
 
         this._bodyEncoder = null;
+
+        // (the reason to) close the socket only after our peer closes
+        this._closeLast = null;
     }
 
     started() {
@@ -103,6 +106,12 @@ export default class Transaction {
 
     blockSendingBodyUntil(externalEvent, waitingFor) {
         this._blockSending('body', externalEvent, waitingFor);
+    }
+
+    closeLast(why) {
+        assert(why);
+        this.context.log("will not close the connection first:", why);
+        this._closeLast = why;
     }
 
     _blockSending(part, externalEvent, waitingFor) {
@@ -199,10 +208,20 @@ export default class Transaction {
 
         this.socket.on('end', () => {
             this.context.enter(`received EOF from ${this.peerKind}`);
+
+            // This configuration-overwriting simplification/hack feels OK for
+            // now. If that changes, add/use a ._peerClosed state instead.
+            if (this._closeLast) {
+                this.context.log(`stop waiting for ${this.peerKind} to close first`);
+                this._closeLast = false;
+            }
+
             // assume all 'data' events always arrive before 'end'
             if (!this._doneReceiving)
                 this.endReceiving(`${this.peerKind} disconnected`);
-            // else ignore post-message EOF; TODO: Clear this.socket?
+            else
+                this.checkpoint(); // probably will just report what we are waiting for
+            // TODO: Clear this.socket?
             this.context.exit();
         });
 
@@ -257,6 +276,8 @@ export default class Transaction {
         if (this._writing())
             doing.push(`writing ${this.socket.bufferSize} bytes`);
 
+        if (this.socket && this._closeLast)
+            doing.push(`waiting for ${this.peerKind} to close first`);
 
         if (doing.length)
             this.context.log('still', doing.join(", "));
