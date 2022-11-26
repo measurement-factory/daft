@@ -124,13 +124,19 @@ export function AssertForwardedMessage(sent, received, kind) {
             `${kind} ${name} field`);
     }
 
-    assert.equal(!received.body, !sent.body);
-    if (sent.body) {
-        assert.equal(received.body.whole().length, sent.body.whole().length);
+    // An HTTP message sent without a body (e.g., EOF after the header) may be
+    // received as an HTTP message with an empty body (e.g., consisting of
+    // nothing but last-chunk) and vice versa because the two concepts are
+    // interchangeable in most HTTP contexts. We ignore this kind of change.
+    const sentBody = sent.body && sent.body.whole().length ? sent.body : null;
+    const receivedBody = received.body && received.body.whole().length ? received.body : null;
+    assert.equal(!receivedBody, !sentBody);
+    if (sentBody) {
+        assert.equal(receivedBody.whole().length, sentBody.whole().length);
         // TODO: assert.equal() detects but does not show the suffix difference
         // of long strings (e.g., 17MB bodies with different last few bytes).
-        assert.equal(received.body.whole(), sent.body.whole());
+        assert.equal(receivedBody.whole(), sentBody.whole());
     } else {
-        assert.equal(received.body, null);
+        assert.equal(receivedBody, null);
     }
 }
