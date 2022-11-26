@@ -138,18 +138,20 @@ export class DutConfig {
 
     // the number of kidN processes Squid instance is supposed to have running
     kidsExpected() {
+        // Explicit "workers 0" enables no-daemon mode (i.e. no kids)
+        if (this._workers !== null && this._workers === 0)
+            return 0;
+
+        // no explicit "workers N" means one worker kid
+        // explicit "workers N" means N worker kids
+        const workersExpected = this._workers === null ? 1 : this._workers;
+
         let kidsExpected = 0;
-        if (this._workers) {
-            if (this._workers === 1) {
-                kidsExpected = 1;
-                // and no Coordinator or diskers
-            } else {
-                kidsExpected += this._workers;
-                if (this._diskCaching)
-                    kidsExpected += 1; // disker
-                kidsExpected += 1; // SMP Coordinator process
-            }
-        }
+        kidsExpected += workersExpected;
+        if (this._diskCaching)
+            kidsExpected += 1; // disker
+        if (kidsExpected > 1)
+            kidsExpected += 1; // SMP Coordinator process
         return kidsExpected;
     }
 
