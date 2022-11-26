@@ -269,12 +269,21 @@ export class ProxyOverlord {
         this._dutConfig = cfg;
         this._start = null; // future start() promise
         this._oldHealth = null; // proxy status during the previous _remoteCall()
+        this._ignoreProblems = null; // ignore proxy-reported problems matching this regex
     }
 
     // "read-only" access to the DUT configuration
     config() {
         assert.strictEqual(arguments.length, 0);
         return this._dutConfig;
+    }
+
+    // start ignoring matching DUT-reported problems
+    ignoreProblems(regex) {
+        assert(regex);
+        console.log("Will ignore proxy problems matching", regex);
+        assert(!this._ignoreProblems); // no support for accumulating exclusions yet
+        this._ignoreProblems = regex;
     }
 
     async noteStartup() {
@@ -367,8 +376,12 @@ export class ProxyOverlord {
                     const oldProblems = this._oldHealth ? this._oldHealth.problems : "";
                     const newProblems = health.problems.startsWith(oldProblems) ?
                         health.problems.substring(oldProblems.length) : health.problems;
-                    if (newProblems.length)
-                        throw new Error(`proxy-reported problem(s):\n${newProblems}`);
+                    if (newProblems.length) {
+                        if (this._ignoreProblems && this._ignoreProblems.test(health.problems))
+                            console.log("Ignoring proxy-reported problem(s):\n", newProblems);
+                        else
+                            throw new Error(`proxy-reported problem(s):\n${newProblems}`);
+                    }
                     this._oldHealth = health;
 
                     resolve(true);
