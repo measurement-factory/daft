@@ -51,6 +51,10 @@ export class DutConfig {
         return this._listeningPorts;
     }
 
+    cachingEnabled() {
+        return this._memoryCaching || this._diskCaching;
+    }
+
     workers(count) {
         assert(count > 0);
         this._workers = count;
@@ -150,7 +154,7 @@ export class DutConfig {
     }
 
     _anyCachingCfg() {
-        if (!this._memoryCaching && !this._diskCaching)
+        if (!this.cachingEnabled())
             return '';
 
         // allow caching of responses configured to exceed default 4MB
@@ -263,6 +267,12 @@ export class ProxyOverlord {
         this._dutConfig = cfg;
         this._start = null; // future start() promise
         this._oldHealth = null; // proxy status during the previous _remoteCall()
+    }
+
+    // "read-only" access to the DUT configuration
+    config() {
+        assert.strictEqual(arguments.length, 0);
+        return this._dutConfig;
     }
 
     async noteStartup() {
