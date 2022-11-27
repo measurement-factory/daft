@@ -1,12 +1,12 @@
 {
   "name": "daft",
-  "version": "1.0.210",
+  "version": "1.0.296",
   "main": "./src/cli/daft.js",
   "author": "The Measurement Factory",
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-eslint": "^10.1.0",
-    "eslint": "^5.16.0"
+    "eslint": "^7.32.0"
   },
   "dependencies": {
     "bluebird": "^3.7.2",
