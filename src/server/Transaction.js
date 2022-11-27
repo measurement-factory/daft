@@ -6,7 +6,6 @@ import SideTransaction from "../side/Transaction";
 import { forcesEof } from "../http/one/MessageWriter";
 import RequestParser from "../http/one/RequestParser";
 import Response from "../http/Response";
-import Body from "../http/Body";
 import { LocalAddress } from "../misc/Gadgets";
 import assert from "assert";
 
@@ -66,17 +65,16 @@ export default class Transaction extends SideTransaction {
             return; // no response without request by default
 
         assert(this.response);
-        // XXX: do not add body to HEAD responses
-        // XXX: add other bodyless status codes
-        if (this.response.body === undefined && this.response.startLine.codeInteger() !== 304)
-            this.response.addBody(new Body());
 
         this.response.header.addByDefault("Server", "DaftServer/1.0");
         this.response.header.addByDefault("Connection", "close");
         this.response.header.addByDefault("Date", new Date().toUTCString());
         this.response.generatorAddress(LocalAddress(this.socket));
 
-        this.response.finalize();
+        // XXX: do not add body to HEAD responses
+        // XXX: add other bodyless status codes
+        const scodeImpliesNoBody = this.response.startLine.codeInteger() === 304;
+        this.response.finalize(!scodeImpliesNoBody);
 
         this._finalizedMessage = true; // TODO: Move to Message::finalize()?
     }

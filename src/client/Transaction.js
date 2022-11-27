@@ -42,9 +42,11 @@ export default class Transaction extends SideTransaction {
 
         this.request.header.addByDefault("User-Agent", "DaftClient/1.0");
         this.request.header.addByDefault("Connection", "close");
-        // no request body by default
 
-        this.request.finalize();
+        // no request body by default, except for POST
+        // TODO: Recognize more methods that usually have body
+        const method = this.request.startLine.method; // may be undefined
+        this.request.finalize(method === 'POST');
 
         // A finalized request should have uri.authority set.
         // Callers should use that for request target, even if uri.relative.

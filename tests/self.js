@@ -4,7 +4,6 @@
 
 import HttpTestCase from "../src/test/HttpCase";
 import Proxy from "../src/proxy/Agent";
-import Body from "../src/http/Body";
 import * as Http from "../src/http/Gadgets";
 import Test from "../src/test/Test";
 import assert from "assert";
@@ -20,7 +19,6 @@ export default class MyTest extends Test {
         {
             let testCase = this.makeCase('should forward POST');
             testCase.client().request.startLine.method = 'POST';
-            testCase.client().request.addBody(new Body());
             await testCase.run();
         }
 
@@ -33,7 +31,6 @@ export default class MyTest extends Test {
         {
             let testCase = this.makeCase('should forward chunked request');
             testCase.client().request.startLine.method = 'POST';
-            testCase.client().request.addBody(new Body());
             testCase.client().request.chunkBody(true);
             await testCase.run();
         }

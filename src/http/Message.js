@@ -5,6 +5,7 @@
 /* Base class for HTTP request or response message, including headers and body */
 
 import Authority from "../anyp/Authority";
+import Body from "./Body";
 import Header from "./Header";
 import { Must } from "../misc/Gadgets";
 import * as Config from "../misc/Config";
@@ -39,7 +40,10 @@ export default class Message {
         this.header = new Header();
         this.headerDelimiter = null;
 
-        this.body = null; // no body by default
+        // By default, let methods like Request::with(), Response::from(), and
+        // Transaction::finalizeMessage() decide whether to add a body. To
+        // stop those methods from guessing, set this.body (e.g., to null).
+        this.body = undefined;
         this._chunkBody = Config.ChunkBodies;
         this._withholdLastChunk = Config.WithholdLastChunk;
 
@@ -121,7 +125,7 @@ export default class Message {
         return Authority.Parse(rawValue).toHostPort();
     }
 
-    finalize() {
+    finalize(bodyExpected) {
         if (this.finalized())
             return;
         this._finalized = true;
@@ -135,6 +139,12 @@ export default class Message {
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
 
+        if (this.body === undefined) {
+            if (bodyExpected)
+                this.addBody(new Body());
+            else
+                this.body = null;
+        }
         if (this.body)
             this.body.finalize();
 
@@ -143,8 +153,10 @@ export default class Message {
         this.header.finalize(); // after syncContentLength() adds headers
     }
 
+    // not a reset; we do not remove old Content-Length
     addBody(body) {
-        Must(!this.body); // not a reset; we do not remove old Content-Length
+        Must(this.body === undefined);
+        Must(body);
         this.body = body;
     }
 
