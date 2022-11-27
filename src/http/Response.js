@@ -53,6 +53,9 @@ export default class Response extends Message {
             assert(resource.body.innedAll);
             assert.strictEqual(resource.body.outedSize(), 0);
             this.addBody(resource.body.clone());
+        } else if (resource.body === null) {
+            assert.strictEqual(this.body, undefined); // no accidental overwrites
+            this.body = null;
         }
     }
 
