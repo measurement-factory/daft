@@ -8,9 +8,11 @@ import net from "net";
 import RequestParser from "../http/one/RequestParser";
 import ResponseParser from "../http/one/ResponseParser";
 import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter";
+import Body from "../http/Body";
 import Context from "../misc/Context";
 import * as Config from "../misc/Config";
 import { Must, SendBytes, ReceivedBytes, PrettyMime, PrettyBody } from "../misc/Gadgets";
+
 import assert from "assert";
 
 export default class Transaction { // XXX: extends SideTransaction
@@ -201,44 +203,30 @@ export default class Transaction { // XXX: extends SideTransaction
     }
 
     adaptRequest() {
+        if (!this.virginRequest)
+            return;
+
+        if (this.virginRequest.body && !this.virginRequest.body.innedAll)
+            return;
+
         if (!this.adaptedRequest) {
-            if (this.virginRequest)
-                this.startAdaptingRequest();
-            else
-                this.generateRequest();
+            this.cloneRequest();
+            this.adaptRequestHeader();
+            assert(this.adaptedRequest);
         }
-
-        if (this.adaptedRequest && this.adaptedRequest.body)
-            this.adaptRequestBody();
-    }
-
-    generateRequest() {
-        Must(!this.virginRequest);
-        return; // no adapted request w/o virginRequest by default
     }
 
     cloneRequest() {
         this.adaptedRequest = this.virginRequest.clone();
-        // this.virginRequest may contain a body, and we just cloned it
-        // consume virgin body here so that adaptRequestBody() does not get a
-        // second copy of it
-        if (this.virginRequest.body)
-            this.virginRequest.body.out();
-    }
-
-    // to customize adaptations, use adaptRequestHeader() if possible
-    startAdaptingRequest() {
-        this.cloneRequest();
-        this.adaptedRequest.startLine.uri.relative = true;
-        this.adaptRequestHeader();
+        if (this.virginRequest.body) {
+            // XXX: overwrites clone() above
+            this.adaptedRequest.body = new Body(this.virginRequest.body.whole());
+            this.adaptedRequest.chunkBody(this.virginRequest.header.chunked());
+        }
     }
 
     adaptRequestHeader() {
         this.adaptedRequest.header.add("Via", Config.ProxySignature);
-    }
-
-    adaptRequestBody() {
-        this.adaptedRequest.body.in(this.virginRequest.body.out());
     }
 
     onOriginReceive(virginData) {
@@ -313,39 +301,30 @@ export default class Transaction { // XXX: extends SideTransaction
     }
 
     adaptResponse() {
+        if (!this.virginResponse)
+            return;
+
+        if (this.virginResponse.body && !this.virginResponse.body.innedAll)
+            return;
+
         if (!this.adaptedResponse) {
-            if (this.virginResponse)
-                this.startAdaptingResponse();
-            else
-                this.generateResponse();
+            this.cloneResponse();
+            this.adaptResponseHeader();
+            assert(this.adaptedResponse);
         }
-
-        if (this.adaptedResponse && this.adaptedResponse.body)
-            this.adaptResponseBody();
-    }
-
-    generateResponse() {
-        Must(!this.virginResponse);
-        return;
     }
 
     cloneResponse() {
         this.adaptedResponse = this.virginResponse.clone();
-        if (this.virginResponse.body)
-            this.virginResponse.body.out();
-    }
-
-    startAdaptingResponse() {
-        this.cloneResponse();
-        this.adaptResponseHeader();
+        if (this.virginResponse.body) {
+            // XXX: overwrites clone() above
+            this.adaptedResponse.body = new Body(this.virginResponse.body.whole());
+            this.adaptedResponse.chunkBody(this.virginResponse.header.chunked());
+        }
     }
 
     adaptResponseHeader() {
         this.adaptedResponse.header.add("Via", Config.ProxySignature);
-    }
-
-    adaptResponseBody() {
-        this.adaptedResponse.body.in(this.virginResponse.body.out());
     }
 
     generateErrorResponse(code) {
