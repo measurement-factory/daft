@@ -86,14 +86,13 @@ export default class Body {
     doneOuting() {
         if (this.outedAll())
             return true;
-        return this._withholdLastByte && this.innedAll && (this._out + 1) == this._in;
+        return this._withholdLastByte && this.innedAll && (this._out + 1) === this._in;
     }
 
     out() {
         if (this.doneOuting())
             return "";
 
-        const wholeLength = this.whole().length;
         let piece = this.whole().substring(this._out);
 
         if (this._withholdLastByte && piece.length)

@@ -43,7 +43,7 @@ export default class Command {
         return this._config;
     }
 
-    // adjusts httpOptions (i.e. http.request parameters) and 
+    // adjusts httpOptions (i.e. http.request parameters) and
     // returns HTTP request body (or null if no body should be written)
     toHttp(httpOptions) {
         httpOptions.path = this._name;

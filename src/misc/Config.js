@@ -71,11 +71,18 @@ export function HugeCachableBodySize() {
     return 10 * 1000*1000;
 }
 
+// either the given body size (if known) or the configured body size
+function suspectedBodySize(bodySize) {
+    // to access (using a common name) the Config option we export ourselves
+    const Config = module.exports;
+    return bodySize === undefined ? Config.bodySize() : bodySize;
+}
+
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
     // by default, report progress except for huge bodies
     if (LogBodies === undefined) {
-        const suspectedSize = bodySize === undefined ? Config.BodySize : bodySize;
+        const suspectedSize = suspectedBodySize(bodySize);
         return suspectedSize <= 1*1024*1024;
     }
     return LogBodies > 0;
@@ -85,8 +92,8 @@ export function logBodyProgress(bodySize) {
 export function logBodyContents(bodySize) {
     // by default, log contents of small non-default bodies only
     if (LogBodies === undefined) {
-        const suspectedSize = bodySize === undefined ? Config.BodySize : bodySize;
-        return suspectedSize <= 100 && suspectedSize != DefaultBodySize();
+        const suspectedSize = suspectedBodySize(bodySize);
+        return suspectedSize <= 100 && suspectedSize !== DefaultBodySize();
     }
     return LogBodies > 0;
 }
@@ -258,9 +265,11 @@ function _Import(options, optionsWithoutDefaults) {
         };
 
         // create Config.camelName()
+        // TODO: Find a way to avoid eslint no-loop-func errors here.
         module.exports[camelName] = function () {
             assert(_ActiveOptions);
             assert(_ActiveOptions instanceof ActiveOptions);
+            // call _ActiveOptions->camelName() with evaluated camelName:
             return ActiveOptions.prototype[camelName].call(_ActiveOptions);
         };
     }

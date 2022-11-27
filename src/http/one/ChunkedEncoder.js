@@ -6,7 +6,6 @@
 
 import Encoder from "./Encoder";
 import * as Config from "../../misc/Config";
-import { Must } from "../../misc/Gadgets";
 import assert from "assert";
 
 Config.Recognize([

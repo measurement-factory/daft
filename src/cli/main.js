@@ -1,6 +1,5 @@
 import Promise from "bluebird";
 import * as Config from "../misc/Config";
-import * as Global from "../misc/Global";
 import * as Gadgets from "../misc/Gadgets";
 import RunTest from "../test/Runner";
 import assert from "assert";

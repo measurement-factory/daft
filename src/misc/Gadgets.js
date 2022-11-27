@@ -5,7 +5,6 @@
 import assert from "assert";
 import Promise from 'bluebird';
 import * as Config from "../misc/Config";
-import * as Global from "../misc/Global";
 
 /* Assorted small handy global functions. */
 
