@@ -56,6 +56,13 @@ export default class Transaction {
             this._receivedEverythingResolver = resolve;
         });
 
+        // endAsync() has been called; do not close the socket until
+        // endAsync() finishes -- the endAsync() sequence needs the socket
+        this._halfClosing = false;
+
+        // finish() has been called at least once
+        this._ending = false;
+
         // a promise to (do as much as possible and) end
         this._finished = new Promise((resolve) => {
             this._finishedResolver = resolve;
@@ -242,7 +249,18 @@ export default class Transaction {
     }
 
     finish() {
-        this.context.log(`${this.ownerKind} transaction ended`);
+        if (this._ending) {
+            // Can we tell when we are 100% done? May some [socket] callbacks
+            // be scheduled before but fire after finish()? Such "late"
+            // callbacks were observed when something else went wrong (e.g.,
+            // we forgot to wait for some event and called finish()
+            // prematurely). For now, assume some legitimate cases also exist.
+            this.context.log(`${this.ownerKind} transaction is still ending`);
+            return;
+        }
+        this._ending = true;
+
+        this.context.log(`${this.ownerKind} transaction ends...`);
 
         if (this.socket) {
             this._agent.absorbTransactionSocket(this, this.socket);
@@ -263,7 +281,7 @@ export default class Transaction {
         }
 
 
-        /* HTTP level */
+        /* HTTP layer */
 
         if (!this._doneReceiving)
             doing.push("receiving");
@@ -271,13 +289,24 @@ export default class Transaction {
         if (!this._doneProducing)
             doing.push("expecting to send more");
 
-        /*  socket level */
+
+        /*  socket layer */
 
         if (this._writing())
             doing.push(`writing ${this.socket.bufferSize} bytes`);
 
         if (this.socket && this._closeLast)
             doing.push(`waiting for ${this.peerKind} to close first`);
+
+        if (this.socket && this._halfClosing)
+            doing.push(`waiting for half-closing completion`);
+
+
+        /* various event handlers that might fire post-finish() */
+
+        if (this._ending)
+            doing.push(`ending`);
+
 
         if (doing.length)
             this.context.log('still', doing.join(", "));

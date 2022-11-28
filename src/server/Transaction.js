@@ -38,14 +38,17 @@ export default class Transaction extends SideTransaction {
     _stopProducing(why) {
         let forceEof = this.socket && forcesEof(this.messageIn, this.messageOut);
         if (forceEof && this._closeLast) {
-            this.context.log("avoiding connection [half-]closure:", this._closeLast);
+            this.context.log("avoiding connection half-closure:", this._closeLast);
             forceEof = false;
         }
         if (forceEof) {
-            this.context.log("will [half-]close the connection to mark the end of response");
+            this.context.log("will half-close the connection to mark the end of response");
+            assert(!this._halfClosing);
+            this._halfClosing = true;
             this.socket.endAsync().then(() => {
                 this.context.enter("wrote everything");
-                this.context.log("previously half-closed connection is now fully closed");
+                this.context.log("half-closed the connection to mark the end of response");
+                this._halfClosing = false;
                 assert(!this._writing());
                 this.checkpoint();
                 this.context.exit();
