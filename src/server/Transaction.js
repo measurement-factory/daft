@@ -68,7 +68,7 @@ export default class Transaction extends SideTransaction {
         this.response.header.addByDefault("Server", "DaftServer/1.0");
         this.response.header.addByDefault("Connection", "close");
         this.response.header.addByDefault("Date", new Date().toUTCString());
-        this.response.copyID(this.request);
+        this.response.copyRequestId(this.request);
         this.response.generatorAddress(LocalAddress(this.socket));
         this.response.finalize();
 

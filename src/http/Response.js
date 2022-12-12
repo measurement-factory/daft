@@ -71,4 +71,19 @@ export default class Response extends Message {
     prefix(messageWriter) {
         return messageWriter.responsePrefix(this);
     }
+
+    // returns the 'ID' field value of the response copied to from the request (if any)
+    copiedResponseId(requst) {
+        const idFieldName = request._daftFieldName("ID");
+        if (this.header.has(idFieldName))
+            return this.header.value(idFieldName);
+        return null;
+    }
+
+    // copy the 'ID' field from the received request
+    copyRequestId(request) {
+        const idFieldName = request._daftFieldName("ID");
+        if (request.header.has(idFieldName))
+            this.header.add(idFieldName, request.header.value(idFieldName));
+    }
 }
