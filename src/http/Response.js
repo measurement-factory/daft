@@ -73,7 +73,7 @@ export default class Response extends Message {
     }
 
     // returns the 'ID' field value of the response copied to from the request (if any)
-    copiedResponseId(requst) {
+    extractMatchingId(request) {
         const idFieldName = request._daftFieldName("ID");
         if (this.header.has(idFieldName))
             return this.header.value(idFieldName);
@@ -81,7 +81,7 @@ export default class Response extends Message {
     }
 
     // copy the 'ID' field from the received request
-    copyRequestId(request) {
+    copyIdFrom(request) {
         const idFieldName = request._daftFieldName("ID");
         if (request.header.has(idFieldName))
             this.header.add(idFieldName, request.header.value(idFieldName));

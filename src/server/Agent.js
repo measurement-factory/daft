@@ -34,7 +34,8 @@ export default class Agent extends SideAgent {
 
         this._serverClosed = null; // a promise to close this.server
 
-        this._serverSocket = null; // server transaction socket
+        // the first accepted or inherited connection
+        this._firstConnectionSocket = null;
     }
 
     address() {
@@ -52,7 +53,7 @@ export default class Agent extends SideAgent {
     start() {
         return Promise.try(() => {
             if (this._savedSocket) {
-                this._serverSocket = this._savedSocket;
+                this._firstConnectionSocket = this._savedSocket;
                 this._savedSocket = null;
                 this._startServing();
             } else {
@@ -66,12 +67,14 @@ export default class Agent extends SideAgent {
         this.server = asyncNet.createServer();
 
         this.server.on('connection', userSocket =>  {
-            if (!this._serverSocket) {
-                this._serverSocket = userSocket;
+            if (!this._firstConnectionSocket) {
+                this._firstConnectionSocket = userSocket;
                 this._startServing();
+                // we only want to serve a single connection because
+                // we support only a single server transaction (for now)
                 this._serverClosed = this.server.closeAsync();
             } else { // get here only if closeAsync() has not yet made server stop listening
-                console.log("does not support more than one server connection");
+                console.log("server closes a subsequent connection");
                 userSocket.destroy();
             }
         });
@@ -102,7 +105,7 @@ export default class Agent extends SideAgent {
             this._originalResponse = transaction.response.clone();
         }
 
-        return this._runTransaction(transaction, this._serverSocket);
+        return this._runTransaction(transaction, this._firstConnectionSocket);
     }
 
     async _stop() {

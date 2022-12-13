@@ -110,7 +110,9 @@ export default class Transaction {
         };
         this._sendingBlocks[part] = block;
         this.context.log(`will block sending ${block.what} to ${block.waitingFor}`);
-        externalEvent.tap(() => this._unblockSending(part));
+        // convert a (possibly) native Promise, lacking tap() (returned, e.g., by an async function)
+        // to a bluebird Promise
+        Promise.resolve(externalEvent).tap(() => this._unblockSending(part));
     }
 
     _unblockSending(part) {

@@ -307,10 +307,17 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    // count - the number of collapsed requests
-    allCollapsed(path, count) {
+    // Wait for the proxy to parse the given number of request headers (containing the given URL path)
+    // without satisfying any of those requests.
+    // This only works if the received requests cannot be quickly satisfied by the proxy!
+    // For example, the parsed requests may be waiting for the server(s) to respond.
+    async finishStagingRequests(path, count) {
         const allRequests = count + 1; // including the parent request
-        let options = {'Overlord-request-path': path, 'Overlord-active-requests-count': allRequests};
+        const options = {
+            'Overlord-request-path': path,
+            'Overlord-active-requests-count': allRequests
+        };
+        console.log("Will wait for Proxy to stage " + count + " requests");
         return this._remoteCall("/waitActiveRequests", options);
     }
 
@@ -326,7 +333,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 5,
+                    'Pop-Version': 6,
                 },
             };
 
