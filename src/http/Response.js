@@ -72,16 +72,18 @@ export default class Response extends Message {
         return messageWriter.responsePrefix(this);
     }
 
-    // returns the 'ID' field value of the response copied to from the request (if any)
-    extractMatchingId(request) {
+    // The "corresponding Daft request" ID, as stored in response headers (or null).
+    // Daft server transactions store the received Daft request ID when generating responses.
+    requestId(request) {
         const idFieldName = request._daftFieldName("ID");
         if (this.header.has(idFieldName))
             return this.header.value(idFieldName);
         return null;
     }
 
-    // copy the 'ID' field from the received request
-    copyIdFrom(request) {
+    // Copy the Daft request ID field (if any) from the given request.
+    // The requestId() method can be used to extract the copied ID.
+    rememberIdOf(request) {
         const idFieldName = request._daftFieldName("ID");
         if (request.header.has(idFieldName))
             this.header.add(idFieldName, request.header.value(idFieldName));

@@ -129,8 +129,8 @@ export default class Message {
     // returns the 'ID' field value of this message
     id() {
         const fieldName = this._daftFieldName("ID");
-        if (this.header.has(fieldName))
-            return this.header.value(fieldName);
+        Must(this.header.has(fieldName));
+        return this.header.value(fieldName);
     }
 
     addBody(body) {

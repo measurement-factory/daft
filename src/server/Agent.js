@@ -21,8 +21,6 @@ export default class Agent extends SideAgent {
 
         super(new Context("server", ++Servers));
 
-        this._originalResponse = null; // for subsequent transactions to mimic
-
         this.server = null; // TCP server to be created in start()
 
         // where to listen for requests (may contain wildcards like '::')
@@ -33,9 +31,6 @@ export default class Agent extends SideAgent {
         this._transaction = new Transaction(this);
 
         this._serverClosed = null; // a promise to close this.server
-
-        // the first accepted or inherited connection
-        this._firstConnectionSocket = null;
     }
 
     address() {
@@ -53,9 +48,9 @@ export default class Agent extends SideAgent {
     start() {
         return Promise.try(() => {
             if (this._savedSocket) {
-                this._firstConnectionSocket = this._savedSocket;
+                const socket = this._savedSocket;
                 this._savedSocket = null;
-                this._startServing();
+                this._startServing(socket);
             } else {
                 this._startListening();
             }
@@ -67,12 +62,11 @@ export default class Agent extends SideAgent {
         this.server = asyncNet.createServer();
 
         this.server.on('connection', userSocket =>  {
-            if (!this._firstConnectionSocket) {
-                this._firstConnectionSocket = userSocket;
-                this._startServing();
+            if (!this._transaction.started()) {
                 // we only want to serve a single connection because
                 // we support only a single server transaction (for now)
                 this._serverClosed = this.server.closeAsync();
+                this._startServing(userSocket);
             } else { // get here only if closeAsync() has not yet made server stop listening
                 console.log("server closes a subsequent connection");
                 userSocket.destroy();
@@ -87,31 +81,16 @@ export default class Agent extends SideAgent {
 
     // Take care of the given accepted connection.
     // The connection may have been accepted by another Agent instance.
-    _startServing() {
-        let transaction = null;
-        if (this._transaction.started()) {
-            transaction = new Transaction(this);
-
-            // reset() copies everything, so this cannot work well if
-            // the original response has transaction-specific pieces
-            assert(!this._originalResponse.finalized());
-            transaction.response.reset(this._originalResponse);
-        } else {
-            transaction = this._transaction;
-
-            // see the reset(this._originalResponse) comments above
-            assert(!transaction.response.finalized());
-            assert(!this._originalResponse);
-            this._originalResponse = transaction.response.clone();
-        }
-
-        return this._runTransaction(transaction, this._firstConnectionSocket);
+    _startServing(userSocket) {
+        assert(!this._transaction.started());
+        assert(!this._transaction.response.finalized());
+        return this._runTransaction(this._transaction, userSocket);
     }
 
     async _stop() {
         if (this.server && this.server.address()) {
-            if (!this._serverClosed)
-                this._serverClosed = this.server.closeAsync(); // no accepted connections yet
+            if (!this._serverClosed) // nil promise means that server has not accepted a connection
+                this._serverClosed = this.server.closeAsync();
             if (this._keepConnections) {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
