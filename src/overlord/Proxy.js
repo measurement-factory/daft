@@ -317,8 +317,8 @@ export class ProxyOverlord {
             'Overlord-request-path': path,
             'Overlord-active-requests-count': allRequests
         };
-        console.log("Will wait for Proxy to stage " + count + " requests");
-        return this._remoteCall("/waitActiveRequests", options);
+        await this._remoteCall("/waitActiveRequests", options);
+        console.log("Proxy staged " + count + " requests");
     }
 
     _remoteCall(commandOrString, options) {

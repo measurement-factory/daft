@@ -30,7 +30,8 @@ export default class Agent extends SideAgent {
 
         this._transaction = new Transaction(this);
 
-        this._serverClosed = null; // a promise to close this.server
+        // this.server.closeAsync()-returned promise (if that method was called)
+        this._serverClosed = null;
     }
 
     address() {
@@ -68,6 +69,7 @@ export default class Agent extends SideAgent {
                 this._serverClosed = this.server.closeAsync();
                 this._startServing(userSocket);
             } else { // get here only if closeAsync() has not yet made server stop listening
+                assert(this._serverClosed); // we have started to close already
                 console.log("server closes a subsequent connection");
                 userSocket.destroy();
             }
@@ -83,21 +85,20 @@ export default class Agent extends SideAgent {
     // The connection may have been accepted by another Agent instance.
     _startServing(userSocket) {
         assert(!this._transaction.started());
-        assert(!this._transaction.response.finalized());
         return this._runTransaction(this._transaction, userSocket);
     }
 
     async _stop() {
         if (this.server && this.server.address()) {
-            if (!this._serverClosed) // nil promise means that server has not accepted a connection
+            if (!this._serverClosed) // we have not called this.server.closeAsync() yet
                 this._serverClosed = this.server.closeAsync();
             if (this._keepConnections) {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
-                this._serverClosed = null;
             } else {
                 this.context.log("waiting for connections to close");
                 this.context.log("currently open connections: ", await this.server.getConnectionsAsync());
+                assert(this._serverClosed);
                 await this._serverClosed;
                 this.context.log("done waiting for connections to close");
             }

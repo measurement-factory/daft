@@ -85,6 +85,7 @@ export default class Response extends Message {
     // The requestId() method can be used to extract the copied ID.
     rememberIdOf(request) {
         const idFieldName = request._daftFieldName("ID");
+        assert(!this.header.has(idFieldName)); // ban overwriting to simplify triage
         if (request.header.has(idFieldName))
             this.header.add(idFieldName, request.header.value(idFieldName));
     }
