@@ -21,8 +21,6 @@ export default class Agent extends SideAgent {
 
         super(new Context("server", ++Servers));
 
-        this._originalResponse = null; // for subsequent transactions to mimic
-
         this.server = null; // TCP server to be created in start()
 
         // where to listen for requests (may contain wildcards like '::')
@@ -31,6 +29,9 @@ export default class Agent extends SideAgent {
         this._actualListeningAddress = null; // used (and fully resolved)
 
         this._transaction = new Transaction(this);
+
+        // this.server.closeAsync()-returned promise (if that method was called)
+        this._serverClosed = null;
     }
 
     address() {
@@ -61,7 +62,18 @@ export default class Agent extends SideAgent {
     _startListening() {
         this.server = asyncNet.createServer();
 
-        this.server.on('connection', userSocket => this._startServing(userSocket));
+        this.server.on('connection', userSocket => {
+            if (!this._transaction.started()) {
+                // we only want to serve a single connection because
+                // we support only a single server transaction (for now)
+                this._serverClosed = this.server.closeAsync();
+                this._startServing(userSocket);
+            } else { // get here only if closeAsync() has not yet made server stop listening
+                assert(this._serverClosed); // we have started to close already
+                console.log("server closes a subsequent connection");
+                userSocket.destroy();
+            }
+        });
 
         const addr = Gadgets.FinalizeListeningAddress(this.address());
         return this.server.listenAsync(addr.port, addr.host).
@@ -72,36 +84,22 @@ export default class Agent extends SideAgent {
     // Take care of the given accepted connection.
     // The connection may have been accepted by another Agent instance.
     _startServing(userSocket) {
-        let transaction = null;
-        if (this._transaction.started()) {
-            transaction = new Transaction(this);
-
-            // reset() copies everything, so this cannot work well if
-            // the original response has transaction-specific pieces
-            assert(!this._originalResponse.finalized());
-            transaction.response.reset(this._originalResponse);
-        } else {
-            transaction = this._transaction;
-
-            // see the reset(this._originalResponse) comments above
-            assert(!transaction.response.finalized());
-            assert(!this._originalResponse);
-            this._originalResponse = transaction.response.clone();
-        }
-
-        return this._runTransaction(transaction, userSocket);
+        assert(!this._transaction.started());
+        return this._runTransaction(this._transaction, userSocket);
     }
 
     async _stop() {
         if (this.server && this.server.address()) {
-            const promiseToClose = this.server.closeAsync(); // unconditionally
+            if (!this._serverClosed) // we have not called this.server.closeAsync() yet
+                this._serverClosed = this.server.closeAsync();
             if (this._keepConnections) {
                 assert(this._savedSocket);
                 console.log("not waiting for (persistent) server connections to close");
             } else {
                 this.context.log("waiting for connections to close");
                 this.context.log("currently open connections: ", await this.server.getConnectionsAsync());
-                await promiseToClose;
+                assert(this._serverClosed);
+                await this._serverClosed;
                 this.context.log("done waiting for connections to close");
             }
 
