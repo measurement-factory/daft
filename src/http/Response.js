@@ -74,4 +74,22 @@ export default class Response extends Message {
     prefix(messageWriter) {
         return messageWriter.responsePrefix(this);
     }
+
+    // The "corresponding Daft request" ID, as stored in response headers (or null).
+    // Daft server transactions store the received Daft request ID when generating responses.
+    requestId(request) {
+        const idFieldName = request._daftFieldName("ID");
+        if (this.header.has(idFieldName))
+            return this.header.value(idFieldName);
+        return null;
+    }
+
+    // Copy the Daft request ID field (if any) from the given request.
+    // The requestId() method can be used to extract the copied ID.
+    rememberIdOf(request) {
+        const idFieldName = request._daftFieldName("ID");
+        assert(!this.header.has(idFieldName)); // ban overwriting to simplify triage
+        if (request.header.has(idFieldName))
+            this.header.add(idFieldName, request.header.value(idFieldName));
+    }
 }
