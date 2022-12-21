@@ -121,7 +121,7 @@ export default class Transaction {
         this._closeLast = why;
     }
 
-    _blockSending(part, externalEvent, waitingFor) {
+    async _blockSending(part, externalEvent, waitingFor) {
         assert(part in this._sendingBlocks); // valid message part name
         assert(!this._sendingBlocks[part]); // not really needed; may simplify triage
         const block = {
@@ -131,7 +131,8 @@ export default class Transaction {
         };
         this._sendingBlocks[part] = block;
         this.context.log(`will block sending ${block.what} to ${block.waitingFor}`);
-        externalEvent.tap(() => this._unblockSending(part));
+        await externalEvent;
+        this._unblockSending(part);
     }
 
     _unblockSending(part) {
