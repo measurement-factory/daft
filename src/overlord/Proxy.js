@@ -330,7 +330,21 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    _remoteCall(commandOrString) {
+    // Wait for the proxy to accumulate at least the given number of
+    // not-yet-satisfied requests (containing the given URL path). This only
+    // works if the proxy can parse request (headers) but cannot satisfy those
+    // requests while we are waiting! For example, Squid may forward parsed
+    // requests and then wait for the server(s) to respond.
+    async finishStagingRequests(path, count) {
+        const options = {
+            'Overlord-request-path': path,
+            'Overlord-active-requests-count': count,
+        };
+        await this._remoteCall("/waitActiveRequests", options);
+        console.log("Proxy staged " + count + " requests");
+    }
+
+    _remoteCall(commandOrString, options) {
         return new Promise((resolve) => {
 
             const command = ((typeof commandOrString) === 'string') ?
@@ -342,9 +356,12 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 5,
+                    'Pop-Version': 6,
                 },
             };
+
+            if (options)
+                httpOptions.headers = { ...httpOptions.headers, ...options };
 
             httpOptions.headers['Overlord-Listening-Ports'] =
                 this._dutConfig.listeningPorts().join(",");
