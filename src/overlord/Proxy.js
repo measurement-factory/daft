@@ -330,7 +330,7 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    // Wait for the proxy to accumulate at least the given number of
+    // Wait for the proxy to accumulate exactly the given number of
     // not-yet-satisfied requests (containing the given URL path). This only
     // works if the proxy can parse request (headers) but cannot satisfy those
     // requests while we are waiting! For example, Squid may forward parsed
