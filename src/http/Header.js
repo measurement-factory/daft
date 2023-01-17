@@ -55,6 +55,12 @@ export default class Header {
         this.filters.push(field => field.name !== name);
     }
 
+    // prohibit all fields with a Http.DaftFieldName() prefix
+    prohibitDaftMarkings() {
+        const daftMarking = Http.DaftFieldName("");
+        this.filters.push(field => !field.name.startsWith(daftMarking));
+    }
+
     // returns null if the header does not have Content-Length field(s)
     // returns undefined if the Content-Length field(s) are malformed
     // returns the well-formed/supported Content-Length value otherwise
