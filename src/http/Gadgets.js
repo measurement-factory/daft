@@ -85,6 +85,41 @@ export function AssertForwardedHeaderFieldValue(sent, received, context) {
     }
 }
 
+function AssertForwardedHeaderField(sent, received, field, kind) {
+        const name = field.name;
+        if (!IsEndToEnd(name, sent))
+            return;
+        if (IsControlledByProxy(name))
+            return;
+        if (IsControlledByCache(name))
+            return;
+        if (IsFraming(name) && !received.header.has(name))
+            return;
+        assert(received.header.has(name), `received ${kind} has ${name}`);
+        AssertForwardedHeaderFieldValue(
+            sent.header.values(name),
+            received.header.values(name),
+            `${kind} ${name} field`);
+}
+
+function AssertForwardedBody(sent, received) {
+    // An HTTP message sent without a body (e.g., EOF after the header) may be
+    // received as an HTTP message with an empty body (e.g., consisting of
+    // nothing but last-chunk) and vice versa because the two concepts are
+    // interchangeable in most HTTP contexts. We ignore this kind of change.
+    const sentBody = sent.body && sent.body.whole().length ? sent.body : null;
+    const receivedBody = received.body && received.body.whole().length ? received.body : null;
+    assert.equal(!receivedBody, !sentBody);
+    if (sentBody) {
+        assert.equal(receivedBody.whole().length, sentBody.whole().length);
+        // TODO: assert.equal() detects but does not show the suffix difference
+        // of long strings (e.g., 17MB bodies with different last few bytes).
+        assert.equal(receivedBody.whole(), sentBody.whole());
+    } else {
+        assert.equal(receivedBody, null);
+    }
+}
+
 // assert if the received message differs from the sent one too much
 export function AssertForwardedMessage(sent, received, kind) {
     assert(sent);
@@ -108,35 +143,31 @@ export function AssertForwardedMessage(sent, received, kind) {
 
     assert(sent.header && received.header);
     for (let field of sent.header.fields) {
-        let name = field.name;
-        if (!IsEndToEnd(name, sent))
-            continue;
-        if (IsControlledByProxy(name))
-            continue;
-        if (IsControlledByCache(name))
-            continue;
-        if (IsFraming(name) && !received.header.has(name))
-            continue;
-        assert(received.header.has(name), `received ${kind} has ${name}`);
-        AssertForwardedHeaderFieldValue(
-            sent.header.values(name),
-            received.header.values(name),
-            `${kind} ${name} field`);
+        AssertForwardedHeaderField(sent, received, field, kind);
     }
 
-    // An HTTP message sent without a body (e.g., EOF after the header) may be
-    // received as an HTTP message with an empty body (e.g., consisting of
-    // nothing but last-chunk) and vice versa because the two concepts are
-    // interchangeable in most HTTP contexts. We ignore this kind of change.
-    const sentBody = sent.body && sent.body.whole().length ? sent.body : null;
-    const receivedBody = received.body && received.body.whole().length ? received.body : null;
-    assert.equal(!receivedBody, !sentBody);
-    if (sentBody) {
-        assert.equal(receivedBody.whole().length, sentBody.whole().length);
-        // TODO: assert.equal() detects but does not show the suffix difference
-        // of long strings (e.g., 17MB bodies with different last few bytes).
-        assert.equal(receivedBody.whole(), sentBody.whole());
-    } else {
-        assert.equal(receivedBody, null);
+    AssertForwardedBody(sent, received);
+}
+
+// assert if the received hit response differs from the cached one too much,
+// after the cached one was refreshed by a 304 server response
+export function AssertRefreshHit(cachedStale, fresh304, freshReceived) {
+    assert.strictEqual(fresh304.startLine.codeInteger(), 304, "server responded with 304");
+    assert(freshReceived.startLine.hasCode(), "client received a response");
+    assert.strictEqual(freshReceived.startLine.codeInteger(), cachedStale.startLine.codeInteger(), "received response status code matches the cached one");
+
+    assert(cachedStale.header);
+    assert(fresh304.header);
+    assert(freshReceived.header);
+    for (let field of fresh304.header.fields) {
+        AssertForwardedHeaderField(fresh304, freshReceived, field, "response");
     }
+
+    for (let field of cachedStale.header.fields) {
+        if (fresh304.header.has(field.name))
+            continue; // should be overwritten by 304 headers (that we checked above)
+        AssertForwardedHeaderField(cachedStale, freshReceived, field, "response");
+    }
+
+    AssertForwardedBody(cachedStale, freshReceived, "response");
 }
