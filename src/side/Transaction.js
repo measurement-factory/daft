@@ -41,6 +41,10 @@ export default class Transaction {
         // sending = producing + writing
         this._doneProducing = false;
         this._doneSending = null; // Date
+        // a promise to send headers
+        this._sentHeaders = new Promise((resolve) => {
+            this._sentHeadersResolver = resolve;
+        });
         // a promise to send everything
         this._sentEverything = new Promise((resolve) => {
             this._sentEverythingResolver = resolve;
@@ -165,6 +169,11 @@ export default class Transaction {
         return false; // configured and now activated
     }
 
+    sentHeaders() {
+        assert(this._sentHeaders); // but may not be resolved yet
+        return this._sentHeaders;
+    }
+
     receivedHeaders() {
         assert(this._receivedHeaders); // but may not be resolved yet
         return this._receivedHeaders;
@@ -273,6 +282,18 @@ export default class Transaction {
         this._finishedResolver(this);
     }
 
+    _noteSentHeaders() {
+        // ignore repeated notifications for caller simplicity sake
+        if (!this._sentHeadersResolver)
+            return;
+
+        if (!this._doneSending) // reduce reporting noise
+            this.context.log("done sending headers");
+
+        this._sentHeadersResolver(this);
+        this._sentHeadersResolver = null;
+    }
+
     checkpoint() {
 
         let doing = [];
@@ -280,8 +301,19 @@ export default class Transaction {
         // discover achievement of this._doneSending state
         if (!this._doneSending && this._doneProducing && !this._writing()) {
             this._doneSending = this.context.log("done sending");
+
+            // duped here to reduce logging noise and preserve a natural order of events
+            this._noteSentHeaders();
+
             this._sentEverythingResolver(this);
         }
+
+        // Resolve this.sentHeaders() if it is time to do so. This kludgy
+        // logic relies on header-producing code setting
+        // this._finalizedMessage. We may delay resolving if we were allowed
+        // to write (a large) message body together with the message headers.
+        if (this._sentHeadersResolver && this._finalizedMessage && !this._writing())
+            this._noteSentHeaders();
 
 
         /* HTTP layer */
@@ -379,10 +411,11 @@ export default class Transaction {
             return;
         }
 
-        if (!this._allowedToSend('body'))
-            return;
+        if (this._allowedToSend('body'))
+            this.context.log(`may send more ${this.messageOutKind} body later`);
 
-        this.context.log(`may send more ${this.messageOutKind} body later`);
+        // Gadgets.SendBytes() may have sent headers, unblocking body sending.
+        this.checkpoint();
     }
 
     _makeOut(callerWantsHeaders) {
@@ -424,7 +457,7 @@ export default class Transaction {
         assert(this._receivedHeadersResolver);
         this._receivedHeadersResolver(this);
         this._receivedHeadersResolver = null;
-        // no this.checkpoint() because it does not depend on headers
+        // no this.checkpoint() because it does not depend on receiving headers
     }
 
     endReceiving(why) {
