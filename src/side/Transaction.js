@@ -233,7 +233,9 @@ export default class Transaction {
             this.context.exit();
         });
 
-        // we wrote everything
+        // Event triggering logic: Earlier, the socket could not write
+        // everything immediately (and started to buffer). It is OK to write
+        // more now (probably because all the buffered data has been written).
         this.socket.on('drain', () => {
             this.context.enter('wrote everything produced so far');
             if (this.socket) // not finish()ed yet
