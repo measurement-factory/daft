@@ -92,12 +92,17 @@ export default class Agent extends SideAgent {
         if (this.server && this.server.address()) {
             if (!this._serverClosed) // we have not called this.server.closeAsync() yet
                 this._serverClosed = this.server.closeAsync();
+
+            const stillOpenConnections = await this.server.getConnectionsAsync();
+            if (stillOpenConnections)
+                this.context.log("still has open connections: ", stillOpenConnections);
             if (this._keepConnections) {
-                assert(this._savedSocket);
-                console.log("not waiting for (persistent) server connections to close");
+                if (!this._savedSocket)
+                    this.context.log("Warning: Have not preserved a connection for future reuse (yet?)");
+                if (stillOpenConnections)
+                    this.context.log("not waiting for (persistent) server connections to close");
             } else {
                 this.context.log("waiting for connections to close");
-                this.context.log("currently open connections: ", await this.server.getConnectionsAsync());
                 assert(this._serverClosed);
                 await this._serverClosed;
                 this.context.log("done waiting for connections to close");
