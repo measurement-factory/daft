@@ -35,8 +35,12 @@ export default class Agent extends SideAgent {
                 this._runTransaction(this._transaction, userSocket);
             });
 
-            return this.server.listenAsync(Config.ProxyListeningAddress.port,
-                Config.ProxyListeningAddress.host).tap(() => {
+            const proxyAddress = Config.proxyAuthority();
+            const listeningOptions = {
+                host: proxyAddress.host,
+                port: proxyAddress.port,
+            };
+            return this.server.listenAsync(listeningOptions).tap(() => {
                     console.log("Proxy is listening on %O", this.server.address());
                 });
         });

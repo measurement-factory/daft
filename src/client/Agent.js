@@ -23,7 +23,7 @@ export default class Agent extends SideAgent {
         this.socket = null; // connection to be established in _run()
         this.localAddress = null;
         this.remoteAddress = null;
-        this.nextHopAddress = Config.ProxyListeningAddress;
+        this.nextHopAddress = Config.proxyAuthority();
 
         this._transaction = new Transaction(this);
     }

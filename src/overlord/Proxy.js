@@ -129,13 +129,14 @@ export class DutConfig {
     // result[k] is the http_port dedicated to SMP worker #k (k >= 1)
     workerListeningAddresses() {
         assert(this._workers > 0);
+        const primaryAddress = Config.proxyAuthority();
         let addresses = [{
-            host: Config.ProxyListeningAddress.host,
-            port: Config.ProxyListeningAddress.port
+            host: primaryAddress.host,
+            port: primaryAddress.port
         }];
         for (let worker = 1; worker <= this._workers; ++worker) {
             addresses.push({
-                host: Config.ProxyListeningAddress.host,
+                host: primaryAddress.host,
                 port: this._workerPort(worker),
             });
         }

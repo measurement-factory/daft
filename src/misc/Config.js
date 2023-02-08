@@ -9,21 +9,6 @@
 import assert from "assert";
 import util from "util";
 
-/*
- * *ListeningAddresses below are used for both listening and connecting.
- * Nodejs default listening behavior is version-specific. We use an
- * explicit '::' address in hope to force the latest "undefined" behavior:
- * - When listening, "undefined" host means all local addresses
- *   (IPv6 if possible or IPv4 otherwise).
- * - When connecting, "undefined" host means "localhost".
- */
-
-// Used to listen for proxy requests and open connections to the proxy.
-export const ProxyListeningAddress = { // TODO: Make configurable
-    host: '::',
-    port: 3128
-};
-
 // Used to form request URLs (set via --origin-authority).
 export const OriginAuthority = null;
 
@@ -112,6 +97,12 @@ let _CliOptions = [
         type: "Boolean",
         overrideRequired: true,
         description: "show this help message",
+    },
+    {
+        option: "proxy-authority",
+        type: "{host: String, port: Number}",
+        default: `{host: 127.0.0.1, port: 3128}`,
+        description: "proxy listening address (i.e. the next hop of test requests)",
     },
     {
         option: "origin-authority",
