@@ -27,6 +27,12 @@ Config.Recognize([
         default: "stopped",
         description: "desired DUT state after all tests are done",
     },
+    {
+        option: "ignore-dut-problems",
+        type: "[ RegExp{source: String} ]",
+        default: "[]",
+        description: "ignore DUT-reported problem(s) matching these regex(es)",
+    },
 ]);
 
 // TODO: Make worker port range configurable
@@ -269,7 +275,10 @@ export class ProxyOverlord {
         this._dutConfig = cfg;
         this._start = null; // future start() promise
         this._oldHealth = null; // proxy status during the previous _remoteCall()
-        this._ignoreProblems = null; // ignore proxy-reported problems matching this regex
+
+        // ignore proxy-reported problems matching any of these regexes
+        this._ignoreProblems = [];
+        Config.ignoreDutProblems().forEach(regex => this.ignoreProblems(regex));
     }
 
     // "read-only" access to the DUT configuration
@@ -278,12 +287,19 @@ export class ProxyOverlord {
         return this._dutConfig;
     }
 
-    // start ignoring matching DUT-reported problems
+    // Start ignoring matching DUT-reported problem(s).
     ignoreProblems(regex) {
         assert(regex);
-        console.log("Will ignore proxy problems matching", regex);
-        assert(!this._ignoreProblems); // no support for accumulating exclusions yet
-        this._ignoreProblems = regex;
+        console.log("Will ignore proxy problem(s) matching", regex);
+
+        // We feed each regex one problem at a time, without resetting regexes
+        // after each feeding. Persistent flags are not only useless right
+        // now, but they prevent matching during subsequent checks. Ban them
+        // explicitly now to be able to add flag-driven features later.
+        assert(!regex.global);
+        assert(!regex.sticky);
+
+        this._ignoreProblems.push(regex);
     }
 
     async noteStartup() {
@@ -356,7 +372,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 6,
+                    'Pop-Version': 7,
                 },
             };
 
@@ -390,16 +406,7 @@ export class ProxyOverlord {
                     }
 
                     const health = JSON.parse(rawBody);
-                    const oldProblems = this._oldHealth ? this._oldHealth.problems : "";
-                    const newProblems = health.problems.startsWith(oldProblems) ?
-                        health.problems.substring(oldProblems.length) : health.problems;
-                    if (newProblems.length) {
-                        if (this._ignoreProblems && this._ignoreProblems.test(health.problems))
-                            console.log("Ignoring proxy-reported problem(s):\n", newProblems);
-                        else
-                            throw new Error(`proxy-reported problem(s):\n${newProblems}`);
-                    }
-                    this._oldHealth = health;
+                    this._updateHealth(health);
 
                     resolve(true);
                 });
@@ -416,4 +423,22 @@ export class ProxyOverlord {
         });
     }
 
+    // _remoteCall() helper for processing updated (cumulative) proxy health
+    _updateHealth(health) {
+        // extract newProblems before updating (cumulative) this._oldHealth
+        const oldProblems = this._oldHealth ? this._oldHealth.problems : [];
+        const newProblems = health.problems.slice(oldProblems.length);
+        this._oldHealth = health;
+
+        if (newProblems.length && this._ignoreProblems) {
+            const honorSome = newProblems.some(problem => {
+                return !this._ignoreProblems.some(regex => regex.test(problem));
+            });
+
+            const newProblemsReport = `proxy-reported problem(s):\n${newProblems.join("\n\n")}`;
+            if (honorSome)
+                throw new Error(newProblemsReport);
+            console.log(`Ignoring ${newProblemsReport}\n`);
+        }
+    }
 }
