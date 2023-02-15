@@ -47,6 +47,8 @@ export class DutConfig {
         this._dedicatedWorkerPorts = false; // one listening port per worker
         this._memoryCaching = false;
         this._diskCaching = false;
+        this._diskCachingOptions = null;
+        this._memoryCachingOptions = null;
         this._collapsedForwarding = false;
         this._listeningPorts = [];
         this._customDirectives = [];
@@ -72,16 +74,20 @@ export class DutConfig {
         this._dedicatedWorkerPorts = enable;
     }
 
-    memoryCaching(enable) {
-        assert.strictEqual(arguments.length, 1);
+    memoryCaching(enable, memoryOptions) {
+        assert(arguments.length == 1 || arguments.length == 2);
         assert(enable !== undefined); // for now; can be used for default mode later
         this._memoryCaching = enable;
+        if (memoryOptions !== undefined)
+            this._memoryCachingOptions = memoryOptions;
     }
 
-    diskCaching(enable) {
-        assert.strictEqual(arguments.length, 1);
+    diskCaching(enable, diskOptions) {
+        assert(arguments.length == 1 || arguments.length == 2);
         assert(enable !== undefined); // for now; can be used for default mode later
         this._diskCaching = enable;
+        if (diskOptions !== undefined)
+            this._diskCachingOptions = diskOptions;
     }
 
     collapsedForwarding(enable) {
@@ -188,9 +194,12 @@ export class DutConfig {
     }
 
     _memoryCachingCfg() {
-        const cacheSize = this._memoryCaching ? "100 MB" : "0";
+        let opts = "0"; // cache size
+        if (this._memoryCaching) {
+           opts = this._memoryCachingOptions === null ? "100 MB" : this._memoryCachingOptions;
+        }
         let cfg = `
-            cache_mem ${cacheSize}
+            cache_mem ${opts}
         `;
         return this._trimCfg(cfg);
     }
@@ -200,6 +209,7 @@ export class DutConfig {
             return '';
 
         const kid = "kid${process_number}";
+        const opts = this._diskCachingOptions === null ? '100' : this._diskCachingOptions;
         const cfg = `
             cache_dir rock /usr/local/squid/var/cache/overlord/rock 100
             cache_store_log stdio:store-${kid}.log
