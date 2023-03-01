@@ -11,7 +11,7 @@ import Server from "../server/Agent";
 import * as Http from "../http/Gadgets";
 import * as Lifetime from "../misc/Lifetime";
 import * as Gadgets from "../misc/Gadgets";
-import Context  from "../misc/Context";
+import Context from "../misc/Context";
 import { Must } from "../misc/Gadgets";
 import assert from "assert";
 
@@ -155,7 +155,7 @@ export default class HttpCase {
     }
 
     _started() {
-        return this._startTime != null;
+        return this._startTime !== null;
     }
 
     _startClock(when) {

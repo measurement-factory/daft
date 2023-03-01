@@ -27,6 +27,12 @@ Config.Recognize([
         default: "stopped",
         description: "desired DUT state after all tests are done",
     },
+    {
+        option: "ignore-dut-problems",
+        type: "[ RegExp{source: String} ]",
+        default: "[]",
+        description: "ignore DUT-reported problem(s) matching these regex(es)",
+    },
 ]);
 
 // TODO: Make worker port range configurable
@@ -49,6 +55,10 @@ export class DutConfig {
     // DUT listening ports; they may be difficult for Overlord to infer
     listeningPorts() {
         return this._listeningPorts;
+    }
+
+    cachingEnabled() {
+        return this._memoryCaching || this._diskCaching;
     }
 
     workers(count) {
@@ -119,26 +129,46 @@ export class DutConfig {
     // result[k] is the http_port dedicated to SMP worker #k (k >= 1)
     workerListeningAddresses() {
         assert(this._workers > 0);
+        const primaryAddress = Config.proxyAuthority();
         let addresses = [{
-            host: Config.ProxyListeningAddress.host,
-            port: Config.ProxyListeningAddress.port
+            host: primaryAddress.host,
+            port: primaryAddress.port
         }];
         for (let worker = 1; worker <= this._workers; ++worker) {
             addresses.push({
-                host: Config.ProxyListeningAddress.host,
+                host: primaryAddress.host,
                 port: this._workerPort(worker),
             });
         }
         return addresses;
     }
 
+    // the number of kidN processes Squid instance is supposed to have running
+    kidsExpected() {
+        // Explicit "workers 0" enables no-daemon mode (i.e. no kids)
+        if (this._workers !== null && this._workers === 0)
+            return 0;
+
+        // no explicit "workers N" means one worker kid
+        // explicit "workers N" means N worker kids
+        const workersExpected = this._workers === null ? 1 : this._workers;
+
+        let kidsExpected = 0;
+        kidsExpected += workersExpected;
+        if (this._diskCaching)
+            kidsExpected += 1; // disker
+        if (kidsExpected > 1)
+            kidsExpected += 1; // SMP Coordinator process
+        return kidsExpected;
+    }
+
     _anyCachingCfg() {
-        if (!this._memoryCaching && !this._diskCaching)
-            return;
+        if (!this.cachingEnabled())
+            return '';
 
         // allow caching of responses configured to exceed default 4MB
         // maximum_object_size but do not lower that limit below its default
-        const defaultObjectSizeMax = 64*1024*1024; // 4MB default
+        const defaultObjectSizeMax = 4*1024*1024; // 4MB default
         const maxResponseHeaderSize = 64*1024;
         const maxResponseSize = maxResponseHeaderSize + Config.bodySize();
         let cfg = ``;
@@ -230,7 +260,7 @@ export class DutConfig {
     // makes cfg text pretty
     _trimCfg(cfg) {
         // TODO: Support rudimentary configuration parsing instead?
-        cfg = cfg.replace(/^\s+$/, ""); // remove leading empty line
+        cfg = cfg.replace(/^\s+$/mg, ""); // remove whitespace-only lines
         cfg = cfg.replace(/^\s+/, ""); // remove leading empty space
         cfg = cfg.replace(/\s+$/mg, ""); // remove trailing whitespace
         cfg = cfg.replace(/^\s{12}/mg, ""); // trim indentation
@@ -246,17 +276,44 @@ export class ProxyOverlord {
         this._dutConfig = cfg;
         this._start = null; // future start() promise
         this._oldHealth = null; // proxy status during the previous _remoteCall()
+
+        // ignore proxy-reported problems matching any of these regexes
+        this._ignoreProblems = [];
+        Config.ignoreDutProblems().forEach(regex => this.ignoreProblems(regex));
+    }
+
+    // "read-only" access to the DUT configuration
+    config() {
+        assert.strictEqual(arguments.length, 0);
+        return this._dutConfig;
+    }
+
+    // Start ignoring matching DUT-reported problem(s).
+    ignoreProblems(regex) {
+        assert(regex);
+        console.log("Will ignore proxy problem(s) matching", regex);
+
+        // We feed each regex one problem at a time, without resetting regexes
+        // after each feeding. Persistent flags are not only useless right
+        // now, but they prevent matching during subsequent checks. Ban them
+        // explicitly now to be able to add flag-driven features later.
+        assert(!regex.global);
+        assert(!regex.sticky);
+
+        this._ignoreProblems.push(regex);
     }
 
     async noteStartup() {
         assert(!this._start);
 
         if (Config.DutAtStartup !== "reset") {
+            console.log("Checking proxy state");
             assert.strictEqual(Config.DutAtStartup, "as-is");
             await this._remoteCall("/check");
             return;
         }
 
+        console.log("Resetting proxy");
         const command = new Command("/reset");
         command.setConfig(this._dutConfig.make());
         this._start = this._remoteCall(command);
@@ -290,7 +347,21 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
-    _remoteCall(commandOrString) {
+    // Wait for the proxy to accumulate exactly the given number of
+    // not-yet-satisfied requests (containing the given URL path). This only
+    // works if the proxy can parse request (headers) but cannot satisfy those
+    // requests while we are waiting! For example, Squid may forward parsed
+    // requests and then wait for the server(s) to respond.
+    async finishStagingRequests(path, count) {
+        const options = {
+            'Overlord-request-path': path,
+            'Overlord-active-requests-count': count,
+        };
+        await this._remoteCall("/waitActiveRequests", options);
+        console.log("Proxy staged " + count + " requests");
+    }
+
+    _remoteCall(commandOrString, options) {
         return new Promise((resolve) => {
 
             const command = ((typeof commandOrString) === 'string') ?
@@ -302,12 +373,18 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 4,
+                    'Pop-Version': 7,
                 },
             };
 
+            if (options)
+                httpOptions.headers = { ...httpOptions.headers, ...options };
+
             httpOptions.headers['Overlord-Listening-Ports'] =
                 this._dutConfig.listeningPorts().join(",");
+
+            httpOptions.headers['Overlord-kids-expected'] =
+                this._dutConfig.kidsExpected();
 
             const requestBody = command.toHttp(httpOptions);
 
@@ -330,12 +407,7 @@ export class ProxyOverlord {
                     }
 
                     const health = JSON.parse(rawBody);
-                    const oldProblems = this._oldHealth ? this._oldHealth.problems : "";
-                    const newProblems = health.problems.startsWith(oldProblems) ?
-                        health.problems.substring(oldProblems.length) : health.problems;
-                    if (newProblems.length)
-                        throw new Error(`proxy-reported problem(s):\n${newProblems}`);
-                    this._oldHealth = health;
+                    this._updateHealth(health);
 
                     resolve(true);
                 });
@@ -352,4 +424,22 @@ export class ProxyOverlord {
         });
     }
 
+    // _remoteCall() helper for processing updated (cumulative) proxy health
+    _updateHealth(health) {
+        // extract newProblems before updating (cumulative) this._oldHealth
+        const oldProblems = this._oldHealth ? this._oldHealth.problems : [];
+        const newProblems = health.problems.slice(oldProblems.length);
+        this._oldHealth = health;
+
+        if (newProblems.length && this._ignoreProblems) {
+            const honorSome = newProblems.some(problem => {
+                return !this._ignoreProblems.some(regex => regex.test(problem));
+            });
+
+            const newProblemsReport = `proxy-reported problem(s):\n${newProblems.join("\n\n")}`;
+            if (honorSome)
+                throw new Error(newProblemsReport);
+            console.log(`Ignoring ${newProblemsReport}\n`);
+        }
+    }
 }

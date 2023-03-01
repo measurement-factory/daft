@@ -41,6 +41,10 @@ export default class Transaction {
         // sending = producing + writing
         this._doneProducing = false;
         this._doneSending = null; // Date
+        // a promise to send headers
+        this._sentHeaders = new Promise((resolve) => {
+            this._sentHeadersResolver = resolve;
+        });
         // a promise to send everything
         this._sentEverything = new Promise((resolve) => {
             this._sentEverythingResolver = resolve;
@@ -56,6 +60,13 @@ export default class Transaction {
             this._receivedEverythingResolver = resolve;
         });
 
+        // endAsync() has been called; do not close the socket until
+        // endAsync() finishes -- the endAsync() sequence needs the socket
+        this._halfClosing = false;
+
+        // finish() has been called at least once
+        this._ending = false;
+
         // a promise to (do as much as possible and) end
         this._finished = new Promise((resolve) => {
             this._finishedResolver = resolve;
@@ -66,6 +77,9 @@ export default class Transaction {
         this._finalizedMessage = false;
 
         this._bodyEncoder = null;
+
+        // (the reason to) close the socket only after our peer closes
+        this._closeLast = null;
     }
 
     started() {
@@ -92,6 +106,11 @@ export default class Transaction {
         return this._sentEverything;
     }
 
+    finished() {
+        assert(this._finished); // but may not be resolved yet
+        return this._finished;
+    }
+
     blockSendingUntil(externalEvent, waitingFor) {
         this._blockSending('headers', externalEvent, waitingFor);
     }
@@ -100,7 +119,13 @@ export default class Transaction {
         this._blockSending('body', externalEvent, waitingFor);
     }
 
-    _blockSending(part, externalEvent, waitingFor) {
+    closeLast(why) {
+        assert(why);
+        this.context.log("will not close the connection first:", why);
+        this._closeLast = why;
+    }
+
+    async _blockSending(part, externalEvent, waitingFor) {
         assert(part in this._sendingBlocks); // valid message part name
         assert(!this._sendingBlocks[part]); // not really needed; may simplify triage
         const block = {
@@ -110,7 +135,8 @@ export default class Transaction {
         };
         this._sendingBlocks[part] = block;
         this.context.log(`will block sending ${block.what} to ${block.waitingFor}`);
-        externalEvent.tap(() => this._unblockSending(part));
+        await externalEvent;
+        this._unblockSending(part);
     }
 
     _unblockSending(part) {
@@ -141,6 +167,11 @@ export default class Transaction {
         block.active = true;
         this.context.log(`not ready to send ${block.what}: ${block.waitingFor}`);
         return false; // configured and now activated
+    }
+
+    sentHeaders() {
+        assert(this._sentHeaders); // but may not be resolved yet
+        return this._sentHeaders;
     }
 
     receivedHeaders() {
@@ -193,15 +224,27 @@ export default class Transaction {
         });
 
         this.socket.on('end', () => {
-            this.context.enter();
+            this.context.enter(`received EOF from ${this.peerKind}`);
+
+            // This configuration-overwriting simplification/hack feels OK for
+            // now. If that changes, add/use a ._peerClosed state instead.
+            if (this._closeLast) {
+                this.context.log(`stop waiting for ${this.peerKind} to close first`);
+                this._closeLast = false;
+            }
+
             // assume all 'data' events always arrive before 'end'
             if (!this._doneReceiving)
                 this.endReceiving(`${this.peerKind} disconnected`);
-            // else ignore post-message EOF; TODO: Clear this.socket?
+            else
+                this.checkpoint(); // probably will just report what we are waiting for
+            // TODO: Clear this.socket?
             this.context.exit();
         });
 
-        // we wrote everything
+        // Event triggering logic: Earlier, the socket could not write
+        // everything immediately (and started to buffer). It is OK to write
+        // more now (probably because all the buffered data has been written).
         this.socket.on('drain', () => {
             this.context.enter('wrote everything produced so far');
             if (this.socket) // not finish()ed yet
@@ -218,7 +261,18 @@ export default class Transaction {
     }
 
     finish() {
-        this.context.log(`${this.ownerKind} transaction ended`);
+        if (this._ending) {
+            // Can we tell when we are 100% done? May some [socket] callbacks
+            // be scheduled before but fire after finish()? Such "late"
+            // callbacks were observed when something else went wrong (e.g.,
+            // we forgot to wait for some event and called finish()
+            // prematurely). For now, assume some legitimate cases also exist.
+            this.context.log(`${this.ownerKind} transaction is still ending`);
+            return;
+        }
+        this._ending = true;
+
+        this.context.log(`${this.ownerKind} transaction ends...`);
 
         if (this.socket) {
             this._agent.absorbTransactionSocket(this, this.socket);
@@ -228,6 +282,18 @@ export default class Transaction {
         this._finishedResolver(this);
     }
 
+    _noteSentHeaders() {
+        // ignore repeated notifications for caller simplicity sake
+        if (!this._sentHeadersResolver)
+            return;
+
+        if (!this._doneSending) // reduce reporting noise
+            this.context.log("done sending headers");
+
+        this._sentHeadersResolver(this);
+        this._sentHeadersResolver = null;
+    }
+
     checkpoint() {
 
         let doing = [];
@@ -235,11 +301,22 @@ export default class Transaction {
         // discover achievement of this._doneSending state
         if (!this._doneSending && this._doneProducing && !this._writing()) {
             this._doneSending = this.context.log("done sending");
+
+            // duped here to reduce logging noise and preserve a natural order of events
+            this._noteSentHeaders();
+
             this._sentEverythingResolver(this);
         }
 
+        // Resolve this.sentHeaders() if it is time to do so. This kludgy
+        // logic relies on header-producing code setting
+        // this._finalizedMessage. We may delay resolving if we were allowed
+        // to write (a large) message body together with the message headers.
+        if (this._sentHeadersResolver && this._finalizedMessage && !this._writing())
+            this._noteSentHeaders();
 
-        /* HTTP level */
+
+        /* HTTP layer */
 
         if (!this._doneReceiving)
             doing.push("receiving");
@@ -247,10 +324,23 @@ export default class Transaction {
         if (!this._doneProducing)
             doing.push("expecting to send more");
 
-        /*  socket level */
+
+        /*  socket layer */
 
         if (this._writing())
             doing.push(`writing ${this.socket.bufferSize} bytes`);
+
+        if (this.socket && this._closeLast)
+            doing.push(`waiting for ${this.peerKind} to close first`);
+
+        if (this.socket && this._halfClosing)
+            doing.push(`waiting for half-closing completion`);
+
+
+        /* various event handlers that might fire post-finish() */
+
+        if (this._ending)
+            doing.push(`ending`);
 
 
         if (doing.length)
@@ -316,10 +406,16 @@ export default class Transaction {
             return;
         }
 
-        if (!this._allowedToSend('body'))
+        if (this.messageOut.body.doneOuting()) {
+            this._stopProducing(`cannot produce any more ${this.messageOutKind} body bytes`);
             return;
+        }
 
-        this.context.log(`may send more ${this.messageOutKind} body later`);
+        if (this._allowedToSend('body'))
+            this.context.log(`may send more ${this.messageOutKind} body later`);
+
+        // Gadgets.SendBytes() may have sent headers, unblocking body sending.
+        this.checkpoint();
     }
 
     _makeOut(callerWantsHeaders) {
@@ -340,10 +436,18 @@ export default class Transaction {
 
             const madeAllNow = this.messageOut.body.outedAll() &&
                 bodyOut.length === this._bodyEncoder.outputSize();
-            const madeThing = madeAllNow ?
-                `the entire ${this.messageOutKind} body`:
-                `a piece of the ${this.messageOutKind} body`;
-            console.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
+            const finishedEncoding = this._bodyEncoder.finished();
+            // Cases using "entire" wording below assume that the encoder may
+            // not output some trailing metadata but always outputs all the
+            // body.out() bytes we feed it with. Also, we use unnecessarily
+            // spelled out conditions below to better document each case.
+            const madeThing =
+                madeAllNow && finishedEncoding ? `the entire ${this.messageOutKind} body`:
+                madeAllNow && !finishedEncoding ? `an incomplete encoding of the entire resource content`:
+                !madeAllNow && finishedEncoding ? `the final piece of the ${this.messageOutKind} body`:
+                !madeAllNow && !finishedEncoding ? `a piece of the ${this.messageOutKind} body`:
+                assert(false);
+            this.context.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
         }
 
         return out;
@@ -353,7 +457,7 @@ export default class Transaction {
         assert(this._receivedHeadersResolver);
         this._receivedHeadersResolver(this);
         this._receivedHeadersResolver = null;
-        // no this.checkpoint() because it does not depend on headers
+        // no this.checkpoint() because it does not depend on receiving headers
     }
 
     endReceiving(why) {

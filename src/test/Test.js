@@ -5,8 +5,7 @@
 import assert from "assert";
 import { Must } from "../misc/Gadgets";
 
-// a (startup, test run(s), shutdown) sequence sharing the same global
-// configuration; the runs may be executed sequentially and/or in parallel
+// a single test attempt: a (startup, test thread run(s), shutdown) sequence
 export default class Test {
     constructor() {
         assert.strictEqual(arguments.length, 0);
@@ -20,8 +19,8 @@ export default class Test {
     async shutdown() {
     }
 
-    // executes a sequence of checks
-    // may be called multiple times when repeating/parallelizing test runs
+    // executes a single test thread
+    // (concurrently) called multiple times when testing using multiple test threads
     async run(/*testRun*/) {
         Must(false, `pure virtual: kids must override`);
     }

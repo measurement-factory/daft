@@ -9,6 +9,8 @@ import Message from "./Message";
 import RequestLine from "./RequestLine";
 import * as Config from "../misc/Config";
 
+import assert from "assert";
+
 export default class Request extends Message {
 
     constructor(...args) {
@@ -22,8 +24,13 @@ export default class Request extends Message {
 
     with(resource) {
         this.relatedResource(resource, "With");
-        if (resource.body)
+        // XXX: Reduce (poor) duplication with Response::from(resource)
+        if (resource.body) {
             this.addBody(resource.body);
+        } else if (resource.body === null) {
+            assert.strictEqual(this.body, undefined); // no accidental overwrites
+            this.body = null;
+        }
     }
 
     conditions(ifs) {

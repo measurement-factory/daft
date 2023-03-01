@@ -5,11 +5,20 @@
 /* Manages an HTTP response message, including headers and body */
 
 import assert from "assert";
+import Body from "./Body";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
-import Body from "./Body";
 import { Must } from "../misc/Gadgets";
 import * as Config from "../misc/Config";
+
+Config.Recognize([
+    {
+        option: "response-ends-at-eof",
+        type: "Boolean",
+        default: "false",
+        description: "send unchunked response without Content-Length",
+    },
+]);
 
 export default class Response extends Message {
 
@@ -17,7 +26,7 @@ export default class Response extends Message {
         super(new StatusLine(), ...args);
 
         // force the sender to close the connection to mark the end of response
-        this.forceEof = false;
+        this.forceEof = null; // use Config.responseEndAtEof by default
 
         this.rangeBlocks = null; // array of parsed range body blocks
     }
@@ -46,13 +55,17 @@ export default class Response extends Message {
             assert(resource.body.innedAll);
             assert.strictEqual(resource.body.outedSize(), 0);
             this.addBody(resource.body.clone());
+        } else if (resource.body === null) {
+            assert.strictEqual(this.body, undefined); // no accidental overwrites
+            this.body = null;
         }
     }
 
     finalizeBody() {
         super.finalizeBody();
-        if (this.hasRanges() && this.body) {
+        if (this.hasRanges()) {
             Must(this.ranges.length > 0);
+            // TODO: Modify body via Body::applyRanges() instead of overwriting it?
             this.body = new Body(this._applyRanges(this.body.whole(), this.ranges));
         }
     }
@@ -122,7 +135,8 @@ export default class Response extends Message {
     }
 
     syncContentLength() {
-        if (this.forceEof) {
+        const forceEof = this.forceEof === null ? Config.responseEndsAtEof() : this.forceEof;
+        if (forceEof) {
             Must(this.body);
             Must(!this.chunkingBody());
             this.header.prohibitNamed("Content-Length");
@@ -134,5 +148,23 @@ export default class Response extends Message {
 
     prefix(messageWriter) {
         return messageWriter.responsePrefix(this);
+    }
+
+    // The "corresponding Daft request" ID, as stored in response headers (or null).
+    // Daft server transactions store the received Daft request ID when generating responses.
+    requestId(request) {
+        const idFieldName = request._daftFieldName("ID");
+        if (this.header.has(idFieldName))
+            return this.header.value(idFieldName);
+        return null;
+    }
+
+    // Copy the Daft request ID field (if any) from the given request.
+    // The requestId() method can be used to extract the copied ID.
+    rememberIdOf(request) {
+        const idFieldName = request._daftFieldName("ID");
+        assert(!this.header.has(idFieldName)); // ban overwriting to simplify triage
+        if (request.header.has(idFieldName))
+            this.header.add(idFieldName, request.header.value(idFieldName));
     }
 }

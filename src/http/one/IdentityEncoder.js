@@ -16,6 +16,10 @@ export default class IdentityEncoder extends Encoder {
         return data;
     }
 
+    _encodeTrailer() {
+        return "";
+    }
+
     _reportCompletion() {
     }
 }

@@ -26,9 +26,16 @@ export default class Resource {
 
     // do our best to persuade most caches to store this resource
     makeCachable() {
+        Must(arguments.length === 0); // TODO: Add doIt parameter
         this.modifiedAt(FuzzyTime.DistantPast());
         this.expireAt(FuzzyTime.DistantFuture());
         this.mime.add("Cache-Control", "public");
+    }
+
+    // do our best to persuade most caches to revalidate cached resource on every access
+    requireRevalidationOnEveryUse(doIt = true) {
+        if (doIt)
+            this.mime.add("Cache-Control", "max-age=0, must-revalidate");
     }
 
     finalize() {

@@ -9,21 +9,6 @@
 import assert from "assert";
 import util from "util";
 
-/*
- * *ListeningAddresses below are used for both listening and connecting.
- * Nodejs default listening behavior is version-specific. We use an
- * explicit '::' address in hope to force the latest "undefined" behavior:
- * - When listening, "undefined" host means all local addresses
- *   (IPv6 if possible or IPv4 otherwise).
- * - When connecting, "undefined" host means "localhost".
- */
-
-// Used to listen for proxy requests and open connections to the proxy.
-export const ProxyListeningAddress = { // TODO: Make configurable
-    host: '::',
-    port: 3128
-};
-
 // Used to form request URLs (set via --origin-authority).
 export const OriginAuthority = null;
 
@@ -65,13 +50,26 @@ export function LargeBodySize() {
     return 2*blockSize + extras;
 }
 
+// largest body that can still be cached in a reasonable amount of time/space
+export function HugeCachableBodySize() {
+    // 1000-base is easier for quick checks when reading logs than 1024-base
+    return 10 * 1000*1000;
+}
+
+// either the given body size (if known) or the configured body size
+function suspectedBodySize(bodySize) {
+    // to access (using a common name) the Config option we export ourselves
+    const Config = module.exports;
+    return bodySize === undefined ? Config.bodySize() : bodySize;
+}
+
 export const ContentRangeBoundary = ProxySignature + "-123456789";
 
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
     // by default, report progress except for huge bodies
     if (LogBodies === undefined) {
-        const suspectedSize = bodySize === undefined ? Config.BodySize : bodySize;
+        const suspectedSize = suspectedBodySize(bodySize);
         return suspectedSize <= 1*1024*1024;
     }
     return LogBodies > 0;
@@ -81,8 +79,8 @@ export function logBodyProgress(bodySize) {
 export function logBodyContents(bodySize) {
     // by default, log contents of small non-default bodies only
     if (LogBodies === undefined) {
-        const suspectedSize = bodySize === undefined ? Config.BodySize : bodySize;
-        return suspectedSize <= 100 && suspectedSize != DefaultBodySize();
+        const suspectedSize = suspectedBodySize(bodySize);
+        return suspectedSize <= 100 && suspectedSize !== DefaultBodySize();
     }
     return LogBodies > 0;
 }
@@ -101,6 +99,12 @@ let _CliOptions = [
         type: "Boolean",
         overrideRequired: true,
         description: "show this help message",
+    },
+    {
+        option: "proxy-authority",
+        type: "{host: String, port: Number}",
+        default: `{host: 127.0.0.1, port: 3128}`,
+        description: "proxy listening address (i.e. the next hop of test requests)",
     },
     {
         option: "origin-authority",
@@ -266,9 +270,11 @@ function _Import(options, optionsWithoutDefaults) {
         };
 
         // create Config.camelName()
+        // TODO: Find a way to avoid eslint no-loop-func errors here.
         module.exports[camelName] = function () {
             assert(_ActiveOptions);
             assert(_ActiveOptions instanceof ActiveOptions);
+            // call _ActiveOptions->camelName() with evaluated camelName:
             return ActiveOptions.prototype[camelName].call(_ActiveOptions);
         };
     }

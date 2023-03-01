@@ -6,16 +6,9 @@
 
 import Encoder from "./Encoder";
 import * as Config from "../../misc/Config";
-import { Must } from "../../misc/Gadgets";
 import assert from "assert";
 
 Config.Recognize([
-    {
-        option: "withhold-last-chunk",
-        type: "Boolean",
-        default: "false",
-        description: "when sending a chunked message, do not send last-chunk",
-    },
     {
         option: "chunk-size",
         type: "Number",
@@ -26,26 +19,14 @@ Config.Recognize([
 ]);
 
 export default class ChunkedEncoder extends Encoder {
-    constructor() {
+    constructor(message) {
+        assert.strictEqual(arguments.length, 1);
+
         super("chunked");
+
         assert(Config.ChunkSize >= 0);
-    }
-
-    encode(data) {
-        Must(!this._finished);
-        if (!data.length)
-            return "";
-        return super.encode(data);
-    }
-
-    finish(data) {
-        // to ignore empty final data, we need to call our encode() but
-        // to count last-chunk and trailer bytes, we need to call super.encode()
-        let result = this.encode(data); // the last piece of data, if any
-        if (!Config.WithholdLastChunk)
-            result += super.encode(""); // last-chunk followed by [empty] trailer
-        super.finish("");
-        return result;
+        assert(message.chunkingBody());
+        this._withholdLastChunk = message.withholdingLastChunk();
     }
 
     // empty data results in last-chunk
@@ -56,7 +37,7 @@ export default class ChunkedEncoder extends Encoder {
 
     _encode(data) {
         if (!data.length)
-            return ChunkedEncoder.EncodeOneChunk(data); // last-chunk
+            return ""; // last-chunk is handled by _encodeTrailer()
 
         if (!Config.ChunkSize)
             return ChunkedEncoder.EncodeOneChunk(data); // all-in-one
@@ -72,5 +53,13 @@ export default class ChunkedEncoder extends Encoder {
         if (pos < data.length)
             buf += ChunkedEncoder.EncodeOneChunk(data.substring(pos, data.length));
         return buf;
+    }
+
+    // super API
+    _encodeTrailer() {
+        if (this._withholdLastChunk)
+            return "";
+        // last-chunk followed by [empty] trailer
+        return ChunkedEncoder.EncodeOneChunk("");
     }
 }

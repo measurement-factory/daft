@@ -5,6 +5,7 @@
 /* Base class for HTTP request or response message, including headers and body */
 
 import Authority from "../anyp/Authority";
+import Body from "./Body";
 import Header from "./Header";
 import { Must } from "../misc/Gadgets";
 import * as Config from "../misc/Config";
@@ -20,6 +21,12 @@ Config.Recognize([
         default: "false",
         description: "use chunked Transfer-Encoding when sending message bodies",
     },
+    {
+        option: "withhold-last-chunk",
+        type: "Boolean",
+        default: "false",
+        description: "when sending a chunked message, do not send last-chunk",
+    },
 ]);
 
 export default class Message {
@@ -33,8 +40,12 @@ export default class Message {
         this.header = new Header();
         this.headerDelimiter = null;
 
-        this.body = null; // no body by default
+        // By default, let methods like Request::with(), Response::from(), and
+        // Transaction::finalizeMessage() decide whether to add a body. To
+        // stop those methods from guessing, set this.body (e.g., to null).
+        this.body = undefined;
         this._chunkBody = Config.ChunkBodies;
+        this._withholdLastChunk = Config.WithholdLastChunk;
 
         // whether this to-be-sent message has auto-generated components such
         // as unique message id() in the header; false for received messages
@@ -57,6 +68,7 @@ export default class Message {
         this.headerDelimiter = them.headerDelimiter;
         this.body = them.body ? them.body.clone() : null;
         this._chunkBody = them._chunkBody;
+        this._withholdLastChunk = them._withholdLastChunk;
         this._finalized = them._finalized;
         return this;
     }
@@ -73,6 +85,16 @@ export default class Message {
     chunkBody(doIt) {
         assert.strictEqual(arguments.length, 1);
         this._chunkBody = doIt;
+    }
+
+    withholdingLastChunk() {
+        assert(!arguments.length);
+        return this._withholdLastChunk;
+    }
+
+    withholdLastChunk(doIt) {
+        assert.strictEqual(arguments.length, 1);
+        this._withholdLastChunk = doIt;
     }
 
     // unique ID of a _finalized_ message
@@ -105,7 +127,7 @@ export default class Message {
         return Authority.Parse(rawValue).toHostPort();
     }
 
-    finalize() {
+    finalize(bodyExpected) {
         if (this.finalized())
             return;
         this._finalized = true;
@@ -119,7 +141,14 @@ export default class Message {
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
 
-        this.finalizeBody();
+        if (this.body === undefined) {
+            if (bodyExpected)
+                this.addBody(new Body());
+            else
+                this.body = null;
+        }
+        if (this.body)
+            this.finalizeBody();
 
         this.syncContentLength();
 
@@ -133,16 +162,19 @@ export default class Message {
         this.header.finalize();
     }
 
-    addRanges(ranges) { assert(false); }
+    addRanges(ranges) {
+        assert(false);
+    }
 
+    // not a reset; we do not remove old Content-Length
     addBody(body) {
-        Must(!this.body); // not a reset; we do not remove old Content-Length
+        Must(this.body === undefined);
+        Must(body);
         this.body = body;
     }
 
     finalizeBody() {
-        if (this.body)
-            this.body.finalize();
+        this.body.finalize();
     }
 
     syncContentLength() {

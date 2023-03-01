@@ -45,6 +45,7 @@ export default class Agent {
         this._stoppedResolver = null;
         await this._stop();
         stoppedResolver(this); // satisfy after cleanup in _stop()
+        return this._stopped;
     }
 
     transaction() {

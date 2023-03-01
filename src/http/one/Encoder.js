@@ -17,12 +17,20 @@ export default class Encoder {
         this._outSize = 0; // number of encoded bytes we gave back to the caller
     }
 
+    // no more encode() calls are expected; no more encoded output will be
+    // produced, even if the already produced encoded output is incomplete
+    finished() {
+        return this._finished;
+    }
+
+    // Returns new encoded bytes.
+    // Stops (i.e. calls finish()) automatically.
     encodeBody(body) {
         const data = body.out();
         return body.outedAll() ? this.finish(data) : this.encode(data);
     }
 
-    // Returns encoded bytes. To stop encoding, call finish() instead.
+    // Returns new encoded bytes. To stop encoding, call finish() instead.
     encode(data) {
         Must(!this._finished);
         this._inSize += data.length;
@@ -31,9 +39,9 @@ export default class Encoder {
         return encoded;
     }
 
-    // Stops encoding. May return encoded data even if data is empty.
+    // Stops encoding. May return output bytes even if input data is empty.
     finish(data) {
-        const encodedData = this.encode(data);
+        const encodedData = this.encode(data) + this._encodeTrailer();
         this._finished = true;
         this._reportCompletion();
         return encodedData;
@@ -45,6 +53,11 @@ export default class Encoder {
 
     _encode(data) {
         Must(false, `pure virtual: kids must override to encode ${data}`);
+    }
+
+    // produces post-date/termination sequence (or an empty string if none)
+    _encodeTrailer() {
+        Must(false, 'pure virtual: kids must override');
     }
 
     _reportCompletion() {

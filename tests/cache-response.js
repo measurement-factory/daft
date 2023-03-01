@@ -9,21 +9,33 @@ import assert from "assert";
 import HttpTestCase from "../src/test/HttpCase";
 import Body from "../src/http/Body";
 import Resource from "../src/anyp/Resource";
+import ConfigGen from "../src/test/ConfigGen";
 import * as Config from "../src/misc/Config";
 import * as AddressPool from "../src/misc/AddressPool";
 import Test from "../src/overlord/Test";
 
-// custom CLI options
-Config.Recognize([
-    {
-        option: "response-ends-at-eof",
-        type: "Boolean",
-        default: "false",
-        description: "send unchunked response without Content-Length",
-    },
-]);
-
 export default class MyTest extends Test {
+
+    static Configurators() {
+        const configGen = new ConfigGen();
+
+        configGen.addGlobalConfigVariation({bodySize: [
+            Config.DefaultBodySize(),
+
+            0,
+            1,
+            Config.LargeBodySize(),
+            Config.HugeCachableBodySize(),
+        ]});
+
+        configGen.addGlobalConfigVariation({responseEndsAtEof: [
+            false,
+
+            true,
+        ]});
+
+        return configGen.generateConfigurators();
+    }
 
     _configureDut(cfg) {
         cfg.memoryCaching(false); // TODO: Make Configurable.
@@ -40,16 +52,15 @@ export default class MyTest extends Test {
         resource.body = new Body();
         resource.finalize();
 
-        let missCase = new HttpTestCase(`forward a ${Config.BodySize}-byte response`);
+        let missCase = new HttpTestCase(`cache a response`);
         missCase.server().serve(resource);
-        missCase.server().response.forceEof = Config.ResponseEndsAtEof;
         missCase.client().request.for(resource);
         missCase.addMissCheck();
         await missCase.run();
 
         await this.dut.finishCaching();
 
-        let hitCase = new HttpTestCase(`hit a ${Config.BodySize}-byte response`);
+        let hitCase = new HttpTestCase(`hit the cached response`);
         hitCase.client().request.for(resource);
         hitCase.addHitCheck(missCase.server().transaction().response);
         await hitCase.run();
