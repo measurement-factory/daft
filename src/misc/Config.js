@@ -119,12 +119,6 @@ let _CliOptions = [
         description: "message body size (bytes)",
     },
     {
-        option: "prefix-size",
-        type: "Number",
-        default: 0, // unspecified
-        description: "minimum message prefix size (bytes)",
-    },
-    {
         option: "range",
         type: "String",
         enum: ["none", "low", "med", "high", "any"],

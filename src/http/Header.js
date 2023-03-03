@@ -26,9 +26,8 @@ export default class Header {
         // a value of the field used by the lower-level code.
         this._extraFields = [];
 
-        // minimum raw() length of a finalized header
-        // set via enforceMinimumLength()
-        this._minimumLength = null;
+        // minimum raw().length value of a finalized header
+        this._minimumSize = 0;
     }
 
     clone() {
@@ -51,19 +50,22 @@ export default class Header {
         // finalize each overwriting field
         this._extraFields.forEach(field => field.finalize());
 
-        if (this._minimumLength !== null) {
+        if (this._minimumSize > 0) {
             const bareLength = this.raw().length;
-            if (bareLength < this._minimumLength)
-                this._stuff(this._minimumLength - bareLength);
-
-            assert(this.raw().length >= this._minimumLength);
+            if (this._minimumSize > bareLength) {
+                this._stuff(this._minimumSize - bareLength);
+                assert(this.raw().length >= this._minimumSize);
+            }
         }
     }
 
     // ensures that the finalized header is at least n bytes long
-    enforceMinimumLength(n) {
+    enforceMinimumSize(n) {
         assert(n >= 0);
-        this._minimumLength = n;
+        assert(!this._minimumSize); // for simplicity sake
+        if (n > 0)
+            console.log("will enforce minimum header size of", n, "bytes");
+        this._minimumSize = n;
     }
 
     // adds a custom field that is at least length bytes long

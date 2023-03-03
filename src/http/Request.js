@@ -11,10 +11,21 @@ import * as Config from "../misc/Config";
 
 import assert from "assert";
 
+Config.Recognize([
+    {
+        option: "request-prefix-size-minimum",
+        type: "Number",
+        default: "0",
+        description: "minimum size of request start line and headers (bytes)",
+    },
+]);
+
 export default class Request extends Message {
 
     constructor(...args) {
         super(new RequestLine(), ...args);
+
+        this.enforceMinimumPrefixSize(Config.requestPrefixSizeMinimum());
     }
 
     for(resource) {
