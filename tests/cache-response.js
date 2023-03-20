@@ -34,12 +34,17 @@ export default class MyTest extends Test {
             true,
         ]});
 
-        return configGen.generateConfigurators();
-    }
+        configGen.addGlobalConfigVariation({dutMemoryCache: [
+            false,
+            true,
+        ]});
 
-    _configureDut(cfg) {
-        cfg.memoryCaching(false); // TODO: Make Configurable.
-        cfg.diskCaching(true); // TODO: Make Configurable.
+        configGen.addGlobalConfigVariation({dutDiskCache: [
+            // TODO: false, but exclude a false+false combo with dutMemoryCache
+            true,
+        ]});
+
+        return configGen.generateConfigurators();
     }
 
     async run(/*testRun*/) {

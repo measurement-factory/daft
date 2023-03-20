@@ -33,6 +33,18 @@ Config.Recognize([
         default: "[]",
         description: "ignore DUT-reported problem(s) matching these regex(es)",
     },
+    {
+        option: "dut-memory-cache",
+        type: "Boolean",
+        default: "false",
+        description: "whether to enable cache_mem",
+    },
+    {
+        option: "dut-disk-cache",
+        type: "Boolean",
+        default: "false",
+        description: "whether to enable cache_dir",
+    },
 ]);
 
 // TODO: Make worker port range configurable
@@ -45,8 +57,8 @@ export class DutConfig {
     constructor() {
         this._workers = null; // no workers directive at all
         this._dedicatedWorkerPorts = false; // one listening port per worker
-        this._memoryCaching = false;
-        this._diskCaching = false;
+        this._memoryCaching = Config.dutMemoryCache();
+        this._diskCaching = Config.dutDiskCache();
         this._collapsedForwarding = false;
         this._listeningPorts = [];
         this._customDirectives = [];
