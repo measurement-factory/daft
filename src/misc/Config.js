@@ -91,34 +91,28 @@ function _DefaultOriginAuthorityPort()
 }
 
 // accumulates recognized CLI options
-let _CliOptions = [
-    {
-        option: "help",
-        type: "Boolean",
-        overrideRequired: true,
-        description: "show this help message",
-    },
-    {
-        option: "proxy-authority",
-        type: "{host: String, port: Number}",
-        default: `{host: 127.0.0.1, port: 3128}`,
-        description: "proxy listening address (i.e. the next hop of test requests)",
-    },
-    {
-        option: "origin-authority",
-        type: "{host: String, port: Number}",
-        default: `{host: localhost, port: ${_DefaultOriginAuthorityPort()}}`,
-        description: "ultimate request destination",
-    },
-    {
-        option: "body-size",
-        type: "Number",
-        default: DefaultBodySize().toString(),
-        description: "message body size (bytes)",
-    },
-];
+let _CliOptions = [];
 
-// a camelName:is-explicit map configured by Finalize()
+// summarizes a Recognize()d configuration option state
+class RecognizedOption {
+    constructor(dashedName, optionsSetOnCommandLine) {
+        assert.strictEqual(arguments.length, 2);
+        assert(dashedName.length > 0);
+
+        // for use on the command line: --option-name
+        this.cliName = "--" + dashedName;
+
+        // for use in code Config.camelName()
+        this.camelName = dashedName.replace(/-(.)/gi, m => m[1].toUpperCase());
+
+        // whether this option was explicitly configured on the command line
+        this.cliConfigured = this.camelName in optionsSetOnCommandLine;
+
+        // TODO: Add value?
+    }
+}
+
+// a camelName:RecognizedOption map configured by Finalize()
 let _RecognizedOptions;
 
 function _assertRecognition(camelName) {
@@ -135,12 +129,36 @@ export function Recognize(options) {
 // whether the given option was set on the command-line
 export function isExplicitlySet(camelName) {
     _assertRecognition(camelName);
-    return _RecognizedOptions[camelName];
+    return _RecognizedOptions[camelName].cliConfigured;
 }
 
 export function RecognizedOptionNames() {
     assert(_RecognizedOptions); // Finalized() has been called
     return Object.keys(_RecognizedOptions);
+}
+
+// A textual representation of the given Javascript object.
+// Suitable for pasting as a command-line argument.
+function optionValue2shell(object) {
+    assert(object !== undefined);
+    assert(object !== null);
+
+    const dump = util.format('%O', object);
+    if (!dump.length)
+        return "''";
+
+    // no special symbols
+    if (/^[-+./:=@_0-9A-Za-z]*$/.test(dump))
+        return dump;
+
+    // already correctly single-quoted (TODO: remove needless quotes)
+    if (/^'[^']*'$/.test(dump))
+        return dump;
+
+    // Do not escape single quotes using backslashes because (some) shells
+    // extend single quote to the backslash itself. Instead, at each single
+    // quote: Close the string, add a single quote, and restart the string.
+    return "'" + dump.replace(/'/g, `'"'"'`) + "'";
 }
 
 // configuration options with dynamically-generated getters
@@ -201,6 +219,14 @@ class ActiveOptions {
         let image = "";
         image += this._sprintGroup("explicitly configured options", true);
         image += this._sprintGroup("options with generated and default values", false);
+
+        image += util.format("    %s:", "command-line equivalent");
+        for (const camelName of Object.keys(this._raw)) {
+            const ro = _RecognizedOptions[camelName];
+            const value = this._raw[camelName];
+            image += ' ' + ro.cliName + '=' + optionValue2shell(value);
+        }
+
         return image;
     }
 }
@@ -243,9 +269,11 @@ function _Import(options, optionsWithoutDefaults) {
     assert(!_RecognizedOptions);
     _RecognizedOptions = {};
     for (const option of _CliOptions) {
-        const dashName = option.option;
-        const camelName = dashName.replace(/-(.)/gi, m => m[1].toUpperCase());
-        _RecognizedOptions[camelName] = camelName in optionsWithoutDefaults;
+        const dashedName = option.option;
+        const ro = new RecognizedOption(dashedName, optionsWithoutDefaults);
+        const camelName = ro.camelName;
+        assert(!(camelName in _RecognizedOptions));
+        _RecognizedOptions[camelName] = ro;
 
         // create ActiveOptions.camelName()
         ActiveOptions.prototype[camelName] = function () {
@@ -324,3 +352,31 @@ export function optionValue(camelName) {
     assert(_ActiveOptions);
     return _ActiveOptions.value(camelName);
 }
+
+Recognize([
+    {
+        option: "help",
+        type: "Boolean",
+        overrideRequired: true,
+        description: "show this help message",
+    },
+    {
+        option: "proxy-authority",
+        type: "{host: String, port: Number}",
+        default: `{host: 127.0.0.1, port: 3128}`,
+        description: "proxy listening address (i.e. the next hop of test requests)",
+    },
+    {
+        option: "origin-authority",
+        type: "{host: String, port: Number}",
+        default: `{host: localhost, port: ${_DefaultOriginAuthorityPort()}}`,
+        description: "ultimate request destination",
+    },
+    {
+        option: "body-size",
+        type: "Number",
+        default: DefaultBodySize().toString(),
+        description: "message body size (bytes)",
+    },
+]);
+
