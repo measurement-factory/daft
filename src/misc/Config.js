@@ -380,11 +380,5 @@ Recognize([
         default: DefaultBodySize().toString(),
         description: "message body size (bytes)",
     },
-    {
-        option: "range",
-        type: "String",
-        enum: ["none", "low", "med", "high", "any"],
-        description: "the part of the body used in Range requests",
-    },
 ]);
 
