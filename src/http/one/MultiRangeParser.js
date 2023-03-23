@@ -64,8 +64,13 @@ export default class MultiRangeParser {
         const low = Number.parseInt(match[2], 10);
         const high = Number.parseInt(match[3], 10);
         const whole = Number.parseInt(match[4], 10);
-        assert(low < high);
-        assert(high < whole);
+
+        if (low > high)
+            throw new Error(`invalid or unsupported range specs ${stringValue}: ${low} > ${high}`);
+
+        if (high >= whole)
+            throw new Error(`invalid or unsupported range specs ${stringValue}: ${high} >= ${whole}`);
+
         return {low: low, high: high, whole: whole};
     }
 }
