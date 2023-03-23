@@ -5,6 +5,7 @@
 /* Manages an HTTP response message, including headers and body */
 
 import assert from "assert";
+import Field from "./Field";
 import Body from "./Body";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
@@ -88,35 +89,61 @@ export default class Response extends Message {
         return false;
     }
 
-    _applyRanges(content, ranges) {
-        if (!ranges)
-            return content; // the entire payload, no ranges
+    // TODO: Create a class to encapsulate these fields/logic.
+    // { low, high, bytes(wholeBody), headerField }
+    _finalizedRange(wholeBodyLength, range) {
+        const rawLow = range[0];
+        const rawHigh = range[1];
 
-        if (ranges.length === 1) { // a single range
-            const range = ranges[0];
-            const low = range[0];
-            const high = range[1];
-            return content.substring(low, high+1);
-        }
+        assert(rawLow >= 0);
+        assert(rawLow <= rawHigh);
+        const low = rawLow;
+
+        assert(rawHigh >= 0);
+        const high = Math.min(rawHigh, wholeBodyLength-1);
+
+        assert(low <= high);
+        assert(high <= wholeBodyLength);
+
+        // Report unsatisfiable ranges. They may be a test developer mistake.
+        // TODO: Create a class to mark bad range specs known to test code!
+        if (!(0 <= low && low <= high))
+            console.log(`Warning: Generating an invalid or unsatisfiable range spec: ${rawLow}-${rawHigh}/${wholeBodyLength}`);
+
+        // XXX: This field is not finalized despite our _finalizedRange() name.
+        // We should not finalize because the caller might want to customize,
+        // especially when the field is added to the primary response header.
+        const field = new Field('Content-Range', `bytes ${low}-${high}/${wholeBodyLength}`);
+
+        return {
+            low: low,
+            high: high,
+            bytes: function (wholeBody) { return wholeBody.substring(low, high+1); },
+            headerField: field,
+        };
+    }
+
+    _applyRanges(wholeBody, ranges) {
+        if (!ranges)
+            return wholeBody; // the entire payload, no ranges
+
+        if (ranges.length === 1) // a single range
+            return this._finalizedRange(wholeBody.length, ranges[0]).bytes(wholeBody);
 
         // payload in "multipart/byteranges" format (RFC7233)
 
         Must(ranges.length > 1);
 
         const terminator = "\r\n";
-        const length = content.length;
         let part = "";
-        for (let range of ranges) {
-            const low = range[0];
-            const high = range[1];
-            Must(low !== null && low !== undefined); // TODO: support 'half-closed' ranges
-            Must(high !== null && high !== undefined);
+        for (let rangeSpec of ranges) {
+            const range = this._finalizedRange(wholeBody.length, rangeSpec);
+            range.headerField.finalize();
+
             part += terminator + "--" + Config.ContentRangeBoundary;
-            part += terminator + 'Content-Type: text/html';
-            part += terminator + `Content-Range: bytes ${low}-${high}/${length}`;
-            part += terminator;
-            const block = content.substring(low, high+1);
-            part += terminator + block;
+            part += terminator + 'Content-Type: text/html'; // XXX?
+            part += terminator + range.headerField.raw();
+            part += terminator + range.bytes(wholeBody);
         }
         part += terminator + "--" + Config.ContentRangeBoundary + "--" + terminator;
         return part;
@@ -132,9 +159,8 @@ export default class Response extends Message {
         this.ranges = ranges;
         if (ranges.length === 1) {
             Must(!this.header.has('Content-Range'));
-            const range = ranges[0];
-            const value = `bytes ${range[0]}-${range[1]}/${length}`;
-            this.header.add('Content-Range', value);
+            const range = this._finalizedRange(length, ranges[0]);
+            this.header.add(range.headerField);
         } else {
             Must(!this.header.has('Content-Type'));
             const value = 'multipart/byteranges; boundary=' + Config.ContentRangeBoundary;
