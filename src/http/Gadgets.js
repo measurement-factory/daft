@@ -111,10 +111,21 @@ function AssertForwardedBody(sent, received) {
     const receivedBody = received.body && received.body.whole().length ? received.body : null;
     assert.equal(!receivedBody, !sentBody);
     if (sentBody) {
-        assert.equal(receivedBody.whole().length, sentBody.whole().length);
-        // TODO: assert.equal() detects but does not show the suffix difference
-        // of long strings (e.g., 17MB bodies with different last few bytes).
-        assert.equal(receivedBody.whole(), sentBody.whole());
+        const sentBodyWhole = sentBody.whole();
+        const receivedBodyWhole = receivedBody.whole();
+        assert.equal(receivedBodyWhole.length, sentBodyWhole.length);
+        // assert.equal() detects but does not show the suffix difference of
+        // long strings (e.g., 17MB bodies with different last few bytes)
+        if (receivedBodyWhole != sentBodyWhole) {
+            for (var pos = 0; pos < receivedBodyWhole.length; ++pos) {
+                if (receivedBodyWhole[pos] != sentBodyWhole[pos]) {
+                    console.log(`${sentBodyWhole.length}-byte bodies start to differ at offset ${pos}`);
+                    assert.equal(receivedBodyWhole.substr(pos), sentBodyWhole.substr(pos));
+                    assert(false); // unreachable
+                }
+            }
+            assert(false); // unreachable
+        }
     } else {
         assert.equal(receivedBody, null);
     }
