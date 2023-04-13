@@ -154,6 +154,16 @@ export const DropConfig = undefined;
 // TODO: Perhaps we should register with Configure::Finalize() instead.
 let FlexibleConfigGenFinalized = false;
 
+// For generator function detection. See https://stackoverflow.com/a/21559723
+const _GeneratorFun = function *() {}.constructor;
+
+export class ConfigurationError extends Error
+{
+    constructor(message) {
+        super(message);
+    }
+}
+
 // generates configurators after a series of configuration-yielding steps
 // where each next step yields a new sequence of configurations by cloning
 // configurations yielded during the previous step and adjusting the clones
@@ -161,13 +171,21 @@ let FlexibleConfigGenFinalized = false;
 // [ { a=a1, b=b1, c=?}, { a=a1, b=b2, c=?}, ... ] // step adds b values
 // [ { a=a1, b=b1, c=c1}, { a=a1, b=b1, c=c2}, ... ] // step adds c values
 export class FlexibleConfigGen {
-    // adds individual option-specific getter/setter methods
+    // adds individual option-specific setter methods
     static AddMethods(optionNames) {
         optionNames.forEach(optionName => {
             //Object.defineProperty(FlexibleConfigGen, optionName, {
-            FlexibleConfigGen.prototype[optionName] = function (gen) {
+            FlexibleConfigGen.prototype[optionName] = function (genOrArray) {
+                // This check prevents the generator function from _dropping_
+                // configurations incompatible with this explicitly set option
+                // value. Use dropInvalidConfigurations() for dropping instead
+                // of DropConfig. TODO: Consider removing DropConfig.
                 if (Config.isExplicitlySet(optionName))
                     return; // automated variation disabled
+
+                // if array was given, convert it to a yield-each generator
+                const gen = (genOrArray instanceof _GeneratorFun) ? genOrArray :
+                    function *() { yield *genOrArray; };
 
                 assert.notEqual(this._configs.length, 0);
                 let newConfigs = [];
@@ -202,6 +220,43 @@ export class FlexibleConfigGen {
             FlexibleConfigGen.AddMethods(Config.RecognizedOptionNames());
             FlexibleConfigGenFinalized = true;
         }
+    }
+
+    // reports and removes configuration candidates that result in
+    // ConfigurationError exceptions in the given checker function
+    dropInvalidConfigurations(checker) {
+        this._configs = this._configs.filter(cfg => {
+            try {
+                /* void */ checker(cfg);
+                return true;
+            } catch (error) {
+                if (error instanceof ConfigurationError) {
+                    console.log(`Warning: Dropping configuration candidate: ${error.message}`);
+                    return false;
+                }
+                throw error; // re-throw all other errors/bugs
+            }
+        });
+
+        if (!this._configs.length)
+            throw new ConfigurationError("No valid configuration candidates left");
+    }
+
+    // reports and removes duplicate configuration candidates, using the given
+    // summation function to compare candidates
+    dropDuplicateConfigurations(gister) {
+        assert.notEqual(this._configs.length, 0);
+        let seen = new Set();
+        this._configs = this._configs.filter(cfg => {
+            const gist = gister(cfg);
+            if (seen.has(gist)) {
+                console.log(`Warning: Dropping duplicate configuration candidate: ${gist}`);
+                return false;
+            }
+            seen.add(gist);
+            return true; // keep
+        });
+        assert.notEqual(this._configs.length, 0);
     }
 
     // returns configurators that can generate all possible configurations
