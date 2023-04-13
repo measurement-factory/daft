@@ -160,6 +160,25 @@ export default class Header {
         return boundary.replace(/^"(.*)"$/, '$1');
     }
 
+    // returns an array of [low,hi] values extracted from a
+    // "Range: bytes=low-high,..." field (or null if there is no Range header)
+    byteRanges() {
+        const name = 'Range';
+        if (!this.has(name))
+            return null;
+        const value = this.value(name);
+        assert(value.startsWith('bytes=')); // no support for other Ranges
+        const specs = value.substring(6);
+        // no support for open ranges yet
+        const result = specs.split(/\s*,\s*/).map(spec => spec.split('-').map(rawOffset => {
+            const offset = Misc.ToUnsigned(rawOffset);
+            if (offset === undefined)
+                throw new Error(`cannot parse offset '${rawOffset}' in Range: ${value}`);
+            return offset;
+        }));
+        return result;
+    }
+
     addWarning(code, text = "warning text") {
         this.add("Warning", `${code} daft-host "${text}"`);
     }

@@ -62,16 +62,4 @@ export default class Request extends Message {
         this.header.add("Range", value);
         this.ranges = ranges;
     }
-
-    // returns an array of range pairs, extracted from the 'Range' header value
-    parseRangeHeader() {
-        const name = 'Range';
-        if (!this.header.has(name))
-            return [];
-
-        const value = this.header.value(name);
-        const pairs = value.substring(value.indexOf('=') + 1).split(',');
-        return pairs.map(v => v.split('-')).map(v => [Number.parseInt(v[0]), Number.parseInt(v[1])]);
-    }
-
 }
