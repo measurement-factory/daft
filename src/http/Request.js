@@ -59,7 +59,7 @@ export default class Request extends Message {
         Must(ranges.length);
         Must(!this.header.has('Range'));
         const value = 'bytes=' + ranges.map(v => `${v[0]}-${v[1]}`).join(', ');
-        this.header.add("Range", value);
+        this.header.add("Range", value); // XXX: Move to finalize()
         this.ranges = ranges;
     }
 }

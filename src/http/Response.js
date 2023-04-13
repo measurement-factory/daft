@@ -70,13 +70,35 @@ export default class Response extends Message {
         }
     }
 
+    finalize(request) {
+        assert(request);
+        assert(request instanceof Message);
+
+        this.header.addByDefault("Server", "DaftServer/1.0");
+        this.header.addByDefault("Connection", "close");
+        this.header.addByDefault("Date", new Date().toUTCString());
+        this.rememberIdOf(request);
+
+        // XXX: do not add body to HEAD responses
+        // XXX: add other bodyless status codes
+        const banBody = this.startLine.codeInteger() === 304;
+        if (this.body === undefined && banBody)
+            this.body = null;
+
+        const requestedRanges = request.header.byteRanges();
+        if (requestedRanges) {
+            if (!this.startLine.hasCode() || this.startLine.codeInteger() === 206) {
+                this._finalizeToHonorRanges(requestedRanges);
+                if (!this.startLine.hasCode())
+                    this.startLine.code(206);
+            }
+        }
+
+        super.finalize(!banBody);
+    }
+
     finalizeBody() {
         super.finalizeBody();
-        if (this.hasRanges()) {
-            Must(this.ranges.length > 0);
-            // TODO: Modify body via Body::applyRanges() instead of overwriting it?
-            this.body = new Body(this._applyRanges(this.body.whole(), this.ranges));
-        }
     }
 
     hasRanges() {
@@ -123,49 +145,58 @@ export default class Response extends Message {
         };
     }
 
-    _applyRanges(wholeBody, ranges) {
-        if (!ranges)
-            return wholeBody; // the entire payload, no ranges
+    // finalizes header and body aspects related to the Range: request header
+    // ranges is a [ [low,high], ...] array
+    _finalizeToHonorRanges(ranges) {
+        assert(ranges);
+        assert(ranges.length);
+        this.ranges = ranges; // XXX: Why store them?
 
-        if (ranges.length === 1) // a single range
-            return this._finalizedRange(wholeBody.length, ranges[0]).bytes(wholeBody);
+        const wholeBody = this.body ? this.body.clone() : new Body();
+        wholeBody.finalize();
+        let wholeBodyLength = wholeBody.whole().length;
+        let wholeBodyBytes = wholeBody.whole();
+        if (this.body) {
+            // If this.body was set, then we do not know whether it represents
+            // the whole resource body we should extract parts from or the
+            // partial content to be sent to the requestor as-is. For now, we
+            // assume the former. TODO: Make this decision configurable.
+            console.log(`Harvesting Range-requested parts from a pre-configured ${wholeBodyLength}-byte response body`);
+            // and overwrite existing this.body below...
+        }
 
-        // payload in "multipart/byteranges" format (RFC7233)
+        if (ranges.length === 1) {
+            assert(!this.header.has('Content-Range'));
+            const range = this._finalizedRange(wholeBodyLength, ranges[0]);
+            this.header.add(range.headerField);
+            if (this.body === null)
+                return; // but we still added headers above
+            this.body = new Body(range.bytes(wholeBodyBytes)); // TODO: Move into _finalizedRange()
+            return;
+        }
 
-        Must(ranges.length > 1);
+        /* "multipart/byteranges" body format (RFC 7233) */
 
+        assert(ranges.length > 1);
+        assert(!this.header.has('Content-Type'));
+        const value = 'multipart/byteranges; boundary=' + Config.ContentRangeBoundary;
+        this.header.add('Content-Type', value);
+        if (this.body === null)
+            return; // but we still added headers above
+
+        let bodyContent = "";
         const terminator = "\r\n";
-        let part = "";
         for (let rangeSpec of ranges) {
-            const range = this._finalizedRange(wholeBody.length, rangeSpec);
+            const range = this._finalizedRange(wholeBodyLength, rangeSpec);
             range.headerField.finalize();
 
-            part += terminator + "--" + Config.ContentRangeBoundary;
-            part += terminator + 'Content-Type: text/html'; // XXX?
-            part += terminator + range.headerField.raw();
-            part += terminator + range.bytes(wholeBody);
+            bodyContent += terminator + "--" + Config.ContentRangeBoundary;
+            bodyContent += terminator + 'Content-Type: text/html'; // XXX?
+            bodyContent += terminator + range.headerField.raw();
+            bodyContent += terminator + range.bytes(wholeBodyBytes);
         }
-        part += terminator + "--" + Config.ContentRangeBoundary + "--" + terminator;
-        return part;
-    }
-
-    // Creates response header field from an array of range pairs.
-    // For a single range - 'Content-Range' is created.
-    // For multiple ranges - 'Content-Type' is created with 'multipart/byteranges' value.
-    addRanges(ranges, length) {
-        Must(ranges);
-        Must(length);
-        Must(ranges.length);
-        this.ranges = ranges;
-        if (ranges.length === 1) {
-            Must(!this.header.has('Content-Range'));
-            const range = this._finalizedRange(length, ranges[0]);
-            this.header.add(range.headerField);
-        } else {
-            Must(!this.header.has('Content-Type'));
-            const value = 'multipart/byteranges; boundary=' + Config.ContentRangeBoundary;
-            this.header.add('Content-Type', value);
-        }
+        bodyContent += terminator + "--" + Config.ContentRangeBoundary + "--" + terminator;
+        this.body = new Body(bodyContent);
     }
 
     syncContentLength() {

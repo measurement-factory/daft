@@ -69,16 +69,8 @@ export default class Transaction extends SideTransaction {
 
         assert(this.response);
 
-        this.response.header.addByDefault("Server", "DaftServer/1.0");
-        this.response.header.addByDefault("Connection", "close");
-        this.response.header.addByDefault("Date", new Date().toUTCString());
-        this.response.rememberIdOf(this.request);
         this.response.generatorAddress(LocalAddress(this.socket));
-
-        // XXX: do not add body to HEAD responses
-        // XXX: add other bodyless status codes
-        const scodeImpliesNoBody = this.response.startLine.codeInteger() === 304;
-        this.response.finalize(!scodeImpliesNoBody);
+        this.response.finalize(this.request);
 
         this._finalizedMessage = true; // TODO: Move to Message::finalize()?
     }

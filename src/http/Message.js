@@ -174,10 +174,6 @@ export default class Message {
         this.header.finalize();
     }
 
-    addRanges(ranges) {
-        assert(false);
-    }
-
     // not a reset; we do not remove old Content-Length
     addBody(body) {
         Must(this.body === undefined);
