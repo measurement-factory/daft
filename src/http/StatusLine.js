@@ -61,6 +61,8 @@ export default class StatusLine {
                 return "Switching Protocols";
             case 200:
                 return "OK";
+            case 206:
+                return "Partial Content";
             case 304:
                 return "Not Modified";
             default: // including undefined
