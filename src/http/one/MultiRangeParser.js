@@ -44,8 +44,9 @@ export default class MultiRangeParser {
         const parsedRange = MultiRangeParser.ParseContentRange(header);
         this.ranges.push([parsedRange.low, parsedRange.high]);
         const rangeLength = parsedRange.high - parsedRange.low + 1;
-        this.blocks.push(match[4].substring(0, rangeLength-1));
-        this._remaining = match[4].substring(rangeLength).trimStart();
+        const bodyPartEnd = rangeLength;
+        this.blocks.push(match[4].substring(0, bodyPartEnd));
+        this._remaining = match[4].substring(bodyPartEnd).trimStart();
         return true;
     }
 
