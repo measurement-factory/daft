@@ -34,8 +34,13 @@ export class Spec {
         return this.high_;
     }
 
+    // position of the byte following the specified range
+    end() {
+        return this.high_ + 1;
+    }
+
     length() {
-        return this.high_ - this.low_ + 1;
+        return this.end() - this.low_;
     }
 
     equal(them) {
@@ -133,6 +138,19 @@ export class Part {
     equal(them) {
         return this.rangeSpec_.equal(them.rangeSpec_) && this.bytes_ === them.bytes_;
     }
+
+    // Applies the given specs to the given body and returns the corresponding
+    // Part. If these specs cannot be satisfied for this body, returns null.
+    static Satisfy(rangeSpec, wholeBody) {
+        if (rangeSpec.low() >= wholeBody.length)
+            return null;
+
+        assert(wholeBody.length >= 1); // or we would have returned null above
+        const newHigh = Math.min(rangeSpec.high(), wholeBody.length - 1);
+        const newSpec = new Spec(rangeSpec.low(), newHigh);
+        const speccedBytes = wholeBody.substring(rangeSpec.low(), rangeSpec.end());
+        return new Part(newSpec, speccedBytes);
+    }
 }
 
 // a sequence of Part objects
@@ -156,23 +174,24 @@ export class Parts extends Array {
         return Specs.from(this.map(part => part.rangeSpec()));
     }
 
-    matchSpecs(theirSpecs) {
+    // TODO: The caller should generate the expected Parts instead!
+    // whether our parts match the application of their specs to the wholeBody
+    matchSpecs(theirSpecs, wholeBody) {
         if (this.length != theirSpecs.length) {
             console.log("Warning: spec length differ: ", thisSpec, theirSpec);
             return false; // XXX: Does not account for parts merging.
         }
 
         for (var i = 0; i < this.length; ++i) {
-            const thisSpec = this[i].rangeSpec();
+            const thisPart = this[i];
             const theirSpec = theirSpecs[i];
-            if (thisSpec.equal(theirSpec))
-                continue;
-            // XXX: Allow for one byte difference due to "shortening" of the
-            // returned part when there are not enough body bytes
-            if (thisSpec.low() == theirSpec.low() && thisSpec.high() + 1 === theirSpec.high())
-                continue;
-            console.log(`Warning: specs[${i}] differ: `, thisSpec, theirSpec);
-            return false;
+            const theirPart = Part.Satisfy(theirSpec, wholeBody);
+            assert(theirPart); // until we start generating unsatisfiable ranges
+            if (!thisPart.equal(theirPart)) {
+                // TODO: Use ~AssertForwardedBody() to show body differences.
+                console.log(`Warning: Range part[${i}] differs from the specs: `, thisPart, theirPart);
+                return false;
+            }
         }
 
         return true;
