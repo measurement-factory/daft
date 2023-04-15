@@ -141,7 +141,7 @@ export class Part {
 
     // Applies the given specs to the given body and returns the corresponding
     // Part. If these specs cannot be satisfied for this body, returns null.
-    static Satisfy(rangeSpec, wholeBody) {
+    static From(rangeSpec, wholeBody) {
         if (rangeSpec.low() >= wholeBody.length)
             return null;
 
@@ -174,27 +174,17 @@ export class Parts extends Array {
         return Specs.from(this.map(part => part.rangeSpec()));
     }
 
-    // TODO: The caller should generate the expected Parts instead!
-    // whether our parts match the application of their specs to the wholeBody
-    matchSpecs(theirSpecs, wholeBody) {
-        if (this.length != theirSpecs.length) {
-            console.log("Warning: spec length differ: ", thisSpec, theirSpec);
-            return false; // XXX: Does not account for parts merging.
-        }
+    // Parts that satisfy the given range specs using the given wholeBody
+    static From(specs, wholeBody) {
+        assert(specs.length); // HTTP does not support empty part lists?
 
-        for (var i = 0; i < this.length; ++i) {
-            const thisPart = this[i];
-            const theirSpec = theirSpecs[i];
-            const theirPart = Part.Satisfy(theirSpec, wholeBody);
-            assert(theirPart); // until we start generating unsatisfiable ranges
-            if (!thisPart.equal(theirPart)) {
-                // TODO: Use ~AssertForwardedBody() to show body differences.
-                console.log(`Warning: Range part[${i}] differs from the specs: `, thisPart, theirPart);
-                return false;
-            }
+        const parts = new Parts();
+        for (var i = 0; i < specs.length; ++i) {
+            const part = Part.From(specs[i], wholeBody);
+            assert(part);
+            parts.push(part);
         }
-
-        return true;
+        return parts;
     }
 }
 
