@@ -4,12 +4,13 @@
 
 /* Manages HTTP message header. */
 
+import assert from "assert";
+
+import * as Config from "../misc/Config";
+import * as Http from "../http/Gadgets";
+import * as Misc from "../misc/Gadgets";
 import Field from "./Field";
 import { Must } from "../misc/Gadgets";
-import * as Misc from "../misc/Gadgets";
-import * as Http from "../http/Gadgets";
-import * as Config from "../misc/Config";
-import assert from "assert";
 
 
 export default class Header {
@@ -144,39 +145,23 @@ export default class Header {
         return codings.indexOf("chunked") >= 0; // XXX: imprecise!
     }
 
-    // returns the extracted multirange boundary string (or null)
-    multiRangeBoundary() {
-        const name = 'Content-Type';
-        if (!this.has(name))
+    // multipart/byteranges Content-Type's boundary parameter value (or null)
+    multipartBoundary() {
+        const field = this.has('Content-Type');
+        if (!field)
             return null;
-        const value = this.value(name);
-        if (!value.includes('multipart/byteranges'))
+        if (!field.value.startsWith('multipart/byteranges'))
             return null;
-        const token = value.split(';').map(el => el.trim()).find(el => el.startsWith('boundary'));
-        if (!token)
-            return null;
-        const boundary = token.substring(token.indexOf('=')+1).trim();
-        // remove extra quotes, added, e.g., by Squid
-        return boundary.replace(/^"(.*)"$/, '$1');
-    }
 
-    // returns an array of [low,hi] values extracted from a
-    // "Range: bytes=low-high,..." field (or null if there is no Range header)
-    byteRanges() {
-        const name = 'Range';
-        if (!this.has(name))
-            return null;
-        const value = this.value(name);
-        assert(value.startsWith('bytes=')); // no support for other Ranges
-        const specs = value.substring(6);
-        // no support for open ranges yet
-        const result = specs.split(/\s*,\s*/).map(spec => spec.split('-').map(rawOffset => {
-            const offset = Misc.ToUnsigned(rawOffset);
-            if (offset === undefined)
-                throw new Error(`cannot parse offset '${rawOffset}' in Range: ${value}`);
-            return offset;
-        }));
-        return result;
+        const key = 'boundary=';
+        const paramStart = field.value.indexOf(key);
+        assert(paramStart >= 0);
+        const rawBoundary = field.value.substring(paramStart + key.length).trim();
+
+        // remove optional quotes
+        const boundary = rawBoundary.replace(/^"(.*)"$/, '$1');
+        assert(boundary.length);
+        return boundary;
     }
 
     addWarning(code, text = "warning text") {

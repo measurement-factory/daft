@@ -52,14 +52,4 @@ export default class Request extends Message {
     prefix(messageWriter) {
         return messageWriter.requestPrefix(this);
     }
-
-    // creates request 'Range' header field from an array of range pairs
-    addRanges(ranges) {
-        Must(ranges);
-        Must(ranges.length);
-        Must(!this.header.has('Range'));
-        const value = 'bytes=' + ranges.map(v => `${v[0]}-${v[1]}`).join(', ');
-        this.header.add("Range", value); // XXX: Move to finalize()
-        this.ranges = ranges;
-    }
 }

@@ -53,8 +53,6 @@ export default class Message {
         // whether this to-be-sent message has auto-generated components such
         // as unique message id() in the header; false for received messages
         this._finalized = false;
-
-        this.ranges = null; // array of range pairs
     }
 
     // creates and returns an exact replica of this message

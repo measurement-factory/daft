@@ -5,12 +5,14 @@
 /* Manages an HTTP response message, including headers and body */
 
 import assert from "assert";
-import Field from "./Field";
+
+import * as Config from "../misc/Config";
+import * as Range from "./Range";
 import Body from "./Body";
+import Field from "./Field";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
 import { Must } from "../misc/Gadgets";
-import * as Config from "../misc/Config";
 
 Config.Recognize([
     {
@@ -85,7 +87,7 @@ export default class Response extends Message {
         if (this.body === undefined && banBody)
             this.body = null;
 
-        const requestedRanges = request.header.byteRanges();
+        const requestedRanges = Range.Specs.FromRangeHeaderIfPresent(request.header);
         if (requestedRanges) {
             if (!this.startLine.hasCode() || this.startLine.codeInteger() === 206) {
                 this._finalizeToHonorRanges(requestedRanges);
@@ -114,8 +116,9 @@ export default class Response extends Message {
     // TODO: Create a class to encapsulate these fields/logic.
     // { low, high, bytes(wholeBody), headerField }
     _finalizedRange(wholeBodyLength, range) {
-        const rawLow = range[0];
-        const rawHigh = range[1];
+        assert(range instanceof Range.Spec);
+        const rawLow = range.low();
+        const rawHigh = range.high();
 
         assert(rawLow >= 0);
         assert(rawLow <= rawHigh);
@@ -148,10 +151,6 @@ export default class Response extends Message {
     // finalizes header and body aspects related to the Range: request header
     // ranges is a [ [low,high], ...] array
     _finalizeToHonorRanges(ranges) {
-        assert(ranges);
-        assert(ranges.length);
-        this.ranges = ranges; // XXX: Why store them?
-
         const wholeBody = this.body ? this.body.clone() : new Body();
         wholeBody.finalize();
         let wholeBodyLength = wholeBody.whole().length;
