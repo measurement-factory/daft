@@ -5,12 +5,15 @@
 import net from "net";
 import Promise from 'bluebird';
 import assert from "assert";
-import Context from "../misc/Context";
+
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
-import Transaction from "./Transaction";
-import StatusLine from "../http/StatusLine";
+import * as Range from "../http/Range";
+import * as RangeParser from "../http/one/RangeParser";
+import Context from "../misc/Context";
 import SideAgent from "../side/Agent";
+import StatusLine from "../http/StatusLine";
+import Transaction from "./Transaction";
 
 let Clients = 0;
 
@@ -35,6 +38,17 @@ export default class Agent extends SideAgent {
     expectStatusCode(expectedCode) {
         assert(StatusLine.IsNumericCode(expectedCode));
         assert.strictEqual(this.transaction().response.startLine.codeInteger(), expectedCode);
+    }
+
+    // send a Range request and check that a matching 206 response is received
+    configureFor206(rangeSpecs, wholeResponseBody) {
+        this.request.header.add("Range", rangeSpecs.toString());
+        this.checks.add((client) => {
+            client.expectStatusCode(206);
+            const responseParts = RangeParser.ResponseParts(client.transaction().response);
+            const expectedParts = Range.Parts.From(rangeSpecs, wholeResponseBody);
+            assert(responseParts.equal(expectedParts));
+        });
     }
 
     // a promise to either do "everything" (except stopping) or be stopped
