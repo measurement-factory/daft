@@ -82,6 +82,13 @@ export function PrettyMime(prefix, data) {
     if (prefix === undefined || prefix === null)
         prefix = "";
     let text = data;
+
+    // do not dump long sequences of RandomText("random-") bytes, but dump ten
+    // fist random characters to identify most different sequences
+    text = text.replace(/\b(random-[0-9a-z]{10})([0-9a-z]+)\b/g,
+        (match, p1, p2) => p1 + "[..." + p2.length + "_bytes...]");
+
+    // make certain whitespace characters visible
     text = text.replace(/\t/g, "\\t");
     text = text.replace(/\r/g, "\\r");
     text = text.replace(/\n/g, "\\n\n");
