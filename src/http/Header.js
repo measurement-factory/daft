@@ -71,11 +71,14 @@ export default class Header {
 
     // adds a custom field that is at least length bytes long
     _stuff(length) {
-        let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing"), 'x');
+        let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing"), 'r');
         stuffingField.finalize();
         const stuffingMin = stuffingField.raw().length;
-        if (length > stuffingMin)
-            stuffingField.value += 'x'.repeat(length - stuffingMin);
+        if (length > stuffingMin) {
+            // Extra "1" covers the first 'r' we are overwriting here. We are
+            // overwriting it to leave the word "random" for code searches.
+            stuffingField.value = Misc.RandomText("random-", 1 + length - stuffingMin);
+        }
         this.add(stuffingField);
     }
 
