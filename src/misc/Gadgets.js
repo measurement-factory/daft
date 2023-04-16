@@ -82,6 +82,13 @@ export function PrettyMime(prefix, data) {
     if (prefix === undefined || prefix === null)
         prefix = "";
     let text = data;
+
+    // do not dump long sequences of RandomText("random-") bytes, but dump ten
+    // fist random characters to identify most different sequences
+    text = text.replace(/\b(random-[0-9a-z]{10})([0-9a-z]+)\b/g,
+        (match, p1, p2) => p1 + "[..." + p2.length + "_bytes...]");
+
+    // make certain whitespace characters visible
     text = text.replace(/\t/g, "\\t");
     text = text.replace(/\r/g, "\\r");
     text = text.replace(/\n/g, "\\n\n");
@@ -190,8 +197,6 @@ export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
     console.log(toLog);
 }
 
-const _LongText = "TeXt".repeat(10240/4);
-
 // Returns a length-bytes string, including the prefix.
 // Besides the given prefix, the rest of the string is base-36 encoded.
 // Does not guarantee uniqueness, even within the same process.
@@ -202,17 +207,9 @@ export function RandomText(prefix, length) {
     let buf = "";
 
     // random header (for all generated texts with short-enough prefixes)
-    while (buf.length < length && buf.length < 32) {
+    while (buf.length < length) {
         buf += Math.random().toString(36).substr(2); // remove leading "0."
     }
-
-    // fast-growing body from fixed tokens (if needed)
-    if (buf.length < length) {
-        const remainingChars = length - buf.length;
-        buf += _LongText.repeat(remainingChars/_LongText.length + 1);
-    }
-
-    assert(buf.length >= length);
 
     // remove any extra trailing characters
     return (prefix + buf).substr(0, length);
