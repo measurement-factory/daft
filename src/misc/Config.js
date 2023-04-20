@@ -32,9 +32,6 @@ export function isReverseProxy() {
     return ProxyingMode === ProxyingInReverse;
 }
 
-// TODO: Make configurable from the command-line.
-export const LogBodies = undefined; // whether to log bodies on console
-
 // smallest non-empty body that is large enough to be different from other
 // default-size randomly-generated bodies (within one test)
 export function DefaultBodySize() {
@@ -67,22 +64,26 @@ export const ContentRangeBoundary = ProxySignature + "-123456789";
 
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
+    // to access (using a common name) the Config option we export ourselves
+    const Config = module.exports;
     // by default, report progress except for huge bodies
-    if (LogBodies === undefined) {
+    if (Config.LogBodies === undefined) {
         const suspectedSize = suspectedBodySize(bodySize);
         return suspectedSize <= 1*1024*1024;
     }
-    return LogBodies > 0;
+    return bodySize <= Config.logBodies();
 }
 
 // whether to log body contents
 export function logBodyContents(bodySize) {
+    // to access (using a common name) the Config option we export ourselves
+    const Config = module.exports;
     // by default, log contents of small non-default bodies only
-    if (LogBodies === undefined) {
+    if (Config.LogBodies === undefined) {
         const suspectedSize = suspectedBodySize(bodySize);
         return suspectedSize <= 100 && suspectedSize !== DefaultBodySize();
     }
-    return LogBodies > 0;
+    return bodySize <= Config.logBodies();
 }
 
 /* Command-line options handling */
@@ -379,6 +380,11 @@ Recognize([
         type: "Number",
         default: DefaultBodySize().toString(),
         description: "message body size (bytes)",
+    },
+    {
+        option: "log-bodies",
+        type: "Number",
+        description: "log message bodies (up to the given size in bytes)",
     },
 ]);
 
