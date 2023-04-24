@@ -31,6 +31,16 @@ export default class Uri {
         return this.raw();
     }
 
+    // makes a unique (XXX: rename) URN URI (RFC 8141)
+    makeUrn() {
+        // XXX: If we set this.scheme and keep this.relative false, then
+        // finalize() will add default authority. Need empty authority?!
+        this.scheme = "urn";
+        this.authority = null;
+        this.path = "localhost:a123,z456" + UniqueId("/");
+        this.relative = true;
+    }
+
     // call only if you actually need an integer port value;
     // throws if port is known but malformed
     // throws if port is unknown and cannot be computed using scheme
@@ -58,11 +68,11 @@ export default class Uri {
 
     raw() {
         let image = "";
+        if (this.scheme !== null)
+            image += this.scheme + ":";
         if (!this.relative) {
-            if (this.scheme !== null)
-                image += this.scheme + "://";
             if (this.authority)
-                image += this.authority.raw();
+                image += "//" + this.authority.raw();
         }
         if (this.path !== null)
             image += this.path;
@@ -116,7 +126,9 @@ export default class Uri {
     }
 
     finalize() {
-        if (!this.relative) {
+        // XXX: We set these fields even for relative URIs.
+        // See Client::Transaction::finalizeMessage()
+        if (true || !this.relative) {
             if (this.scheme === null)
                 this.scheme = "http";
 
