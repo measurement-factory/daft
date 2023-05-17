@@ -4,8 +4,10 @@
 
 /* Manages HTTP URI. */
 
-import * as Global from "../misc/Global";
+import assert from "assert";
+
 import * as Config from "../misc/Config";
+import * as Global from "../misc/Global";
 import Authority from "./Authority";
 import { Must, UniqueId } from "../misc/Gadgets";
 
@@ -16,6 +18,11 @@ export default class Uri {
         this.authority = null;
         this.path = null;
         this.relative = false; // whether raw() lacks scheme://authority prefix
+
+        // Whether the formatted URI is just the RFC 7230 section 5.3.3
+        // `authority-form` (i.e. RFC 3986 section 3.2 `authority` excluding
+        // any `userinfo` and its `@` delimiter).
+        this._forceAuthorityForm = null;
     }
 
     clone() {
@@ -56,7 +63,25 @@ export default class Uri {
         this.authority = Authority.FromHostPort(value);
     }
 
+    // whether the caller has restricted how the URI should be formatted
+    finalizedForm() {
+        assert(!arguments.length);
+        return this._forceAuthorityForm !== null || this.relative;
+    }
+
+    // makes this.__authorityForm true
+    forceAuthorityForm() {
+        assert(!this.finalizedForm());
+        this._forceAuthorityForm = true;
+    }
+
     raw() {
+        if (this._forceAuthorityForm) {
+            assert(this.authority);
+            assert(!this._relative);
+            return this.authority.raw();
+        }
+
         let image = "";
         if (!this.relative) {
             if (this.scheme !== null)
@@ -96,9 +121,17 @@ export default class Uri {
         if (rawBytes === '*')
             throw new Error("No support for * URIs yet");
 
+        const slashPos = rawBytes.indexOf('/');
+
         // A relative URI (i.e., relative-ref that starts with path-absolute)?
-        if (rawBytes[0] === "/") {
+        if (slashPos === 0) {
             this.path = rawBytes;
+            return;
+        }
+
+        // An authority-only URI (:port witout slashes anywhere)
+        if (slashPos < 0 && rawBytes.indexOf(':') >= 0) {
+            this.authority = Authority.Parse(rawBytes);
             return;
         }
 

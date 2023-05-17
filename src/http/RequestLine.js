@@ -33,11 +33,17 @@ export default class RequestLine {
             this.method = "GET";
         if (this.methodDelimiter === null)
             this.methodDelimiter = " ";
+
+        if (this.method === "CONNECT" && !this.uri.finalizedForm())
+            this.uri.forceAuthorityForm();
         this.uri.finalize();
+
         if (this.uriDelimiter === null)
             this.uriDelimiter = " ";
+
         if (this.protocol === null)
             this.protocol = "HTTP/1.1";
+
         if (this.terminator === null)
             this.terminator = "\r\n";
     }
