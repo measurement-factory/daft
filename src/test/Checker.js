@@ -3,6 +3,8 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from "assert";
+import Promise from "bluebird";
+
 import * as Gadgets from "../misc/Gadgets";
 
 // A container of delayed function calls, each call performing some simple
@@ -22,14 +24,14 @@ export default class Checker {
         this._checks.push(futureCheck);
     }
 
-    // perform all the registered checks
-    run(/* arguments */) {
+    // perform all the registered checks; some of them may be asynchronous
+    async run(/* arguments */) {
         const args = arguments;
         assert(!this.ran);
         this.ran = true;
-        this._checks.forEach(check => {
+        await Promise.each(this._checks, async check => {
             try {
-                check(...args);
+                await check(...args);
             }
             catch (error) {
                 Gadgets.KeepGoingOrThrow(error);
