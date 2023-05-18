@@ -184,7 +184,7 @@ export function SendBytes(socket, bytes, description) {
     Must(arguments.length === 3);
     // bytes must be a "binary" string for the binary conversion in write() to work;
     // for example, the following writes just one byte: write("\u2028", 'binary')
-    Must(Buffer(bytes, "binary").toString("binary") === bytes);
+    Must(Buffer.from(bytes, "binary").toString("binary") === bytes);
     // Even though bytes are in binary format, we must specify "binary" explicitly
     // to avoid *default* conversion to utf8 (that will not work for a binary string!).
     socket.write(bytes, 'binary');

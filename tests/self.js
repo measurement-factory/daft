@@ -37,7 +37,7 @@ export default class MyTest extends Test {
 
         {
             let testCase = this.makeCase('should not misinterpret HTTP header bytes as utf8 sequences');
-            testCase.client().request.startLine.method = Buffer("G\u2028T").toString("binary");
+            testCase.client().request.startLine.method = Buffer.from("G\u2028T").toString("binary");
             await testCase.run();
         }
 
