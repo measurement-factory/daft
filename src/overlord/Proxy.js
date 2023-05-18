@@ -9,6 +9,7 @@ import http from "http";
 import Promise from 'bluebird';
 import util from "util";
 
+import * as AccessRecords from "../overlord/AccessRecords";
 import * as CachePeer from "../overlord/CachePeer";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
@@ -158,8 +159,10 @@ export class DutConfig {
             shutdown_lifetime 1 seconds
             visible_hostname ${kid}.squid.daft.test
             coredump_dir ${logDir}
-            logformat xsquid %err_code/%err_detail %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
-            access_log stdio:access-${kid}.log xsquid
+
+            ${AccessRecords.LogFormat("daftFormat")}
+            access_log stdio:access-${kid}.log daftFormat
+
             cache_log ${logDir}/cache-${kid}.log
         `;
         return this._trimCfg(cfg);
@@ -347,6 +350,9 @@ export class ProxyOverlord {
 
         this._cachePeers = []; // started cache_peers
         this._stoppedCachePeers = false; // stopCachePeers() has been called
+
+        // previously seen AccessRecords
+        this._oldAccessRecords = null;
     }
 
     // "read-only" access to the DUT configuration
@@ -444,6 +450,24 @@ export class ProxyOverlord {
         console.log("Proxy staged " + count + " requests");
     }
 
+    async getAllAccessRecords() {
+        const result = await this._remoteCall("/getAccessRecords");
+        const accessRecords = AccessRecords.Import(result.accessRecords);
+        console.log(`Transactions logged by the proxy: ${accessRecords.count()}`);
+        return accessRecords;
+    }
+
+    async getNewAccessRecords() {
+        const allRecords = await this.getAllAccessRecords();
+        let newRecords = allRecords; // may be overwritten below
+        if (this._oldAccessRecords)
+            newRecords = this._oldAccessRecords.addUnique(allRecords);
+        else
+            this._oldAccessRecords = allRecords;
+        console.log(`New transactions logged by the proxy: ${newRecords.count()}`);
+        return newRecords;
+    }
+
     async _startCachePeers() {
         assert(!this._cachePeers.length);
         const cachePeerCfgs = this.config().cachePeers();
@@ -500,7 +524,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 7,
+                    'Pop-Version': 8,
                 },
             };
 
@@ -533,10 +557,10 @@ export class ProxyOverlord {
                             rawBody);
                     }
 
-                    const health = JSON.parse(rawBody);
-                    this._updateHealth(health);
+                    const body = JSON.parse(rawBody);
+                    this._updateHealth(body.health);
 
-                    resolve(true);
+                    resolve(body.answer);
                 });
             });
 
@@ -553,6 +577,8 @@ export class ProxyOverlord {
 
     // _remoteCall() helper for processing updated (cumulative) proxy health
     _updateHealth(health) {
+        assert(health);
+
         // extract newProblems before updating (cumulative) this._oldHealth
         const oldProblems = this._oldHealth ? this._oldHealth.problems : [];
         const newProblems = health.problems.slice(oldProblems.length);
