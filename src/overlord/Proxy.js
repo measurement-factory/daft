@@ -57,8 +57,8 @@ Config.Recognize([
 ]);
 
 // TODO: Make worker port range configurable
-const FirstWorkerPort = 3130;
-const DedicatedPortPrefix = Math.trunc(FirstWorkerPort / 10);
+const FirstDedicatedWorkerPort = 3131;
+const DedicatedPortPrefix = Math.trunc(FirstDedicatedWorkerPort / 10);
 
 // Configuration (i.e. the set of tuning options) for the Device Under Test.
 // The current _implementation_ is Squid-specific.
@@ -314,7 +314,7 @@ export class DutConfig {
             const port = Gadgets.ToUnsigned(rawPort);
             return port;
         } else {
-            return FirstWorkerPort;
+            return Config.proxyAuthority().port;
         }
 
     }
