@@ -140,12 +140,14 @@ export class DutConfig {
 
     // returns ready-to-use configuration text
     make() {
-        this._rememberListeningPort(3128);
+        const primaryAddress = Config.proxyAuthority();
+        this._rememberListeningPort(primaryAddress.port); // usually 3128
+
         const kid = "kid${process_number}";
         const logDir = "/usr/local/squid/var/logs/overlord";
         const cfg = `
             # Daft-generated configuration
-            http_port 3128
+            http_port ${primaryAddress.port}
             ${this._workersCfg()}
             ${this._cachePeersCfg()}
             ${this._collapsedForwardingCfg()}
