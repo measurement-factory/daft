@@ -31,8 +31,10 @@ export default class Agent extends SideAgent {
         this._transaction = null;
         this.resetTransaction();
 
-        // whether to close the listening socket after the first accept(2)
-        this._keepListening = false;
+        // 'never' close the listening socket after the first accept(2)
+        // 'once'  close the listening socket after the first transaction
+        // 'always'  do not close the listening socket
+        this._keepListening = 'never';
 
         // this.server.closeAsync()-returned promise (if that method was called)
         this._serverClosed = null;
@@ -50,13 +52,13 @@ export default class Agent extends SideAgent {
         return this._transaction.response;
     }
 
-    // resets _keepListening
-    keepListening(doIt) {
+    // sets _keepListening
+    keepListening(how) {
         assert(arguments.length === 1);
-        assert(doIt !== undefined);
-        doIt = Boolean(doIt);
-        if (this._keepListening !== doIt)
-            this._keepListening = doIt;
+        assert(how !== undefined);
+        how = how;
+        if (this._keepListening !== how)
+            this._keepListening = how;
     }
 
     // Allow the next connection to trigger a new transaction (instead of the
@@ -88,7 +90,7 @@ export default class Agent extends SideAgent {
 
         this.server.on('connection', userSocket => {
             if (!this._transaction.started()) {
-                if (!this._keepListening)
+                if (this._keepListening === 'never')
                     this._serverClosed = this.server.closeAsync();
                 this._startServing(userSocket);
             } else {
@@ -96,7 +98,7 @@ export default class Agent extends SideAgent {
                 // called but has not made our server to stop listening yet.
                 // Since we do not support _concurrent_ transactions, there is
                 // nothing else to do in either case.
-                assert(this._keepListening || this._serverClosed);
+                assert((this._keepListening !== 'never') || this._serverClosed);
                 console.log("server closes a subsequent connection");
                 userSocket.destroy();
             }
@@ -147,6 +149,8 @@ export default class Agent extends SideAgent {
             this.listenAt(resource.uri.address);
         this.response.from(resource);
     }
+
+    canStop() { return this._keepListening !== 'always'; }
 
     listenAt(address) {
         Gadgets.Must(address);

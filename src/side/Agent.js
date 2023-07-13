@@ -58,6 +58,8 @@ export default class Agent {
         this._keepConnections = true; // may already be true
     }
 
+    canStop() { return true; }
+
     async _runTransaction(transaction, socket) {
         assert.strictEqual(arguments.length, 2);
         assert(!transaction.started());
@@ -79,7 +81,8 @@ export default class Agent {
             // and finishes before we are stopped; there is currently no
             // mechanism to detect whether more transactions may start.
             console.log("finished all", this._xStarted, "previously started transactions");
-            await this.stop();
+            if (this.canStop())
+                await this.stop();
         } else {
             console.log("keep waiting for the remaining", xRemaining, "transactions");
         }
