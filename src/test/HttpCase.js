@@ -201,15 +201,15 @@ export default class HttpCase {
         }
     }
 
-    _doCheck() {
+    async _doCheck() {
         if (this._server)
-            this._server.checks.run(this._server);
+            await this._server.checks.run(this._server);
         if (this._proxy)
-            this._proxy.checks.run(this._proxy);
+            await this._proxy.checks.run(this._proxy);
         for (const client of this._clients) {
-            client.checks.run(client);
+            await client.checks.run(client);
         }
-        this._checks.run(this);
+        await this._checks.run(this);
     }
 
     // TODO: Call expectStatusCode(200) by default.

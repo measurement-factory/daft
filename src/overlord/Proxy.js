@@ -4,13 +4,16 @@
 
 /* Proxy Overlord Protocol client for controlling a (possibly remote) proxy. */
 
-import http from "http";
-import util from "util";
-import Promise from 'bluebird';
 import assert from "assert";
-import Command from "../overlord/Command";
+import http from "http";
+import Promise from 'bluebird';
+import util from "util";
+
+import * as AccessRecords from "../overlord/AccessRecords";
+import * as CachePeer from "../overlord/CachePeer";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
+import Command from "../overlord/Command";
 
 Config.Recognize([
     {
@@ -45,6 +48,12 @@ Config.Recognize([
         default: "false",
         description: "whether to enable cache_dir",
     },
+    {
+        option: "dut-cache-peers",
+        type: "Number",
+        default: "0",
+        description: "the number of proxy cache_peers to use (if any)",
+    },
 ]);
 
 // TODO: Make worker port range configurable
@@ -61,7 +70,10 @@ export class DutConfig {
         this._diskCaching = Config.dutDiskCache();
         this._collapsedForwarding = false;
         this._listeningPorts = [];
+        this._cachePeers = []; // CachePeer::Config objects
         this._customDirectives = [];
+
+        this._withCachePeers(Config.dutCachePeers());
     }
 
     // DUT listening ports; they may be difficult for Overlord to infer
@@ -73,6 +85,14 @@ export class DutConfig {
         return this._memoryCaching || this._diskCaching;
     }
 
+    hasCachePeers() {
+        return this._cachePeers.length > 0;
+    }
+
+    cachePeers() {
+        return this._cachePeers;
+    }
+
     workers(count) {
         assert(count > 0);
         this._workers = count;
@@ -82,6 +102,14 @@ export class DutConfig {
         assert.strictEqual(arguments.length, 1);
         assert(enable !== undefined); // for now; can be used for default mode later
         this._dedicatedWorkerPorts = enable;
+    }
+
+    _withCachePeers(count) {
+        assert(count >= 0);
+        assert(!this._cachePeers.length);
+        while (this._cachePeers.length < count) {
+            this._cachePeers.push(new CachePeer.Config());
+        }
     }
 
     memoryCaching(enable) {
@@ -119,6 +147,7 @@ export class DutConfig {
             # Daft-generated configuration
             http_port 3128
             ${this._workersCfg()}
+            ${this._cachePeersCfg()}
             ${this._collapsedForwardingCfg()}
             ${this._anyCachingCfg()}
             ${this._memoryCachingCfg()}
@@ -130,8 +159,10 @@ export class DutConfig {
             shutdown_lifetime 1 seconds
             visible_hostname ${kid}.squid.daft.test
             coredump_dir ${logDir}
-            logformat xsquid %err_code/%err_detail %ts.%03tu %6tr (dns=%dt) %>A=%>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
-            access_log stdio:access-${kid}.log xsquid
+
+            ${AccessRecords.LogFormat("daftFormat")}
+            access_log stdio:access-${kid}.log daftFormat
+
             cache_log ${logDir}/cache-${kid}.log
         `;
         return this._trimCfg(cfg);
@@ -240,6 +271,30 @@ export class DutConfig {
         return this._trimCfg(cfg);
     }
 
+    _cachePeersCfg() {
+        if (!this._cachePeers.length)
+            return '';
+
+        let cfg = '';
+
+        // cache_peer lines (and cachePeer finalization)
+        for (let idx = 0; idx < this._cachePeers.length; ++idx) {
+            const cachePeerCfg = this._cachePeers[idx];
+            cachePeerCfg.finalizeWithIndex(idx);
+            cfg += cachePeerCfg.toString() + "\n";
+        }
+
+        // prohibit DIRECT forwarding of requests meant for a cache_peer
+        const routingField = CachePeer.RoutingField();
+        cfg += `
+            nonhierarchical_direct off
+            acl routedToCachePeer req_header ${routingField.name} ${routingField.value}
+            never_direct allow routedToCachePeer
+        `;
+
+        return this._trimCfg(cfg);
+    }
+
     _customCfg() {
         let cfg = '';
         for (let directive of this._customDirectives)
@@ -292,6 +347,12 @@ export class ProxyOverlord {
         // ignore proxy-reported problems matching any of these regexes
         this._ignoreProblems = [];
         Config.ignoreDutProblems().forEach(regex => this.ignoreProblems(regex));
+
+        this._cachePeers = []; // started cache_peers
+        this._stoppedCachePeers = false; // stopCachePeers() has been called
+
+        // previously seen AccessRecords
+        this._oldAccessRecords = null;
     }
 
     // "read-only" access to the DUT configuration
@@ -315,8 +376,25 @@ export class ProxyOverlord {
         this._ignoreProblems.push(regex);
     }
 
+    // started cache_peer at a given zero-based index
+    cachePeerAt(idx) {
+        assert(idx >= 0);
+        assert(idx < this._cachePeers.length);
+        return this._cachePeers[idx];
+    }
+
+    cachePeers() {
+        return this._cachePeers;
+    }
+
     async noteStartup() {
         assert(!this._start);
+
+        // before we can start cache_peers and/or proxy below
+        const finalizedConfig = this._dutConfig.make();
+
+        if (this.config().hasCachePeers())
+            await this._startCachePeers();
 
         if (Config.DutAtStartup !== "reset") {
             console.log("Checking proxy state");
@@ -327,7 +405,7 @@ export class ProxyOverlord {
 
         console.log("Resetting proxy");
         const command = new Command("/reset");
-        command.setConfig(this._dutConfig.make());
+        command.setConfig(finalizedConfig);
         this._start = this._remoteCall(command);
 
         await this._start;
@@ -339,13 +417,12 @@ export class ProxyOverlord {
         if (Config.DutAtShutdown !== "stopped") {
             assert.strictEqual(Config.DutAtShutdown, "as-is");
             await this._remoteCall("/check");
-            return;
-        }
-
-        if (this._start) {
+        } else if (this._start) {
             await this._remoteCall("/stop");
             console.log("Proxy stopped listening");
         }
+
+        await this.stopCachePeers();
     }
 
     async restart() {
@@ -373,6 +450,68 @@ export class ProxyOverlord {
         console.log("Proxy staged " + count + " requests");
     }
 
+    async getAllAccessRecords() {
+        const result = await this._remoteCall("/getAccessRecords");
+        const accessRecords = AccessRecords.Import(result.accessRecords);
+        console.log(`Transactions logged by the proxy: ${accessRecords.count()}`);
+        return accessRecords;
+    }
+
+    async getNewAccessRecords() {
+        const allRecords = await this.getAllAccessRecords();
+        let newRecords = allRecords; // may be overwritten below
+        if (this._oldAccessRecords)
+            newRecords = this._oldAccessRecords.addUnique(allRecords);
+        else
+            this._oldAccessRecords = allRecords;
+        console.log(`New transactions logged by the proxy: ${newRecords.count()}`);
+        return newRecords;
+    }
+
+    async _startCachePeers() {
+        assert(!this._cachePeers.length);
+        const cachePeerCfgs = this.config().cachePeers();
+        console.log(`Starting ${cachePeerCfgs.length} cache_peers`);
+        let startingCachePeers = [];
+        cachePeerCfgs.forEach(peerCfg => {
+            const willStart = this._startCachePeer(peerCfg);
+            startingCachePeers.push(willStart);
+        });
+        assert(startingCachePeers.length === this._cachePeers.length);
+        assert(this._cachePeers.length > 0);
+        await Promise.all(startingCachePeers);
+        console.log(`Started ${this._cachePeers.length} cache_peers`);
+    }
+
+    // terminate all agents representing cache_peers (if any)
+    async stopCachePeers() {
+        if (this._stoppedCachePeers)
+            return; // already did
+
+        this._stoppedCachePeers = true;
+
+        if (!this._cachePeers.length)
+            return; // nothing to do
+
+        console.log(`Stopping cache_peers (${this._cachePeers.length})`);
+        let stoppingCachePeers = [];
+        this._cachePeers.forEach(cachePeer => {
+            const willStop = cachePeer.stop();
+            stoppingCachePeers.push(willStop);
+        });
+        assert(stoppingCachePeers.length === this._cachePeers.length);
+        assert(this._cachePeers.length > 0);
+        await Promise.all(stoppingCachePeers);
+        console.log(`Stopped cache_peers (${this._cachePeers.length})`);
+    }
+
+    _startCachePeer(cachePeerCfg) {
+        const cachePeer = new CachePeer.Agent();
+        cachePeer.listenAt(cachePeerCfg.httpListeningHostPort());
+        this._cachePeers.push(cachePeer);
+        return cachePeer.start();
+    }
+
     _remoteCall(commandOrString, options) {
         return new Promise((resolve) => {
 
@@ -385,7 +524,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 7,
+                    'Pop-Version': 8,
                 },
             };
 
@@ -418,10 +557,10 @@ export class ProxyOverlord {
                             rawBody);
                     }
 
-                    const health = JSON.parse(rawBody);
-                    this._updateHealth(health);
+                    const body = JSON.parse(rawBody);
+                    this._updateHealth(body.health);
 
-                    resolve(true);
+                    resolve(body.answer);
                 });
             });
 
@@ -438,6 +577,8 @@ export class ProxyOverlord {
 
     // _remoteCall() helper for processing updated (cumulative) proxy health
     _updateHealth(health) {
+        assert(health);
+
         // extract newProblems before updating (cumulative) this._oldHealth
         const oldProblems = this._oldHealth ? this._oldHealth.problems : [];
         const newProblems = health.problems.slice(oldProblems.length);

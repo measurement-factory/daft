@@ -92,6 +92,7 @@ export default class Agent extends SideAgent {
 
         const socket = new net.Socket();
         socket.once('error', e => {
+            // TODO: Figure out how to annotate this error with this context.
             //this.context.log("socket connect error:", e);
             socket.destroy();
             rejecter(e);

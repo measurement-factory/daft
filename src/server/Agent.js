@@ -28,7 +28,11 @@ export default class Agent extends SideAgent {
         this._reservedListeningAddress = null; // doled from the pool for our use
         this._actualListeningAddress = null; // used (and fully resolved)
 
-        this._transaction = new Transaction(this);
+        this._transaction = null;
+        this.resetTransaction();
+
+        // whether to close the listening socket after the first accept(2)
+        this._keepListening = false;
 
         // this.server.closeAsync()-returned promise (if that method was called)
         this._serverClosed = null;
@@ -44,6 +48,26 @@ export default class Agent extends SideAgent {
 
     get response() {
         return this._transaction.response;
+    }
+
+    // resets _keepListening
+    keepListening(doIt) {
+        assert(arguments.length === 1);
+        assert(doIt !== undefined);
+        doIt = Boolean(doIt);
+        if (this._keepListening !== doIt)
+            this._keepListening = doIt;
+    }
+
+    // Allow the next connection to trigger a new transaction (instead of the
+    // immediate closure in this._startListening() if there was a previous
+    // connection). See also: keepListening().
+    resetTransaction() {
+        // If the transaction was not started, it is unknown to the log
+        // reader. We do not warn about us forgetting such transactions.
+        if (this._transaction && this._transaction.started())
+            this.context.log("forgetting the previous transaction");
+        this._transaction = new Transaction(this); // reset unconditionally
     }
 
     start() {
@@ -64,12 +88,15 @@ export default class Agent extends SideAgent {
 
         this.server.on('connection', userSocket => {
             if (!this._transaction.started()) {
-                // we only want to serve a single connection because
-                // we support only a single server transaction (for now)
-                this._serverClosed = this.server.closeAsync();
+                if (!this._keepListening)
+                    this._serverClosed = this.server.closeAsync();
                 this._startServing(userSocket);
-            } else { // get here only if closeAsync() has not yet made server stop listening
-                assert(this._serverClosed); // we have started to close already
+            } else {
+                // We get here if this._keepListening or if closeAsync() was
+                // called but has not made our server to stop listening yet.
+                // Since we do not support _concurrent_ transactions, there is
+                // nothing else to do in either case.
+                assert(this._keepListening || this._serverClosed);
                 console.log("server closes a subsequent connection");
                 userSocket.destroy();
             }
