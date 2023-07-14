@@ -71,13 +71,26 @@ export default class Header {
 
     // adds a custom field that is at least length bytes long
     _stuff(length) {
-        let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing"), 'r');
+        let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing-0000"), 'r');
         stuffingField.finalize();
         const stuffingMin = stuffingField.raw().length;
         if (length > stuffingMin) {
-            // Extra "1" covers the first 'r' we are overwriting here. We are
-            // overwriting it to leave the word "random" for code searches.
-            stuffingField.value = Misc.RandomText("random-", 1 + length - stuffingMin);
+            // overcome proxy single field length limitation (64K)
+            // by creating stuffing of multiple fields
+            const maxLength = 1024 * 63;
+            const fields = Math.floor(length/maxLength);
+            const lastFieldLength = length % maxLength;
+            for (let i=1; i <= fields; ++i) {
+                const id = ('0000'+i).slice(-4);
+                // Extra "1" covers the first 'r' we are overwriting here. We are
+                // overwriting it to leave the word "random" for code searches.
+                const value = Misc.RandomText("random-", 1 + maxLength - stuffingMin);
+                let field = this._argsToField(Http.DaftFieldName(`Stuffing-${id}`), value);
+                this.add(field);
+            }
+
+            if (lastFieldLength > stuffingMin)
+                stuffingField.value = Misc.RandomText("random-", 1 + lastFieldLength - stuffingMin);
         }
         this.add(stuffingField);
     }
