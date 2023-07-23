@@ -56,7 +56,6 @@ export default class Agent extends SideAgent {
     keepListening(how) {
         assert(arguments.length === 1);
         assert(how !== undefined);
-        how = how;
         if (this._keepListening !== how)
             this._keepListening = how;
     }
