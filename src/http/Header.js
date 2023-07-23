@@ -225,6 +225,14 @@ export default class Header {
         return values[0];
     }
 
+    /// checks that a single matching header field is present
+    expectField(expectedField) {
+        assert(expectedField);
+        const name = expectedField.name;
+        const actualValues = this.values(name);
+        Http.AssertForwardedHeaderFieldValue([ expectedField.value ], actualValues, `${name} header field`);
+    }
+
     add(...args) {
         let field = this._argsToField(...args);
         this.fields.push(field);
