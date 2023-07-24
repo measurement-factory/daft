@@ -33,7 +33,7 @@ export default class Agent extends SideAgent {
 
         // Whether to expect and serve new connections without a limit. By
         // default, the server only expects and serves a single connection.
-        this._keepServing = false;
+        this._keepListening = false;
 
         // this.server.closeAsync()-returned promise (if that method was called)
         this._serverClosed = null;
@@ -51,16 +51,16 @@ export default class Agent extends SideAgent {
         return this._transaction.response;
     }
 
-    // resets this._keepServing
-    keepServing(doIt) {
+    // resets this._keepListening
+    keepListening(doIt) {
         assert(arguments.length === 1);
         assert(doIt !== undefined);
         doIt = Boolean(doIt);
-        if (this._keepServing === doIt)
+        if (this._keepListening === doIt)
             return; // no changes
 
-        this._keepServing = doIt;
-        if (this._keepServing) {
+        this._keepListening = doIt;
+        if (this._keepListening) {
             this.context.log("expecting multiple new connections");
             assert(!this._serverClosed);
         } else {
@@ -73,7 +73,7 @@ export default class Agent extends SideAgent {
 
     // Allow the next connection to trigger a new transaction (instead of the
     // immediate closure in this._startListening() if there was a previous
-    // connection). See also: keepServing().
+    // connection). See also: keepListening().
     resetTransaction() {
         // If the transaction was not started, it is unknown to the log
         // reader. We do not warn about us forgetting such transactions.
@@ -111,8 +111,8 @@ export default class Agent extends SideAgent {
             if (this._transaction.started() && !this._transaction.finished()) {
                 // We get here when the client opens a new connection while
                 // another transaction is still running. We expect more
-                // (sequential!) connections only if this._keepServing.
-                assert(this._keepServing);
+                // (sequential!) connections only if this._keepListening.
+                assert(this._keepListening);
                 this.context.log("server rejects concurrent connection attempt");
                 userSocket.destroy();
                 return;
@@ -122,13 +122,13 @@ export default class Agent extends SideAgent {
                 // We get here when the client opens a new connection after
                 // the previous transaction ended (and probably closed its
                 // connection; TODO: check?). We expect more connections only
-                // if this._keepServing.
-                assert(this._keepServing);
+                // if this._keepListening.
+                assert(this._keepListening);
                 this.context.log("server allows sequential connection attempt");
                 this.resetTransaction();
             }
 
-            if (!this._keepServing)
+            if (!this._keepListening)
                 this._serverClosed = this.server.closeAsync();
 
             this._startServing(userSocket);
@@ -148,7 +148,7 @@ export default class Agent extends SideAgent {
     }
 
     async _becomeIdle() {
-        if (this._keepServing && !this._serverClosed) {
+        if (this._keepListening && !this._serverClosed) {
             this.context.log("awaiting more connections");
             return;
         }

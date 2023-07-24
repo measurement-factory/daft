@@ -67,7 +67,7 @@ export class Agent extends ServerAgent {
 
         // expect a no-request TCP connection when the proxy is brought up and
         // at least one HTTP request after that
-        this.keepServing(true);
+        this.keepListening(true);
     }
 }
 
