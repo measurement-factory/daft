@@ -70,6 +70,10 @@ export default class Agent extends SideAgent {
         await this._runTransaction(this._transaction, this.socket);
     }
 
+    async _becomeIdle() {
+        await this.stop();
+    }
+
     async _stop() {
         assert(!this._keepConnections); // no pconn support yet
         if (this.socket) {
