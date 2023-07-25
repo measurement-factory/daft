@@ -82,8 +82,7 @@ export default class Response extends Message {
         this.rememberIdOf(request);
 
         // XXX: do not add body to HEAD responses
-        // XXX: add other bodyless status codes
-        const banBody = this.startLine.codeInteger() === 304;
+        const banBody = this.startLine.codeBansBody();
         if (this.body === undefined && banBody)
             this.body = null;
 

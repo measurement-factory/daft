@@ -58,8 +58,7 @@ export default class ResponseParser extends MessageParser {
             return;
         }
 
-        if (this.message.startLine.codeMatches(204, 304) ||
-            this.message.startLine.code1xx()) {
+        if (this.message.startLine.codeBansBody()) {
             // see RFC 9112 Section 6.3 rule #1
             this._log("no response body due to status code");
             this.message.body = null;
