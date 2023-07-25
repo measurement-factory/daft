@@ -36,6 +36,11 @@ export default class Agent {
         this._savedSocket = null;
     }
 
+    // the total number of transactions that finished so far
+    transactionsFinished() {
+        return this._xFinished;
+    }
+
     // a promise to stop doing anything; must be safe to call multiple times
     async stop() {
         if (!this._stoppedResolver)
