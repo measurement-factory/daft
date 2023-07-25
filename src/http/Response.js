@@ -81,10 +81,19 @@ export default class Response extends Message {
         this.header.addByDefault("Date", new Date().toUTCString());
         this.rememberIdOf(request);
 
-        // XXX: do not add body to HEAD responses
-        const banBody = this.startLine.codeBansBody();
-        if (this.body === undefined && banBody)
-            this.body = null;
+        let bodyExpected = this.body !== null; // including undefined this.body
+        if (bodyExpected) {
+            // XXX: do not add body to HEAD responses
+            if (this.startLine.codeBansBody()) {
+                if (this.body && this.body.forcedToBePresent()) {
+                    console.log("forcing response body presence despite protocol bans");
+                } else {
+                    console.log("protocol bans response body");
+                    bodyExpected = false;
+                    this.body = null; // may overwrite a non-nil body
+                }
+            }
+        }
 
         const requestedRanges = Range.Specs.FromRangeHeaderIfPresent(request.header);
         if (requestedRanges) {
@@ -95,7 +104,7 @@ export default class Response extends Message {
             }
         }
 
-        super.finalize(!banBody);
+        super.finalize(bodyExpected);
     }
 
     finalizeBody() {
