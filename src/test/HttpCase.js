@@ -174,27 +174,29 @@ export default class HttpCase {
         this._checks.add(futureCheck);
     }
 
-    // will test whether each client got the server's response
+    // will test whether each client got server's last response
     addMissCheck() {
-        // XXX: this._server.transaction().response is undefined before the
-        // test unless the caller has configured it explicitly already. This
-        // should add check-time code instead.
-        return this.addReceivedResponseCheck(this._server.transaction().response);
+        assert.strictEqual(arguments.length, 0);
+        return this._addReceivedResponseCheck(() => this._server.transaction().response);
     }
 
     // will test whether each client got the given response
     addHitCheck(response) {
-        return this.addReceivedResponseCheck(response);
+        assert(response);
+        assert(!(response instanceof Function));
+        return this._addReceivedResponseCheck(() => response);
     }
 
-    // will test whether each client got the given response
-    // for hits, use addHitCheck() for clarity sake
-    addReceivedResponseCheck(response) {
+    // Will test whether each client got the response extracted by the given function.
+    // For basic misses, use addMissCheck().
+    // For basic hits, use addHitCheck().
+    _addReceivedResponseCheck(responseGetter) {
+        assert(responseGetter instanceof Function);
         assert(this._clients.length); // "received" implies there was a client
         for (const client of this._clients) {
             client.checks.add(() => {
                 Http.AssertForwardedMessage(
-                    response,
+                    responseGetter(this),
                     client.transaction().response,
                     "response");
             });
