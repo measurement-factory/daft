@@ -25,7 +25,7 @@ export default class MessageParser {
         this._messageKind = null;
 
         this._raw = ""; // unparsed data
-        this.expectBody = true;
+
         this._bodyDecoder = null; // will be set if we expect a body
 
         this.logPrefix = null; // should be set by the user
@@ -79,9 +79,6 @@ export default class MessageParser {
 
     determineBodyLength() {
         Must(!this.message.body);
-        if (!this.expectBody)
-            return;
-
         Must(!this._bodyDecoder);
         // TODO: set true body length when possible
         // XXX: do not disclaim body presence when there is one

@@ -2,11 +2,12 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import assert from "assert";
+import Body from "../Body";
+import IdentityDecoder from "./IdentityDecoder";
+import MessageParser from "./MessageParser";
 import Response from "../Response";
 import StatusLine from "../StatusLine";
-import Body from "../Body";
-import MessageParser from "./MessageParser";
-import assert from "assert";
 
 export default class ResponseParser extends MessageParser {
 
@@ -18,15 +19,57 @@ export default class ResponseParser extends MessageParser {
         this._request = null;
         if (aRequest)
             this.request(aRequest);
+
+        // whether we should ignore HTTP protocol framing signals and simply
+        // expect that body bytes start after the headers and end at EOF
+        this._assumeBodyPresentAndEndsAtEof = false;
     }
 
     request(aRequest) {
         assert(aRequest);
         assert(!this._request);
         this._request = aRequest;
-        this.expectBody = this._request.startLine.method !== "HEAD";
     }
 
+    // handy for hacks like receiving data after 101 (Switching Protocols)
+    assumeBodyPresentAndEndsAtEof(reason) {
+        assert(reason);
+        assert.strictEqual(this._assumeBodyPresentAndEndsAtEof, false);
+        this._assumeBodyPresentAndEndsAtEof = true;
+        this._log("will assume response body is present and ends at EOF despite protocol requirements: ", reason);
+    }
+
+    // MessageParser API
+    determineBodyLength() {
+        assert(!this.message.body);
+        assert(!this._bodyDecoder);
+
+        if (this._assumeBodyPresentAndEndsAtEof) {
+            this._log("assuming response body is present and ends at EOF");
+            this.message.body = new Body();
+            this._bodyDecoder = new IdentityDecoder(null);
+            return;
+        }
+
+        if (this._request && this._request.startLine.method === "HEAD") {
+            // see RFC 9112 Section 6.3 rule #1
+            this._log("no response body in HEAD responses");
+            this.message.body = null;
+            return;
+        }
+
+        if (this.message.startLine.codeMatches(204, 304) ||
+            this.message.startLine.code1xx()) {
+            // see RFC 9112 Section 6.3 rule #1
+            this._log("no response body due to status code");
+            this.message.body = null;
+            return;
+        }
+
+        super.determineBodyLength();
+    }
+
+    // MessageParser API
     determineDefaultBody() {
         // responses have bodies by default
         this.message.body = new Body();
