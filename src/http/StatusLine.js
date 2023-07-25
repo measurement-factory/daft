@@ -87,6 +87,11 @@ export default class StatusLine {
         return scode !== undefined && codes.includes(scode);
     }
 
+    codeBansBody() {
+        // see RFC 9112 Section 6.3 rule #1
+        return this.codeMatches(204, 304) || this.code1xx();
+    }
+
     // reject string, infinity, NaN, approximate, and negative values
     static IsNumericCode(value) {
         return Number.isSafeInteger(value) && value >= 0;
