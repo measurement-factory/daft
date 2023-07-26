@@ -61,7 +61,7 @@ export default class Agent {
     }
 
     keepConnections() {
-        console.log("will require and reuse persistent connections");
+        this.context.log("will require and reuse persistent connections");
         this._keepConnections = true; // may already be true
     }
 
@@ -70,7 +70,7 @@ export default class Agent {
         assert(!transaction.started());
 
         ++this._xStarted;
-        console.log("starting transaction number", this._xStarted);
+        this.context.log("starting transaction number", this._xStarted);
 
         socket.removeAllListeners(); // e.g., we may have an 'error' handler
         socket.setEncoding('binary');
@@ -82,10 +82,10 @@ export default class Agent {
         const xRemaining = this._xStarted - this._xFinished;
         assert(xRemaining >= 0);
         if (!xRemaining) { // all previously started transactions are done
-            console.log("finished all", this._xStarted, "previously started transactions");
+            this.context.log("finished all", this._xStarted, "previously started transactions");
             await this._becomeIdle();
         } else {
-            console.log("keep waiting for the remaining", xRemaining, "transactions");
+            this.context.log("keep waiting for the remaining", xRemaining, "transactions");
         }
     }
 
@@ -132,7 +132,7 @@ export default class Agent {
         // most likely, our caller requires a pconn reuse
         assert(agent._savedSocket);
 
-        console.log("reusing saved connection");
+        this.context.log("reusing saved connection");
         this._savedSocket = agent._savedSocket;
         agent._savedSocket = null;
         this._savedSocket.ref();
