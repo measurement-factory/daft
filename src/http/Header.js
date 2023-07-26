@@ -225,7 +225,7 @@ export default class Header {
         return values[0];
     }
 
-    /// checks that a single matching header field is present
+    /// asserts that a single matching header field is present
     expectField(expectedField) {
         assert(expectedField);
         const name = expectedField.name;

@@ -4,8 +4,6 @@
 
 /* Manages an HTTP response message, including headers and body */
 
-import assert from "assert";
-
 import * as Config from "../misc/Config";
 import * as Range from "./Range";
 import Body from "./Body";
@@ -13,6 +11,8 @@ import Field from "./Field";
 import Message from "./Message";
 import StatusLine from "./StatusLine";
 import { Must } from "../misc/Gadgets";
+
+import assert from "assert";
 
 Config.Recognize([
     {

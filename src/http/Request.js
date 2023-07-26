@@ -4,10 +4,9 @@
 
 /* Manages an HTTP request message, including headers and body */
 
-import { Must } from "../misc/Gadgets";
+import * as Config from "../misc/Config";
 import Message from "./Message";
 import RequestLine from "./RequestLine";
-import * as Config from "../misc/Config";
 
 import assert from "assert";
 

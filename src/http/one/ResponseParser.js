@@ -2,12 +2,13 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import assert from "assert";
 import Body from "../Body";
 import IdentityDecoder from "./IdentityDecoder";
 import MessageParser from "./MessageParser";
 import Response from "../Response";
 import StatusLine from "../StatusLine";
+
+import assert from "assert";
 
 export default class ResponseParser extends MessageParser {
 
@@ -95,4 +96,3 @@ export default class ResponseParser extends MessageParser {
         return statusLine;
     }
 }
-
