@@ -107,10 +107,6 @@ export default class Response extends Message {
         super.finalize(bodyExpected);
     }
 
-    finalizeBody() {
-        super.finalizeBody();
-    }
-
     hasRanges() {
         if (this.header.has('Content-Range'))
             return true;

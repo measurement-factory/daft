@@ -164,7 +164,7 @@ export default class Message {
                 this.body = null;
         }
         if (this.body)
-            this.finalizeBody();
+            this.body.finalize();
 
         this.syncContentLength();
 
@@ -177,10 +177,6 @@ export default class Message {
         Must(this.body === undefined);
         Must(body);
         this.body = body;
-    }
-
-    finalizeBody() {
-        this.body.finalize();
     }
 
     syncContentLength() {
