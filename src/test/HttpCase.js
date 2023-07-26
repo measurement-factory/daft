@@ -193,14 +193,14 @@ export default class HttpCase {
     _addReceivedResponseCheck(responseGetter) {
         assert(responseGetter instanceof Function);
         assert(this._clients.length); // "received" implies there was a client
-        for (const client of this._clients) {
-            client.checks.add(() => {
+        this.check(() => {
+            for (const client of this._clients) {
                 Http.AssertForwardedMessage(
                     responseGetter(this),
                     client.transaction().response,
                     "response");
-            });
-        }
+            }
+        });
     }
 
     async _doCheck() {
