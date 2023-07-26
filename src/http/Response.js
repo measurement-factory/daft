@@ -79,7 +79,7 @@ export default class Response extends Message {
         this.header.addByDefault("Server", "DaftServer/1.0");
         this.header.addByDefault("Connection", "close");
         this.header.addByDefault("Date", new Date().toUTCString());
-        this.rememberIdOf(request);
+        this._rememberIdOf(request);
 
         let bodyExpected = this.body !== null; // including undefined this.body
         if (bodyExpected) {
@@ -227,11 +227,13 @@ export default class Response extends Message {
         return null;
     }
 
-    // Copy the Daft request ID field (if any) from the given request.
-    // The requestId() method can be used to extract the copied ID.
-    rememberIdOf(request) {
+    // Copy the Daft request ID field (if any) from the given request unless
+    // we already have some Daft request ID stored. The requestId() method can
+    // be used to extract the copied ID.
+    _rememberIdOf(request) {
         const idFieldName = request._daftFieldName("ID");
-        assert(!this.header.has(idFieldName)); // ban overwriting to simplify triage
+        if (this.header.has(idFieldName))
+            return; // the first ID wins, but we could accumulate all of them
         if (request.header.has(idFieldName))
             this.header.add(idFieldName, request.header.value(idFieldName));
     }

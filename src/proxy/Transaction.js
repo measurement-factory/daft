@@ -277,7 +277,7 @@ export default class Transaction { // XXX: extends SideTransaction
         const logPrefix = "c< ";
 
         if (!this.responseHeadersSent) {
-            this.adaptedResponse.finalize();
+            this.adaptedResponse.finalize(this.virginRequest);
             this.responseHeadersSent = true;
             const hdrOut = responsePrefix(this.adaptedResponse);
             out += hdrOut;
@@ -316,6 +316,11 @@ export default class Transaction { // XXX: extends SideTransaction
 
     cloneResponse() {
         this.adaptedResponse = this.virginResponse.clone();
+
+        const idFieldName = this.virginRequest._daftFieldName("ID");
+        this.adaptedResponse.header.deleteAllNamed(idFieldName);
+        // this.adaptedResponse.finalize(request) will assign that request ID
+
         if (this.virginResponse.body) {
             // XXX: overwrites clone() above
             this.adaptedResponse.body = new Body(this.virginResponse.body.whole());
