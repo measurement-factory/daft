@@ -9,7 +9,7 @@ import Body from "../Body";
 import ChunkedDecoder from "./ChunkedDecoder";
 import IdentityDecoder from "./IdentityDecoder";
 import { Must, PrettyMime, PrettyBody } from "../../misc/Gadgets";
-import { parseHeader } from "./HeaderParser"
+import { parseHeader } from "./HeaderParser";
 
 import assert from "assert";
 

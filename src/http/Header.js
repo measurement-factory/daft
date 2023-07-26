@@ -6,7 +6,6 @@
 
 import assert from "assert";
 
-import * as Config from "../misc/Config";
 import * as Http from "../http/Gadgets";
 import * as Misc from "../misc/Gadgets";
 import Field from "./Field";
