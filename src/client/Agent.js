@@ -2,15 +2,17 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import * as Config from "../misc/Config";
+import * as Gadgets from "../misc/Gadgets";
+import * as Http from "../http/Gadgets";
+import Context from "../misc/Context";
+import SideAgent from "../side/Agent";
+import StatusLine from "../http/StatusLine";
+import Transaction from "./Transaction";
+
 import net from "net";
 import Promise from 'bluebird';
 import assert from "assert";
-import Context from "../misc/Context";
-import * as Config from "../misc/Config";
-import * as Gadgets from "../misc/Gadgets";
-import Transaction from "./Transaction";
-import StatusLine from "../http/StatusLine";
-import SideAgent from "../side/Agent";
 
 let Clients = 0;
 
@@ -35,6 +37,14 @@ export default class Agent extends SideAgent {
     expectStatusCode(expectedCode) {
         assert(StatusLine.IsNumericCode(expectedCode));
         assert.strictEqual(this.transaction().response.startLine.codeInteger(), expectedCode);
+    }
+
+    // asserts that the specified response was received
+    expectResponse(response) {
+        Http.AssertForwardedMessage(
+            response,
+            this.transaction().response,
+            "response");
     }
 
     // a promise to either do "everything" (except stopping) or be stopped
