@@ -46,6 +46,10 @@ export default class Agent extends SideAgent {
         });
     }
 
+    async _becomeIdle() {
+        await this.stop();
+    }
+
     async stop() {
         if (this.server && this.server.address()) {
             const savedAddress = this.server.address();

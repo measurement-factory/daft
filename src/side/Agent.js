@@ -41,6 +41,8 @@ export default class Agent {
         if (!this._stoppedResolver)
             return this._stopped; // may not be satisfied yet
 
+        // XXX: Prevent new transactions from starting beyond this point.
+
         const stoppedResolver = this._stoppedResolver;
         this._stoppedResolver = null;
         await this._stop();
@@ -75,14 +77,15 @@ export default class Agent {
         const xRemaining = this._xStarted - this._xFinished;
         assert(xRemaining >= 0);
         if (!xRemaining) { // all previously started transactions are done
-            // XXX: We may still come back here if another transaction starts
-            // and finishes before we are stopped; there is currently no
-            // mechanism to detect whether more transactions may start.
-            console.log("finished all", this._xStarted, "previously started transactions");
-            await this.stop();
+            this.context.log("finished all", this._xStarted, "previously started transactions");
+            await this._becomeIdle();
         } else {
-            console.log("keep waiting for the remaining", xRemaining, "transactions");
+            this.context.log("keep waiting for the remaining", xRemaining, "transactions");
         }
+    }
+
+    async _becomeIdle() {
+        assert(!"pure virtual: kids must override");
     }
 
     // keeps or closes the socket of a finish()ing transaction
