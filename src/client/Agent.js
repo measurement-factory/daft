@@ -8,6 +8,7 @@ import assert from "assert";
 
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
+import * as Http from "../http/Gadgets";
 import * as Range from "../http/Range";
 import * as RangeParser from "../http/one/RangeParser";
 import Context from "../misc/Context";
@@ -38,6 +39,14 @@ export default class Agent extends SideAgent {
     expectStatusCode(expectedCode) {
         assert(StatusLine.IsNumericCode(expectedCode));
         assert.strictEqual(this.transaction().response.startLine.codeInteger(), expectedCode);
+    }
+
+    // asserts that the specified response was received
+    expectResponse(response) {
+        Http.AssertForwardedMessage(
+            response,
+            this.transaction().response,
+            "response");
     }
 
     // send a Range request and check that a matching 206 response is received

@@ -4,15 +4,15 @@
 
 /* Manages a single case testing an HTTP client, server, and/or proxy. */
 
-import Promise from "bluebird";
+import * as Gadgets from "../misc/Gadgets";
+import * as Lifetime from "../misc/Lifetime";
 import Checker from "../test/Checker";
 import Client from "../client/Agent";
-import Server from "../server/Agent";
-import * as Http from "../http/Gadgets";
-import * as Lifetime from "../misc/Lifetime";
-import * as Gadgets from "../misc/Gadgets";
 import Context from "../misc/Context";
+import Promise from "bluebird";
+import Server from "../server/Agent";
 import { Must } from "../misc/Gadgets";
+
 import assert from "assert";
 
 let HttpCases = 0;
@@ -194,11 +194,9 @@ export default class HttpCase {
         assert(responseGetter instanceof Function);
         assert(this._clients.length); // "received" implies there was a client
         this.check(() => {
+            const response = responseGetter(this); // at checking time
             for (const client of this._clients) {
-                Http.AssertForwardedMessage(
-                    responseGetter(this),
-                    client.transaction().response,
-                    "response");
+                client.expectResponse(response);
             }
         });
     }
