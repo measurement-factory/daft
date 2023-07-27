@@ -60,6 +60,8 @@ function suspectedBodySize(bodySize) {
     return bodySize === undefined ? Config.bodySize() : bodySize;
 }
 
+export const ContentRangeBoundary = ProxySignature + "-123456789";
+
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
     // to access (using a common name) the Config option we export ourselves

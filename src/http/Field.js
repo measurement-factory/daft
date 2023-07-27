@@ -45,6 +45,11 @@ export default class Field {
             this.terminator = "\r\n";
     }
 
+    raw() {
+        return this.name + this.separator +
+            this.value + this.terminator;
+    }
+
     static Id(name) {
         return name.toLowerCase();
     }

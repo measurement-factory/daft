@@ -95,6 +95,15 @@ export default class Header {
         return Misc.ToUnsigned(value);
     }
 
+    raw() {
+        if (this._raw !== null)
+            return this._raw;
+
+        // TODO: Hide Header::fields and stop violating Header boundaries.
+        return this.fields.map(f => f.raw()).join("") +
+            this._extraFields.map(f => f.raw()).join("");
+    }
+
     chunked() {
         let name = 'Transfer-Encoding';
         if (!this.has(name)) // not specified at all
@@ -102,6 +111,25 @@ export default class Header {
 
         let codings = this.values('Transfer-Encoding');
         return codings.indexOf("chunked") >= 0; // XXX: imprecise!
+    }
+
+    // multipart/byteranges Content-Type's boundary parameter value (or null)
+    multipartBoundary() {
+        const field = this.has('Content-Type');
+        if (!field)
+            return null;
+        if (!field.value.startsWith('multipart/byteranges'))
+            return null;
+
+        const key = 'boundary=';
+        const paramStart = field.value.indexOf(key);
+        assert(paramStart >= 0);
+        const rawBoundary = field.value.substring(paramStart + key.length).trim();
+
+        // remove optional quotes
+        const boundary = rawBoundary.replace(/^"(.*)"$/, '$1');
+        assert(boundary.length);
+        return boundary;
     }
 
     addWarning(code, text = "warning text") {

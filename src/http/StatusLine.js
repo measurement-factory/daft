@@ -44,12 +44,25 @@ export default class StatusLine {
             this.terminator = "\r\n";
     }
 
+    raw() {
+        return [
+            this.protocol,
+            this.protocolDelimiter,
+            (this.hasCode() ? this.codeString() : null),
+            this.statusDelimiter,
+            this.reasonPhrase,
+            this.terminator
+        ].filter(item => item !== null).join("");
+    }
+
     ReasonPhrase(codeInteger = undefined) {
         switch (codeInteger) {
             case 101:
                 return "Switching Protocols";
             case 200:
                 return "OK";
+            case 206:
+                return "Partial Content";
             case 304:
                 return "Not Modified";
             default: // including undefined
