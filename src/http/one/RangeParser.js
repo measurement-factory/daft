@@ -2,10 +2,10 @@
  * Copyright (C) 2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import assert from "assert";
-
 import * as Range from "../../http/Range"
 import { parseHeader } from "./HeaderParser"
+
+import assert from "assert";
 
 // TODO: Return Ranges.Part instead
 // parsed range in the format of {low, high, whole}

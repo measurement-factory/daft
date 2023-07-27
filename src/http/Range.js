@@ -4,11 +4,11 @@
 
 /* Classes dealing with Range requests and 206 (Partial Content) responses */
 
-import assert from "assert";
-
 import * as Misc from "../misc/Gadgets";
 import * as Http from "../http/Gadgets";
 import Header from "./Header";
+
+import assert from "assert";
 
 /* All Daft Range code is based on _byte_ ranges (at least for now) */
 

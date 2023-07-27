@@ -4,13 +4,12 @@
 
 /* Manages HTTP message header. */
 
-import assert from "assert";
-
 import * as Http from "../http/Gadgets";
 import * as Misc from "../misc/Gadgets";
 import Field from "./Field";
 import { Must } from "../misc/Gadgets";
 
+import assert from "assert";
 
 export default class Header {
 
