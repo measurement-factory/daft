@@ -24,6 +24,9 @@ export default class Header {
         // Usually, the two mechanisms are used together in order to customize
         // a value of the field used by the lower-level code.
         this._extraFields = [];
+
+        // minimum raw().length value of a finalized header
+        this._minimumSize = 0;
     }
 
     clone() {
@@ -45,6 +48,49 @@ export default class Header {
         this.fields.forEach(field => field.finalize());
         // finalize each overwriting field
         this._extraFields.forEach(field => field.finalize());
+
+        if (this._minimumSize > 0) {
+            const bareLength = this.raw().length;
+            if (this._minimumSize > bareLength) {
+                this._stuff(this._minimumSize - bareLength);
+                assert(this.raw().length >= this._minimumSize);
+            }
+        }
+    }
+
+    // ensures that the finalized header is at least n bytes long
+    enforceMinimumSize(n) {
+        assert(n >= 0);
+        assert(!this._minimumSize); // for simplicity sake
+        if (n > 0)
+            console.log("will enforce minimum header size of", n, "bytes");
+        this._minimumSize = n;
+    }
+
+    // adds a custom field that is at least length bytes long
+    _stuff(length) {
+        let stuffingField = this._argsToField(Http.DaftFieldName("Stuffing-0000"), 'r');
+        stuffingField.finalize();
+        const stuffingMin = stuffingField.raw().length;
+        if (length > stuffingMin) {
+            // overcome proxy single field length limitation (64K)
+            // by creating stuffing of multiple fields
+            const maxLength = 1024 * 63;
+            const fields = Math.floor(length/maxLength);
+            const lastFieldLength = length % maxLength;
+            for (let i=1; i <= fields; ++i) {
+                const id = ('0000'+i).slice(-4);
+                // Extra "1" covers the first 'r' we are overwriting here. We are
+                // overwriting it to leave the word "random" for code searches.
+                const value = Misc.RandomText("random-", 1 + maxLength - stuffingMin);
+                let field = this._argsToField(Http.DaftFieldName(`Stuffing-${id}`), value);
+                this.add(field);
+            }
+
+            if (lastFieldLength > stuffingMin)
+                stuffingField.value = Misc.RandomText("random-", 1 + lastFieldLength - stuffingMin);
+        }
+        this.add(stuffingField);
     }
 
     // Is this field allowed by all the filters?

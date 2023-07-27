@@ -40,6 +40,9 @@ export default class Message {
         this.header = new Header();
         this.headerDelimiter = null;
 
+        // minimum number of bytes in a finalized message prefix
+        this._minimumPrefixSize = 0;
+
         // By default, let methods like Request::with(), Response::from(), and
         // Transaction::finalizeMessage() decide whether to add a body. To
         // stop those methods from guessing, set this.body (e.g., to null).
@@ -125,6 +128,15 @@ export default class Message {
         return Authority.Parse(rawValue).toHostPort();
     }
 
+    // ensures that the finalized message prefix is at least n bytes long
+    enforceMinimumPrefixSize(n) {
+        assert(n >= 0);
+        assert(!this._minimumPrefixSize); // for simplicity sake
+        if (n > 0)
+            console.log("will enforce minimum prefix size of", n, "bytes");
+        this._minimumPrefixSize = n;
+    }
+
     finalize(bodyExpected) {
         if (this.finalized())
             return;
@@ -139,6 +151,12 @@ export default class Message {
         if (this.headerDelimiter === null)
             this.headerDelimiter = "\r\n";
 
+        if (this._minimumPrefixSize > 0) {
+            const startSize = this.startLine.raw().length + this.headerDelimiter.length;
+            if (this._minimumPrefixSize > startSize)
+                this.header.enforceMinimumSize(this._minimumPrefixSize - startSize);
+        }
+
         if (this.body === undefined) {
             if (bodyExpected)
                 this.addBody(new Body());
@@ -150,7 +168,8 @@ export default class Message {
 
         this.syncContentLength();
 
-        this.header.finalize(); // after syncContentLength() adds headers
+        // after this.syncContentLength() and this.header.enforceMinimumSize()
+        this.header.finalize();
     }
 
     // not a reset; we do not remove old Content-Length

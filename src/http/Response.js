@@ -21,6 +21,12 @@ Config.Recognize([
         default: "false",
         description: "send unchunked response without Content-Length",
     },
+    {
+        option: "response-prefix-size-minimum",
+        type: "Number",
+        default: "0",
+        description: "minimum size of response status line and headers (bytes)",
+    },
 ]);
 
 export default class Response extends Message {
@@ -32,6 +38,8 @@ export default class Response extends Message {
         this.forceEof = null; // use Config.responseEndAtEof by default
 
         this.rangeBlocks = null; // array of parsed range body blocks
+
+        this.enforceMinimumPrefixSize(Config.responsePrefixSizeMinimum());
     }
 
     // makes us an exact replica of them
