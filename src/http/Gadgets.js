@@ -42,6 +42,7 @@ const _ControlledByProxyHeaderNames = [
 // "New-Field"
 const _ControlledByCacheHeaderNames = [
     "Age",
+    "Cache-Status",
 ].map(name => name.toLowerCase());
 
 export function IsHopByHop(name /*, header */) {
