@@ -4,11 +4,12 @@
 
 /* Manages HTTP message header. */
 
+import * as Http from "../http/Gadgets";
+import * as Misc from "../misc/Gadgets";
 import Field from "./Field";
 import { Must } from "../misc/Gadgets";
-import * as Misc from "../misc/Gadgets";
-import * as Http from "../http/Gadgets";
 
+import assert from "assert";
 
 export default class Header {
 
@@ -146,6 +147,14 @@ export default class Header {
         let values = this.values(name);
         Must(values.length === 1);
         return values[0];
+    }
+
+    /// asserts that a single matching header field is present
+    expectField(expectedField) {
+        assert(expectedField);
+        const name = expectedField.name;
+        const actualValues = this.values(name);
+        Http.AssertForwardedHeaderFieldValue([ expectedField.value ], actualValues, `${name} header field`);
     }
 
     add(...args) {
