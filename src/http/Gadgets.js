@@ -117,9 +117,9 @@ function AssertForwardedBody(sent, received) {
         assert.equal(receivedBodyWhole.length, sentBodyWhole.length);
         // assert.equal() detects but does not show the suffix difference of
         // long strings (e.g., 17MB bodies with different last few bytes)
-        if (receivedBodyWhole != sentBodyWhole) {
+        if (receivedBodyWhole !== sentBodyWhole) {
             for (var pos = 0; pos < receivedBodyWhole.length; ++pos) {
-                if (receivedBodyWhole[pos] != sentBodyWhole[pos]) {
+                if (receivedBodyWhole[pos] !== sentBodyWhole[pos]) {
                     console.log(`${sentBodyWhole.length}-byte bodies start to differ at offset ${pos}`);
                     assert.equal(receivedBodyWhole.substr(pos), sentBodyWhole.substr(pos));
                     assert(false); // unreachable

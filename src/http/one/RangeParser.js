@@ -2,8 +2,8 @@
  * Copyright (C) 2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import * as Range from "../../http/Range"
-import { parseHeader } from "./HeaderParser"
+import * as Range from "../../http/Range";
+import { parseHeader } from "./HeaderParser";
 
 import assert from "assert";
 
@@ -86,10 +86,7 @@ export function ResponseParts(response) {
     const boundary = response.header.multipartBoundary();
     if (boundary) {
         const parser = new MultipartParser(boundary);
-        if (!parser.parse(whole)) {
-            response._log(`Warning: Cannot parse multipart body`); // XXX
-            return;
-        }
+        assert(parser.parse(whole));
         while (parser.blocks.length) {
             const specArray = parser.ranges.shift();
             parts.push(new Range.Part(new Range.Spec(...specArray), parser.blocks.shift()));

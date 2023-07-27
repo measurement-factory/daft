@@ -5,8 +5,6 @@
 /* Classes dealing with Range requests and 206 (Partial Content) responses */
 
 import * as Misc from "../misc/Gadgets";
-import * as Http from "../http/Gadgets";
-import Header from "./Header";
 
 import assert from "assert";
 
@@ -16,7 +14,7 @@ import assert from "assert";
 // no support for tail/head ranges yet
 export class Spec {
     constructor(low, high) {
-        assert(arguments.length == 2);
+        assert.strictEqual(arguments.length, 2);
 
         assert(low >= 0);
         this.low_ = low;
@@ -81,7 +79,7 @@ export class Spec {
 export class Specs extends Array {
 
     equal(them) {
-        if (this.length != them.length)
+        if (this.length !== them.length)
             return false;
 
         for (var i = 0; i < this.length; ++i) {
@@ -118,7 +116,7 @@ export class Specs extends Array {
 // a single byterange part: range spec and the corresponding body bytes
 export class Part {
     constructor(rangeSpec, bytes) {
-        assert(arguments.length == 2);
+        assert.strictEqual(arguments.length, 2);
         assert(rangeSpec instanceof Spec);
 
         this.rangeSpec_ = rangeSpec;
@@ -159,7 +157,7 @@ export class Parts extends Array {
     equal(them) {
         assert(them instanceof Parts);
 
-        if (this.length != them.length)
+        if (this.length !== them.length)
             return false;
 
         for (var i = 0; i < this.length; ++i) {
