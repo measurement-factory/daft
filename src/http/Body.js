@@ -22,6 +22,9 @@ export default class Body {
         // .innedAll after all the bytes have been out()ed already.
         this._withholdLastByte = false;
 
+        // whether to send/receive this body where prohibited by the protocol
+        this._forcePresence = false;
+
         if (content !== undefined)
             this.whole(content);
     }
@@ -33,6 +36,18 @@ export default class Body {
             dupe[key] = this[key];
         }
         return dupe;
+    }
+
+    // whether forcePresence() has been called
+    forcedToBePresent() {
+        return this._forcePresence;
+    }
+
+    // send/receive this body even in cases prohibited by the protocol
+    forcePresence(reason) {
+        Must(reason);
+        this._forcePresence = true; // may already by true
+        console.log("forcing body to be present despite protocol requirements: ", reason);
     }
 
     withholdLastByte(doIt) {
