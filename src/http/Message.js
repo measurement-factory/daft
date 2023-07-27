@@ -64,7 +64,7 @@ export default class Message {
         this.startLine = them.startLine.clone();
         this.header = them.header.clone();
         this.headerDelimiter = them.headerDelimiter;
-        this.body = them.body ? them.body.clone() : null;
+        this.body = them.body ? them.body.clone() : them.body;
         this._chunkBody = them._chunkBody;
         this._withholdLastChunk = them._withholdLastChunk;
         this._finalized = them._finalized;
