@@ -47,7 +47,7 @@ export default class Body {
     forcePresence(reason) {
         Must(reason);
         this._forcePresence = true; // may already by true
-        console.log("forcing body to be present despite protocol requirements: ", reason);
+        console.log("forcing body to be present despite protocol requirements:", reason);
     }
 
     withholdLastByte(doIt) {

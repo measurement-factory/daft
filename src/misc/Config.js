@@ -336,7 +336,7 @@ export function Finalize(argv) {
         return false;
     }
 
-    console.log("Explicit configuration: ", argv.slice(2));
+    console.log("Explicit configuration:", argv.slice(2));
     return true;
 }
 

@@ -37,7 +37,7 @@ export default class ResponseParser extends MessageParser {
         assert(reason);
         assert.strictEqual(this._assumeBodyPresentAndEndsAtEof, false);
         this._assumeBodyPresentAndEndsAtEof = true;
-        this._log("will assume response body is present and ends at EOF despite protocol requirements: ", reason);
+        this._log("will assume response body is present and ends at EOF despite protocol requirements:", reason);
     }
 
     // MessageParser API

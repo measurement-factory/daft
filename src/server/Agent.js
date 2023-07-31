@@ -162,7 +162,7 @@ export default class Agent extends SideAgent {
 
             const stillOpenConnections = await this.server.getConnectionsAsync();
             if (stillOpenConnections)
-                this.context.log("still has open connections: ", stillOpenConnections);
+                this.context.log("still has open connections:", stillOpenConnections);
             if (this._keepConnections) {
                 if (!this._savedSocket)
                     this.context.log("Warning: Have not preserved a connection for future reuse (yet?)");
