@@ -82,16 +82,13 @@ export default class Response extends Message {
         this._rememberIdOf(request);
 
         let bodyExpected = this.body !== null; // including undefined this.body
-        if (bodyExpected) {
-            // XXX: do not add body to HEAD responses
-            if (this.startLine.codeBansBody()) {
-                if (this.body && this.body.forcedToBePresent()) {
-                    console.log("forcing response body presence despite protocol bans");
-                } else {
-                    console.log("protocol bans response body");
-                    bodyExpected = false;
-                    this.body = null; // may overwrite a non-nil body
-                }
+        if (bodyExpected && this._protocolBansBody(request)) {
+            if (this.body && this.body.forcedToBePresent()) {
+                console.log("forcing response body presence despite protocol bans");
+            } else {
+                console.log("protocol bans response body");
+                bodyExpected = false;
+                this.body = null; // may overwrite a non-nil body
             }
         }
 
@@ -115,6 +112,14 @@ export default class Response extends Message {
             return value.includes('multipart/byteranges');
         }
         return false;
+    }
+
+    _protocolBansBody(request) {
+        // see RFC 9112 Section 6.3 rule #1
+        if (request.startLine.method === "HEAD")
+            return true;
+
+        return this.startLine.codeBansBody();
     }
 
     // TODO: Create a class to encapsulate these fields/logic.
