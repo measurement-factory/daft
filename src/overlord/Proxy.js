@@ -438,6 +438,11 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
+    async finishRockHeaderUpdating() {
+        await this._remoteCall("/finishRockHeaderUpdating");
+        console.log("Proxy finished any rock header updating jobs");
+    }
+
     // Wait for the proxy to accumulate exactly the given number of
     // not-yet-satisfied requests (containing the given URL path). This only
     // works if the proxy can parse request (headers) but cannot satisfy those
@@ -526,7 +531,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 8,
+                    'Pop-Version': 9,
                 },
             };
 
