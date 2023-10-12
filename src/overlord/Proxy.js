@@ -439,8 +439,11 @@ export class ProxyOverlord {
     }
 
     async finishRockHeaderUpdating() {
-        await this._remoteCall("/finishRockHeaderUpdating");
-        console.log("Proxy finished any rock header updating jobs");
+        const options = {
+            'Overlord-job.type': 'Rock::HeaderUpdater',
+        };
+        await this._remoteCall("/finishJobs", options);
+        console.log("Proxy finished all HTTP header updating jobs in rock cache_dir(s)");
     }
 
     // Wait for the proxy to accumulate exactly the given number of
