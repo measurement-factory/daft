@@ -440,7 +440,7 @@ export class ProxyOverlord {
 
     async finishRockHeaderUpdating() {
         const options = {
-            'Overlord-job.type': '\\bRock::HeaderUpdater',
+            'Overlord-job.type-regex': Buffer.from('\\bRock::HeaderUpdater').toString('base64'),
         };
         await this._remoteCall("/finishJobs", options);
         console.log("Proxy finished all HTTP header updating jobs in rock cache_dir(s)");
