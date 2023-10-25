@@ -440,7 +440,7 @@ export class ProxyOverlord {
 
     async finishRockHeaderUpdating() {
         const options = {
-            'Overlord-job.type-regex': Buffer.from('\\bRock::HeaderUpdater').toString('base64'),
+            'Overlord-job.type-regex': new RegExp('\\bRock::HeaderUpdater'),
         };
         await this._remoteCall("/finishJobs", options);
         console.log("Proxy finished all HTTP header updating jobs in rock cache_dir(s)");
@@ -523,6 +523,12 @@ export class ProxyOverlord {
     }
 
     _remoteCall(commandOrString, options) {
+        if (options) {
+            // convert RegExp objects to base64-encoded strings
+            options = Object.fromEntries(Object.entries(options).map(([name, value]) =>
+                        [name, name.endsWith('-regex') ? Buffer.from(value.source).toString('base64') : value]));
+        }
+
         return new Promise((resolve) => {
 
             const command = ((typeof commandOrString) === 'string') ?
