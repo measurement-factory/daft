@@ -525,8 +525,14 @@ export class ProxyOverlord {
     _remoteCall(commandOrString, options) {
         if (options) {
             // convert RegExp objects to base64-encoded strings
-            options = Object.fromEntries(Object.entries(options).map(([name, value]) =>
-                        [name, name.endsWith('-regex') ? Buffer.from(value.source).toString('base64') : value]));
+            options = Object.fromEntries(Object.entries(options).map(([name, value]) => {
+                          if (name.endsWith('-regex')) {
+                              assert(value instanceof RegExp);
+                              return [name, Buffer.from(value.source).toString('base64')];
+                          }
+                          assert(!(value instanceof RegExp));
+                          return [name, value];
+                      }));
         }
 
         return new Promise((resolve) => {
