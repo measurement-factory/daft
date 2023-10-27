@@ -528,7 +528,11 @@ export class ProxyOverlord {
             options = Object.fromEntries(Object.entries(options).map(([name, value]) => {
                           if (name.endsWith('-regex')) {
                               assert(value instanceof RegExp);
-                              return [name, Buffer.from(value.source).toString('base64')];
+                              // Store the regex in the 'extended pattern' format, so that Operlord.pl could
+                              // dynamically restore it.
+                              // See https://perldoc.perl.org/perlre#Extended-Patterns for details.
+                              const flags = value.flags ? `(?${value.flags})` : "";
+                              return [name, Buffer.from(`${flags}${value.source}`).toString('base64')];
                           }
                           assert(!(value instanceof RegExp));
                           return [name, value];
