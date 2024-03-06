@@ -438,6 +438,14 @@ export class ProxyOverlord {
         console.log("Proxy finished any pending caching transactions");
     }
 
+    async finishRockHeaderUpdating() {
+        const options = {
+            'Overlord-job.type-regex': new RegExp('\\bRock::HeaderUpdater'),
+        };
+        await this._remoteCall("/finishJobs", options);
+        console.log("Proxy finished all HTTP header updating jobs in rock cache_dir(s)");
+    }
+
     // Wait for the proxy to accumulate exactly the given number of
     // not-yet-satisfied requests (containing the given URL path). This only
     // works if the proxy can parse request (headers) but cannot satisfy those
@@ -515,6 +523,22 @@ export class ProxyOverlord {
     }
 
     _remoteCall(commandOrString, options) {
+        if (options) {
+            // convert RegExp objects to base64-encoded strings
+            options = Object.fromEntries(Object.entries(options).map(([name, value]) => {
+                          if (name.endsWith('-regex')) {
+                              assert(value instanceof RegExp);
+                              // Store the regex in the 'extended pattern' format, so that Operlord.pl could
+                              // dynamically restore it.
+                              // See https://perldoc.perl.org/perlre#Extended-Patterns for details.
+                              const flags = value.flags ? `(?${value.flags})` : "";
+                              return [name, Buffer.from(`${flags}${value.source}`).toString('base64')];
+                          }
+                          assert(!(value instanceof RegExp));
+                          return [name, value];
+                      }));
+        }
+
         return new Promise((resolve) => {
 
             const command = ((typeof commandOrString) === 'string') ?
@@ -526,7 +550,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 8,
+                    'Pop-Version': 9,
                 },
             };
 
