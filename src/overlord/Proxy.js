@@ -470,6 +470,17 @@ export class ProxyOverlord {
         return newRecords;
     }
 
+    async getCacheManagerMenu() {
+        const result = await this._remoteCall("/getCacheManagerMenu");
+        const lines = result.menu.split('\n').filter(l => l);
+        const names = [];
+        for (const v of lines) {
+            const fields = v.split(/\s+/).filter(f => f);
+            names.push(fields[0]);
+        }
+        return names;
+    }
+
     async _startCachePeers() {
         assert(!this._cachePeers.length);
         const cachePeerCfgs = this.config().cachePeers();
@@ -526,7 +537,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 8,
+                    'Pop-Version': 9,
                 },
             };
 
