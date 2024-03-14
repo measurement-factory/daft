@@ -473,12 +473,13 @@ export class ProxyOverlord {
     async getCacheManagerMenu() {
         const result = await this._remoteCall("/getCacheManagerMenu");
         const lines = result.menu.split('\n').filter(l => l);
-        const names = [];
+        const pages = [];
         for (const v of lines) {
             const fields = v.split(/\s+/).filter(f => f);
-            names.push(fields[0]);
+            assert(fields.length >= 3);
+            pages.push({name: fields[0], protection: fields[fields.length-1]});
         }
-        return names;
+        return pages;
     }
 
     async _startCachePeers() {
