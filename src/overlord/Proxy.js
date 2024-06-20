@@ -188,23 +188,16 @@ export class DutConfig {
         return addresses;
     }
 
-    // the number of kidN processes Squid instance is supposed to have running
-    kidsExpected() {
-        // Explicit "workers 0" enables no-daemon mode (i.e. no kids)
-        if (this._workers !== null && this._workers === 0)
-            return 0;
-
+    // the number of configured dedicated worker processes
+    workerCount() {
         // no explicit "workers N" means one worker kid
-        // explicit "workers N" means N worker kids
-        const workersExpected = this._workers === null ? 1 : this._workers;
+        // explicit "workers N" means N worker kids (including zero N)
+        return (this._workers === null) ? 1 : this._workers;
+    }
 
-        let kidsExpected = 0;
-        kidsExpected += workersExpected;
-        if (this._diskCaching)
-            kidsExpected += 1; // disker
-        if (kidsExpected > 1)
-            kidsExpected += 1; // SMP Coordinator process
-        return kidsExpected;
+    // the number of configured dedicated disker processes
+    diskerCount() {
+        return this._diskCaching ? 1 : 0; // for now
     }
 
     _anyCachingCfg() {
@@ -526,7 +519,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 8,
+                    'Pop-Version': 9,
                 },
             };
 
@@ -536,8 +529,8 @@ export class ProxyOverlord {
             httpOptions.headers['Overlord-Listening-Ports'] =
                 this._dutConfig.listeningPorts().join(",");
 
-            httpOptions.headers['Overlord-kids-expected'] =
-                this._dutConfig.kidsExpected();
+            httpOptions.headers['Overlord-worker-count'] = this._dutConfig.workerCount();
+            httpOptions.headers['Overlord-disker-count'] = this._dutConfig.diskerCount();
 
             const requestBody = command.toHttp(httpOptions);
 
