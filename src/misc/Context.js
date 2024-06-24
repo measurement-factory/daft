@@ -42,7 +42,7 @@ export default class Context {
         if (arguments.length) {
             if (!this._entranceStamp) {
                 const stamp = PrettyDate(now);
-                console.log(`|${stamp} ${this.id} ${format}`, ...rest);
+                console.log(`| ${stamp} ${this.id} ${format}`, ...rest);
             } else {
                 console.log(`   ${format}`, ...rest);
             }
