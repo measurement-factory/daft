@@ -40,8 +40,9 @@ class AccessRecord {
     }
 
     // whether the given %code was logged with a given value
-    checkEqual(name, expectedValue) {
-        const actualValue = this._getRawValue(name);
+    checkEqual(name, rawExpectedValue) {
+        const expectedValue = rawExpectedValue.toString(); // e.g., number to string
+        const actualValue = this._getRawValue(name); // always a string
         if (actualValue !== expectedValue)
             throw new Error(`expected ${name}=${expectedValue}; got ${name}=${actualValue}`);
         // success
@@ -57,7 +58,7 @@ class AccessRecord {
         const actualValue = this._getRawValue(name);
         if (actualValue === '-')
             throw new Error(`expected ${name} with a value; got ${name}=${actualValue}`);
-        // success
+        return actualValue; // success
     }
 }
 
@@ -85,6 +86,23 @@ class AccessRecords {
             return this._records[0];
 
         throw new Error(`expecting a single access record but got ${count}`);
+    }
+
+    // returns the first available AccessRecord
+    first() {
+        if (this.count())
+            return this._records[0];
+
+        throw new Error(`expecting at least one (first) access record but got zero`);
+    }
+
+    // returns the last available AccessRecord
+    last() {
+        const count = this.count();
+        if (count)
+            return this._records[count-1];
+
+        throw new Error(`expecting at least one (last) access record but got zero`);
     }
 
     // adds records that we have not seen before and
