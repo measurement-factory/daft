@@ -426,6 +426,12 @@ export class ProxyOverlord {
         console.log("Proxy restarted");
     }
 
+    async reconfigure() {
+        console.log("Proxy reconfiguring");
+        await this._remoteCall("/reconfigure");
+        console.log("Proxy reconfigured");
+    }
+
     async finishCaching() {
         await this._remoteCall("/finishCaching");
         console.log("Proxy finished any pending caching transactions");
@@ -519,7 +525,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 9,
+                    'Pop-Version': 10,
                 },
             };
 
