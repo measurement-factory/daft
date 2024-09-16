@@ -35,6 +35,9 @@ export default class Agent extends SideAgent {
         // default, the server only expects and serves a single connection.
         this._keepListening = false;
 
+        // customization function for transactions after the first one
+        this._onSubsequentTransaction = null;
+
         // this.server.closeAsync()-returned promise (if that method was called)
         this._serverClosed = null;
     }
@@ -71,15 +74,32 @@ export default class Agent extends SideAgent {
         }
     }
 
+    // Customize 2nd, 3rd, etc. transaction using the supplied function. The
+    // function will be called with the transaction argument. Implies
+    // keepListening(true).
+    onSubsequentTransaction(fun) {
+        assert(arguments.length === 1);
+        assert(fun);
+        assert(!this._onSubsequentTransaction); // for now
+        this._onSubsequentTransaction = fun;
+
+        this.keepListening(true); // may already be true
+    }
+
     // Allow the next connection to trigger a new transaction (instead of the
     // immediate closure in this._startListening() if there was a previous
-    // connection). See also: keepListening().
+    // connection). See also: keepListening() and onSubsequentTransaction().
     resetTransaction() {
+        const sawTransactions = Boolean(this._transaction);
+
         // If the transaction was not started, it is unknown to the log
         // reader. We do not warn about us forgetting such transactions.
         if (this._transaction && this._transaction.started())
             this.context.log("forgetting the previous transaction");
         this._transaction = new Transaction(this); // reset unconditionally
+
+        if (sawTransactions && this._onSubsequentTransaction)
+            this._onSubsequentTransaction(this._transaction);
     }
 
     start() {
