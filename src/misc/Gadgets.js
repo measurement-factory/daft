@@ -178,17 +178,42 @@ export function LocalAddress(socket) {
     };
 }
 
-// to avoid dumping "prettified" bytes on console, omit logPrefix
-// TODO: Add our own socket wrapper to store logPrefix and ensure binary output?
-export function SendBytes(socket, bytes, description) {
-    Must(arguments.length === 3);
+export async function SendBytes(socket, bytes, description, logger = console) {
+    assert(arguments.length === 3 || arguments.length === 4);
     // bytes must be a "binary" string for the binary conversion in write() to work;
     // for example, the following writes just one byte: write("\u2028", 'binary')
     Must(Buffer.from(bytes, "binary").toString("binary") === bytes);
-    // Even though bytes are in binary format, we must specify "binary" explicitly
-    // to avoid *default* conversion to utf8 (that will not work for a binary string!).
-    socket.write(bytes, 'binary');
-    console.log(DescribeSocketIo(socket, `is sending ${bytes.length} ${description} bytes to`));
+    return Promise.try(() => SendBytes_(socket, bytes, description, logger));
+}
+
+// SendBytes() helper
+function SendBytes_(socket, bytes, description, logger) {
+    assert.strictEqual(arguments.length, 4);
+    return new Promise((resolve, reject) => {
+        // Even though bytes are in binary format, we must specify "binary" explicitly
+        // to avoid *default* conversion to utf8 (that will not work for a binary string!).
+        if (socket.write(bytes, 'binary')) {
+            logger.log(DescribeSocketIo(socket, `is sending ${bytes.length} ${description} bytes to`));
+            assert(!socket.writableNeedDrain);
+            resolve(socket);
+        } else {
+            logger.log(DescribeSocketIo(socket, `is buffering and sending ${bytes.length} ${description} bytes to`));
+
+            const errorHandler = (error) => { reject(error); };
+            socket.once('error', errorHandler);
+
+            socket.once('drain', () => {
+                // Prevent accumulation of event listeners (added by previous
+                // once() call, one per successful buffered write() call).
+                // Technically, we should also prevent accumulation of 'drain'
+                // event listeners (one per failed write()), but we assume
+                // that a write failure destroys the entire socket object.
+                socket.removeListener('error', errorHandler);
+
+                resolve(socket);
+            });
+        }
+    });
 }
 
 export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {

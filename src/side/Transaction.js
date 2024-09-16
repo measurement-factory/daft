@@ -38,6 +38,9 @@ export default class Transaction {
             body: null
         };
 
+        // whether we are in the await socket.write() state
+        this._awaitingWrite = false;
+
         // sending = producing + writing
         this._doneProducing = false;
         this._doneSending = null; // Date
@@ -253,7 +256,7 @@ export default class Transaction {
             this.context.exit();
         });
 
-        this.send();
+        await this.send();
 
         this.context.exit();
 
@@ -294,6 +297,10 @@ export default class Transaction {
         this._sentHeadersResolver = null;
     }
 
+    _noteDoneSending() {
+        // kids may overwrite
+    }
+
     checkpoint() {
 
         let doing = [];
@@ -306,6 +313,8 @@ export default class Transaction {
             this._noteSentHeaders();
 
             this._sentEverythingResolver(this);
+
+            this._noteDoneSending();
         }
 
         // Resolve this.sentHeaders() if it is time to do so. This kludgy
@@ -372,12 +381,19 @@ export default class Transaction {
             this.endReceiving(`got ${this.messageInKind} body`);
     }
 
-    send() {
+    // Generates messageOut (if needed) and sends none, a few, or all messageOut bytes.
+    // XXX: In various "not ready to send" cases, does not return a promise to send something later.
+    async send() {
         if (this._doneProducing)
             return;
 
         if (!this._allowedToSend('headers'))
             return;
+
+        if (this._awaitingWrite) {
+            this.context.log("not writing while waiting for the previous write to complete");
+            return;
+        }
 
         let hadHeaders = this._finalizedMessage;
         if (!hadHeaders)
@@ -389,68 +405,68 @@ export default class Transaction {
             return;
         }
 
-
         assert(this.messageOut);
-        const out = this._makeOut(!hadHeaders);
-
-        if (out.length)
-            Gadgets.SendBytes(this.socket, out, this.messageOutKind);
-
-        if (!this.messageOut.body) {
-            this._stopProducing(`produced a bodyless ${this.messageOutKind}`);
-            return;
-        }
-
-        if (this.messageOut.body.outedAll()) {
-            this._stopProducing(`produced the entire ${this.messageOutKind} body`);
-            return;
-        }
-
-        if (this.messageOut.body.doneOuting()) {
-            this._stopProducing(`cannot produce any more ${this.messageOutKind} body bytes`);
-            return;
-        }
-
-        if (this._allowedToSend('body'))
-            this.context.log(`may send more ${this.messageOutKind} body later`);
-
-        // Gadgets.SendBytes() may have sent headers, unblocking body sending.
-        this.checkpoint();
-    }
-
-    _makeOut(callerWantsHeaders) {
-        let out = "";
-
-        if (callerWantsHeaders) {
-            const hdrOut = this.messageOut.prefix(MessageWriter);
-            console.log(`will send ${this.messageOutKind} header` +
-                Gadgets.PrettyMime(this.logPrefixForSending, hdrOut));
-            out += hdrOut;
+        if (!hadHeaders) {
+            const out = this._makeHeader();
+            if (out.length) {
+                this._awaitingWrite = true;
+                await Gadgets.SendBytes(this.socket, out, this.messageOutKind, this.context);
+                this._awaitingWrite = false;
+            }
         }
 
         if (this.messageOut.body && this._allowedToSend('body')) {
-            if (!this._bodyEncoder)
-                this._bodyEncoder = MessageWriter.bodyEncoder(this.messageOut);
-            const bodyOut = this._bodyEncoder.encodeBody(this.messageOut.body);
-            out += bodyOut;
-
-            const madeAllNow = this.messageOut.body.outedAll() &&
-                bodyOut.length === this._bodyEncoder.outputSize();
-            const finishedEncoding = this._bodyEncoder.finished();
-            // Cases using "entire" wording below assume that the encoder may
-            // not output some trailing metadata but always outputs all the
-            // body.out() bytes we feed it with. Also, we use unnecessarily
-            // spelled out conditions below to better document each case.
-            const madeThing =
-                madeAllNow && finishedEncoding ? `the entire ${this.messageOutKind} body`:
-                madeAllNow && !finishedEncoding ? `an incomplete encoding of the entire resource content`:
-                !madeAllNow && finishedEncoding ? `the final piece of the ${this.messageOutKind} body`:
-                !madeAllNow && !finishedEncoding ? `a piece of the ${this.messageOutKind} body`:
-                assert(false);
-            this.context.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
+            const out = this._makeBody();
+            if (out.length) {
+                this._awaitingWrite = true;
+                await Gadgets.SendBytes(this.socket, out, this.messageOutKind, this.context);
+                this._awaitingWrite = false;
+            }
         }
 
-        return out;
+        this.checkpoint();
+    }
+
+    _makeHeader() {
+        const hdrOut = this.messageOut.prefix(MessageWriter);
+
+        if (!this.messageOut.body)
+            this._stopProducing(`produced a bodyless ${this.messageOutKind}`);
+
+        console.log(`will send ${this.messageOutKind} header` +
+            Gadgets.PrettyMime(this.logPrefixForSending, hdrOut));
+        return hdrOut;
+    }
+
+    _makeBody() {
+        if (!this._bodyEncoder)
+            this._bodyEncoder = MessageWriter.bodyEncoder(this.messageOut);
+        const bodyOut = this._bodyEncoder.encodeBody(this.messageOut.body);
+
+        if (this.messageOut.body.outedAll())
+            this._stopProducing(`produced the entire ${this.messageOutKind} body`);
+        else if (this.messageOut.body.doneOuting())
+            this._stopProducing(`cannot produce any more ${this.messageOutKind} body bytes`);
+
+        const madeAllNow = this.messageOut.body.outedAll() &&
+            bodyOut.length === this._bodyEncoder.outputSize();
+        const finishedEncoding = this._bodyEncoder.finished();
+        // Cases using "entire" wording below assume that the encoder may
+        // not output some trailing metadata but always outputs all the
+        // body.out() bytes we feed it with. Also, we use unnecessarily
+        // spelled out conditions below to better document each case.
+        const madeThing =
+            madeAllNow && finishedEncoding ? `the entire ${this.messageOutKind} body`:
+            madeAllNow && !finishedEncoding ? `an incomplete encoding of the entire resource content`:
+            !madeAllNow && finishedEncoding ? `the final piece of the ${this.messageOutKind} body`:
+            !madeAllNow && !finishedEncoding ? `a piece of the ${this.messageOutKind} body`:
+            assert(false);
+        this.context.log(`will send ${madeThing}` + Gadgets.PrettyBody(this.logPrefixForSending, bodyOut));
+
+        if (!finishedEncoding)
+            this.context.log(`may send more ${this.messageOutKind} body later`);
+
+        return bodyOut;
     }
 
     _endReceivingHeaders() {
@@ -470,15 +486,15 @@ export default class Transaction {
     }
 
     _stopProducing(why) {
+        this.context.log("done producing:", why);
         assert(!this._doneProducing);
         this._doneProducing = true;
-        this.context.log("done producing:", why);
-        this.checkpoint();
     }
 
     // whether we are still writing already produced content
     // more content may be produced later unless this._doneProducing
     _writing() {
+        // TODO: Replace this low-level implementation with this._awaitingWrite?
         return this.socket && this.socket.bufferSize;
     }
 

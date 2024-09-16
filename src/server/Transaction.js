@@ -35,7 +35,7 @@ export default class Transaction extends SideTransaction {
         return this.messageOut;
     }
 
-    _stopProducing(why) {
+    _noteDoneSending() {
         let forceEof = this.socket && forcesEof(this.messageIn, this.messageOut);
         if (forceEof && this._closeLast) {
             this.context.log("avoiding connection half-closure:", this._closeLast);
@@ -56,7 +56,7 @@ export default class Transaction extends SideTransaction {
             // we might still be writing here
         }
 
-        super._stopProducing(why);
+        super._noteDoneSending();
     }
 
     generateDefaultMessage() {
