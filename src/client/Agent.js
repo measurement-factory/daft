@@ -38,6 +38,8 @@ export default class Agent extends SideAgent {
 
     expectStatusCode(expectedCode) {
         assert(StatusLine.IsNumericCode(expectedCode));
+        if (!this.transaction().response)
+            throw new Error(`Expected ${expectedCode} response, but received no response at all`);
         assert.strictEqual(this.transaction().response.startLine.codeInteger(), expectedCode);
     }
 
