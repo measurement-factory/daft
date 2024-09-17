@@ -83,6 +83,9 @@ export default class Transaction {
 
         // (the reason to) close the socket only after our peer closes
         this._closeLast = null;
+
+        // a function to call at every checkpoint(); see caller for parameters
+        this._customCheckpoint = null;
     }
 
     started() {
@@ -351,6 +354,9 @@ export default class Transaction {
         if (this._ending)
             doing.push(`ending`);
 
+        if (this._customCheckpoint)
+            this._customCheckpoint(this, doing);
+
 
         if (doing.length)
             this.context.log('still', doing.join(", "));
@@ -362,6 +368,7 @@ export default class Transaction {
         Gadgets.ReceivedBytes(this.socket, virginData, this.messageInKind, this.messageParser.logPrefix);
         this.parse(virginData);
         this.send();
+        this.checkpoint(); // XXX: onReceive() my call checkpoint() twice or even thrice
     }
 
     parse(virginData) {
