@@ -15,6 +15,9 @@ import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import Command from "../overlord/Command";
 
+// This default is used only when memory caching is enabled via --dut-memory-cache=true.
+const DefaultMemoryCacheSize = 100*1024*1024; // bytes (squid.conf defaults to 256 MB)
+
 Config.Recognize([
     {
         option: "dut-at-startup",
@@ -43,6 +46,12 @@ Config.Recognize([
         description: "whether to enable cache_mem",
     },
     {
+        option: "dut-memory-cache-size",
+        type: "Number",
+        default: DefaultMemoryCacheSize.toString(),
+        description: "cache_mem size in bytes (when memory cache is enabled); enable memory cache with --dut-memory-cache=true",
+    },
+    {
         option: "dut-disk-cache",
         type: "Boolean",
         default: "false",
@@ -66,8 +75,25 @@ export class DutConfig {
     constructor() {
         this._workers = null; // no workers directive at all
         this._dedicatedWorkerPorts = false; // one listening port per worker
-        this._memoryCaching = Config.dutMemoryCache();
+
+        if (Config.dutMemoryCache()) {
+            this._memoryCacheSize = Config.dutMemoryCacheSize();
+            if (!this._memoryCacheSize)
+                throw new Error("--dut-memory-cache=true is not compatible with --dut-memory-cache-size=0");
+        } else {
+            this._memoryCacheSize = 0; // disabled
+            // XXX: We cannot detect a positive --dut-memory-cache-size value
+            // conflict because that option has a positive _default_ value.
+            // Ideally, it would have a default "unset" state instead, but
+            // Config API cannot test for that.
+            //
+            // N.B. Config.isExplicitlySet() only tests whether the option was
+            // set on the command line; we cannot use this API here because it
+            // returns false for options set by Config generators.
+        }
+
         this._diskCaching = Config.dutDiskCache();
+
         this._collapsedForwarding = false;
         this._listeningPorts = [];
         this._cachePeers = []; // CachePeer::Config objects
@@ -82,7 +108,7 @@ export class DutConfig {
     }
 
     cachingEnabled() {
-        return this._memoryCaching || this._diskCaching;
+        return this._memoryCacheSize || this._diskCaching;
     }
 
     hasCachePeers() {
@@ -115,7 +141,14 @@ export class DutConfig {
     memoryCaching(enable) {
         assert.strictEqual(arguments.length, 1);
         assert(enable !== undefined); // for now; can be used for default mode later
-        this._memoryCaching = enable;
+        this._memoryCacheSize = enable ? DefaultMemoryCacheSize : 0;
+    }
+
+    memoryCacheSize(bytes) {
+        assert.strictEqual(arguments.length, 1);
+        assert(bytes !== undefined);
+        assert(bytes >= 0);
+        this._memoryCacheSize = bytes;
     }
 
     diskCaching(enable) {
@@ -218,17 +251,16 @@ export class DutConfig {
         // Also allow caching of responses configured to exceed default 512KB
         // maximum_object_size_in_memory limit.
         const defaultObjectSizeInMemoryMax = 512*1024; // 512KB default
-        const sizeToAllow = Math.max(defaultObjectSizeMax, maxResponseSize);
-        if (this._memoryCaching && sizeToAllow > defaultObjectSizeInMemoryMax)
+        const sizeToAllow = Math.min(this._memoryCacheSize, Math.max(defaultObjectSizeMax, maxResponseSize));
+        if (this._memoryCacheSize && sizeToAllow > defaultObjectSizeInMemoryMax)
             cfg += `maximum_object_size_in_memory ${sizeToAllow} bytes`;
 
         return this._trimCfg(cfg);
     }
 
     _memoryCachingCfg() {
-        const cacheSize = this._memoryCaching ? "100 MB" : "0";
         let cfg = `
-            cache_mem ${cacheSize}
+            cache_mem ${this._memoryCacheSize} bytes
         `;
         return this._trimCfg(cfg);
     }
