@@ -104,6 +104,14 @@ async function _TestAttempt(Test, attemptId) {
 
         if (Config.ConcurrencyLevel > 1)
             console.log(`Finished all ${Config.ConcurrencyLevel} test threads.`);
+    } catch (error) {
+        // We report the caught `try` error A here because otherwise, if
+        // `finally` code throws B, then error A is not reported! The same
+        // loss would happen if a global timeout expires (throwing C) while
+        // waiting for that `finally` code below to complete.
+        console.log('Test failure: ', error);
+        // Signal an error to caller without reporting the same error twice.
+        throw "Test failure was detailed earlier";
     } finally {
         console.log(`Shutting down DUT`);
         await test.shutdown();
