@@ -36,6 +36,11 @@ export default class Agent {
         this._savedSocket = null;
     }
 
+    // the total number of transactions that started to run() so far
+    transactionsStarted() {
+        return this._xStarted;
+    }
+
     // the total number of transactions that finished so far
     transactionsFinished() {
         return this._xFinished;
