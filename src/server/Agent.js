@@ -21,6 +21,10 @@ export default class Agent extends SideAgent {
 
         super(new Context("server", ++Servers));
 
+        // individual transaction responses will be based on this resource (if
+        // this resource is configured by calling via this.serve())
+        this._resource = null;
+
         this.server = null; // TCP server to be created in start()
 
         // where to listen for requests (may contain wildcards like '::')
@@ -97,6 +101,9 @@ export default class Agent extends SideAgent {
         if (this._transaction && this._transaction.started())
             this.context.log("forgetting the previous transaction");
         this._transaction = new Transaction(this); // reset unconditionally
+
+        if (this._resource)
+            this._transaction.response.from(this._resource);
 
         if (sawTransactions && this._onSubsequentTransaction)
             this._onSubsequentTransaction(this._transaction);
@@ -205,7 +212,10 @@ export default class Agent extends SideAgent {
     serve(resource) {
         if (!this._requestedListeningAddress && resource.uri.address)
             this.listenAt(resource.uri.address);
-        this.response.from(resource);
+        // No cloning: We treat this resource as "live" -- it may change.
+        this._resource = resource;
+        // Any any resource changes will only affect the next transaction.
+        this._transaction.response.from(this._resource);
     }
 
     listenAt(address) {
