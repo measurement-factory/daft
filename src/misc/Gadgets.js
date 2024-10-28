@@ -178,14 +178,6 @@ export function LocalAddress(socket) {
     };
 }
 
-export async function SendBytes(socket, bytes, description, logger = console) {
-    assert(arguments.length === 3 || arguments.length === 4);
-    // bytes must be a "binary" string for the binary conversion in write() to work;
-    // for example, the following writes just one byte: write("\u2028", 'binary')
-    Must(Buffer.from(bytes, "binary").toString("binary") === bytes);
-    return Promise.try(() => SendBytes_(socket, bytes, description, logger));
-}
-
 // SendBytes() helper
 function SendBytes_(socket, bytes, description, logger) {
     assert.strictEqual(arguments.length, 4);
@@ -214,6 +206,14 @@ function SendBytes_(socket, bytes, description, logger) {
             });
         }
     });
+}
+
+export async function SendBytes(socket, bytes, description, logger = console) {
+    assert(arguments.length === 3 || arguments.length === 4);
+    // bytes must be a "binary" string for the binary conversion in write() to work;
+    // for example, the following writes just one byte: write("\u2028", 'binary')
+    Must(Buffer.from(bytes, "binary").toString("binary") === bytes);
+    return Promise.try(() => SendBytes_(socket, bytes, description, logger));
 }
 
 export function ReceivedBytes(socket, bytes, description /*, logPrefix*/) {
