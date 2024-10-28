@@ -81,6 +81,21 @@ export default class Response extends Message {
         this.header.addByDefault("Date", new Date().toUTCString());
         this._rememberIdOf(request);
 
+        // TODO: Handle other conditions.
+        if (!this.startLine.hasCode() && request.header.has("If-Modified-Since") && this.header.has("Last-Modified")) {
+            // XXX: This strcmp()-like comparison fails on unusually-formatted values.
+            const ims = request.header.value("If-Modified-Since");
+            const lmt = this.header.value("Last-Modified");
+            if (ims === lmt) {
+                console.log(`defaulting to 304 because IMS matched Last-Modified: ${ims}`);
+                this.startLine.code(304);
+            } else {
+                console.log(`not defaulting to 304 because IMS mismatched Last-Modified:\n` +
+                    `requested If-Modified-Since: ${ims}` +
+                    `preset        Last-Modified: ${lmt}`);
+            }
+        }
+
         let bodyExpected = this.body !== null; // including undefined this.body
         if (bodyExpected && this._protocolBansBody(request)) {
             if (this.body && this.body.forcedToBePresent()) {
