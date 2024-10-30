@@ -105,6 +105,11 @@ class AccessRecords {
         throw new Error(`expecting at least one (last) access record but got zero`);
     }
 
+    // returns all available AccessRecord objects
+    all() {
+        return this._records; // may be empty
+    }
+
     // adds records that we have not seen before and
     // returns AccessRecords containing those added records
     addUnique(allRecords) {
