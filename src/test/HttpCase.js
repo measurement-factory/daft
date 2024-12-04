@@ -4,6 +4,7 @@
 
 /* Manages a single case testing an HTTP client, server, and/or proxy. */
 
+import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
 import * as Lifetime from "../misc/Lifetime";
 import Checker from "../test/Checker";
@@ -31,6 +32,7 @@ export default class HttpCase {
         this._stopAgentsPromise = null;
 
         this._expectedRuntime = new Date(60*1000); // 1 minute
+        this._expectedRuntimeCustomized = false;
 
         this._startTime = null;
         this._finishTime = null;
@@ -40,6 +42,7 @@ export default class HttpCase {
     expectLongerRuntime(/* Date */ extra) {
         this.context.log(`will let the test case run ${Gadgets.PrettyTime(extra)} longer`);
         this._expectedRuntime = Gadgets.DateSum(this._expectedRuntime, extra);
+        this._expectedRuntimeCustomized = true;
     }
 
     // add (and return) a client, assuming there may be more than one
@@ -109,9 +112,9 @@ export default class HttpCase {
     }
 
     async _run() {
-        Lifetime.Extend(this._expectedRuntime);
-
         this._setDefaults();
+
+        Lifetime.Extend(this._calculateRuntimeExtension());
 
         const agents = this._agents();
         assert(agents.length); // a test case cannot work without an agent
@@ -133,6 +136,18 @@ export default class HttpCase {
         // all agents are stopped here
         // check only after a successful run
         await this._doCheck();
+    }
+
+    _calculateRuntimeExtension() {
+        if (this._expectedRuntimeCustomized)
+            return this._expectedRuntime;
+
+        // allocate extra minutes to handle huge bodies
+        // TODO: Also ask agents about their message body size expectations.
+        if (Config.bodySize() > Config.LargeBodySize())
+            this.expectLongerRuntime(new Date(5*60*1000));
+
+        return this._expectedRuntime;
     }
 
     startTime() {
