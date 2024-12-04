@@ -13,6 +13,7 @@ import * as AccessRecords from "../overlord/AccessRecords";
 import * as CachePeer from "../overlord/CachePeer";
 import * as Config from "../misc/Config";
 import * as Gadgets from "../misc/Gadgets";
+import * as Lifetime from "../misc/Lifetime";
 import Command from "../overlord/Command";
 
 // This default is used only when memory caching is enabled via --dut-memory-cache=true.
@@ -416,6 +417,9 @@ export class ProxyOverlord {
 
     async noteStartup() {
         assert(!this._start);
+
+        // discovering proxy execution environment and launching the proxy may take a minute
+        Lifetime.Extend(new Date(1*60*1000));
 
         // before we can start cache_peers and/or proxy below
         const finalizedConfig = this._dutConfig.make();
