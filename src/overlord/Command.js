@@ -10,7 +10,7 @@ Config.Recognize([
         option: "dut-shutdown-manner",
         type: "String",
         enum: [ 'gracefully', 'urgently', 'immediately' ],
-        default: 'immediately',
+        default: 'urgently',
         description: "how to shut DUT down (if needed)",
     },
 ]);
@@ -25,6 +25,11 @@ export default class Command {
         this._name = name;
 
         this._config = null; // DUT configuration file
+
+        // TODO: Do not send when not needed
+        this._options = {
+            "shutdown-manner": Config.DutShutdownManner,
+        };
     }
 
     hasConfig() {
@@ -43,13 +48,22 @@ export default class Command {
         return this._config;
     }
 
+    setOption(name, value) {
+        assert.strictEqual(arguments.length, 2);
+        assert.notStrictEqual(value, undefined);
+        assert.notStrictEqual(value, null);
+        assert(!(name in this._options));
+        this._options[name] = value;
+    }
+
     // adjusts httpOptions (i.e. http.request parameters) and
     // returns HTTP request body (or null if no body should be written)
     toHttp(httpOptions) {
         httpOptions.path = this._name;
 
-        // TODO: Do not send when not needed
-        this._setHttpOption(httpOptions, "shutdown-manner", Config.DutShutdownManner);
+        for (const name in this._options) {
+            this._setHttpOption(httpOptions, name, this._options[name]);
+        }
 
         if (!this.hasConfig())
             return null; // no HTTP request body

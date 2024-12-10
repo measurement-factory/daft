@@ -98,6 +98,7 @@ export class DutConfig {
         this._collapsedForwarding = false;
         this._listeningPorts = [];
         this._cachePeers = []; // CachePeer::Config objects
+        this._memoryPools = true; // mimics default
         this._customDirectives = [];
 
         this._withCachePeers(Config.dutCachePeers());
@@ -158,6 +159,12 @@ export class DutConfig {
         this._diskCaching = enable;
     }
 
+    memoryPools(enable) {
+        assert.strictEqual(arguments.length, 1);
+        assert(enable !== undefined); // for now; can be used for default mode later
+        this._memoryPools = enable;
+    }
+
     collapsedForwarding(enable) {
         assert.strictEqual(arguments.length, 1);
         assert(enable !== undefined); // for now; can be used for default mode later
@@ -188,6 +195,7 @@ export class DutConfig {
             ${this._anyCachingCfg()}
             ${this._memoryCachingCfg()}
             ${this._diskCachingCfg()}
+            ${this._memoryPoolsCfg()}
             ${this._customCfg()}
             http_access allow localhost
             dns_nameservers 127.0.0.1
@@ -323,6 +331,13 @@ export class DutConfig {
         return this._trimCfg(cfg);
     }
 
+    _memoryPoolsCfg() {
+        let cfg = '';
+        if (!this._memoryPools)
+            cfg = 'memory_pools off';
+        return this._trimCfg(cfg);
+    }
+
     _customCfg() {
         let cfg = '';
         for (let directive of this._customDirectives)
@@ -379,6 +394,8 @@ export class ProxyOverlord {
         this._cachePeers = []; // started cache_peers
         this._stoppedCachePeers = false; // stopCachePeers() has been called
 
+        this._memoryLeakDetection = undefined; // set by detectMemoryLeaks()
+
         // previously seen AccessRecords
         this._oldAccessRecords = null;
     }
@@ -404,6 +421,28 @@ export class ProxyOverlord {
         this._ignoreProblems.push(regex);
     }
 
+    // Supported `how` values:
+    // * undefined: detect if possible
+    // * true: detect; abort if detection is not possible
+    // * false: do not detect
+    detectMemoryLeaks(how) {
+        assert.strictEqual(arguments.length, 1);
+        // To simplify triage and this function reporting code... Also flags
+        // attempts to change this._memoryLeakDetection and then restarting
+        // Squid: We restart() Squid with the original squid.conf that may
+        // stop reflecting this._memoryLeakDetection value at restart time.
+        assert(this._memoryLeakDetection == undefined);
+        if (how === undefined)
+            console.log("Will determine whether to detect memory leaks at proxy startup time");
+        else if (how === false)
+            console.log("Will not detect memory leaks");
+        else if (how === true)
+            console.log("Will detect memory leaks");
+        else
+            throw new Error(`BUG: unsupported detectMemoryLeaks() parameter: ${how}`);
+        this._memoryLeakDetection = how;
+    }
+
     // started cache_peer at a given zero-based index
     cachePeerAt(idx) {
         assert(idx >= 0);
@@ -415,6 +454,33 @@ export class ProxyOverlord {
         return this._cachePeers;
     }
 
+    async _finalizeDutConfig() {
+
+        // before we can this._dutConfig.make() below
+        if (this._memoryLeakDetection === undefined && Config.dutShutdownManner() === "immediately") {
+            console.log(`Cannot detect memory leaks due to proxy shutdown manner: ${Config.dutShutdownManner()}`);
+            this._memoryLeakDetection = false;
+        }
+        if (this._memoryLeakDetection === undefined) {
+            const answer = await this._remoteCall('/executionEnvironment');
+            const ee = answer.executionEnvironment;
+            assert(ee);
+            const canDetectLeaks = ee.valgrindIsPresent;
+            console.log(`Proxy execution environment ${canDetectLeaks ? "can" : "cannot"} detect memory leaks`);
+            this._memoryLeakDetection = canDetectLeaks;
+        }
+        if (this._memoryLeakDetection) {
+            // Valgrind suppressions do not work with (current) memory pools
+            // because valgrind only checks original/true allocation stack
+            // trace. A subsequent from-pool "allocation" from suppressed code
+            // will not match its suppression and will be reported as a leak,
+            // with an irrelevant/misleading original allocation stack trace!
+            this._dutConfig.memoryPools(false);
+        }
+
+        return this._dutConfig.make();
+    }
+
     async noteStartup() {
         assert(!this._start);
 
@@ -422,7 +488,7 @@ export class ProxyOverlord {
         Lifetime.Extend(new Date(1*60*1000));
 
         // before we can start cache_peers and/or proxy below
-        const finalizedConfig = this._dutConfig.make();
+        const finalizedConfig = await this._finalizeDutConfig();
 
         if (this.config().hasCachePeers())
             await this._startCachePeers();
@@ -437,6 +503,7 @@ export class ProxyOverlord {
         console.log("Resetting proxy");
         const command = new Command("/reset");
         command.setConfig(finalizedConfig);
+        command.setOption('valgrind-use', this._memoryLeakDetection ? "1" : "0");
         this._start = this._remoteCall(command);
 
         await this._start;
@@ -458,7 +525,9 @@ export class ProxyOverlord {
 
     async restart() {
         console.log("Proxy restarting");
-        await this._remoteCall("/restart");
+        const command = new Command("/restart");
+        command.setOption('valgrind-use', this._memoryLeakDetection ? "1" : "0");
+        await this._remoteCall(command);
         console.log("Proxy restarted");
     }
 
@@ -561,7 +630,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 10,
+                    'Pop-Version': 11,
                 },
             };
 
@@ -595,7 +664,10 @@ export class ProxyOverlord {
                     }
 
                     const body = JSON.parse(rawBody);
-                    this._updateHealth(body.health);
+                    if (body.health)
+                        this._updateHealth(body.health);
+                    else
+                        assert(body.minimal);
 
                     resolve(body.answer);
                 });
