@@ -8,6 +8,56 @@ import * as Gadgets from "../misc/Gadgets";
 import Context from "../misc/Context";
 import assert from "assert";
 
+// asynchronous preconditions for sending a given message part
+class SendingBlock {
+    constructor(senderContext, partName) {
+        assert(senderContext);
+        assert(partName);
+
+        this.context = senderContext;
+        this._partName = partName;
+        this._active = false; // nobody is waiting for this block to be removed yet
+        this._events = new Set(); // descriptions of promises that sender awaits
+    }
+
+    noteWaitStart(waitingFor) {
+        assert(this._partName);
+        const added = this._events.add(waitingFor);
+        assert(added);
+        const will = this._events.size > 1 ? "will also" : "will";
+        this.context.log(`${will} block sending ${this._partName} to ${waitingFor}`);
+    }
+
+    noteWaitEnd(waitingFor) {
+        const deleted = this._events.delete(waitingFor);
+        assert(deleted);
+        this.context.log(`no longer blocking sending ${this._partName} to ${waitingFor}`);
+    }
+
+    // the description of an event we are still waiting for (or null)
+    stillWaiting() {
+        if (!this._events.size)
+            return null;
+        return this._events.values().next().value;
+    }
+
+    partName() {
+        return this._partName;
+    }
+
+    active() {
+        return this._active;
+    }
+
+    activate() {
+        this._active = true; // may already be true
+    }
+
+    deactivate() {
+        this._active = false; // may already be false
+    }
+}
+
 // a process of sending and receiving a (request, response) tuple
 // kids define which of those two messages is sent and which is received
 export default class Transaction {
@@ -133,28 +183,26 @@ export default class Transaction {
 
     async _blockSending(part, externalEvent, waitingFor) {
         assert(part in this._sendingBlocks); // valid message part name
-        assert(!this._sendingBlocks[part]); // not really needed; may simplify triage
-        const block = {
-            what: `${this.messageOutKind} ${part}`,
-            waitingFor: waitingFor,
-            active: false // nobody is waiting for this block to be removed yet
-        };
-        this._sendingBlocks[part] = block;
-        this.context.log(`will block sending ${block.what} to ${block.waitingFor}`);
-        await externalEvent;
-        this._unblockSending(part);
-    }
 
-    _unblockSending(part) {
-        assert(part in this._sendingBlocks); // valid message part name
+        if (!this._sendingBlocks[part])
+            this._sendingBlocks[part] = new SendingBlock(this.context, `${this.messageOutKind} ${part}`);
         const block = this._sendingBlocks[part];
-        assert(block);
 
-        const verb = block.active ? "resumes" : "will no longer block";
-        this.context.enter(`${verb} sending ${block.what} after ${block.waitingFor}`);
-        this._sendingBlocks[part] = null;
-        if (block.active) {
-            block.active = false;
+        block.noteWaitStart(waitingFor);
+        await externalEvent;
+        block.noteWaitEnd(waitingFor);
+
+        const stillWaitingFor = block.stillWaiting();
+        if (stillWaitingFor) {
+            const verb = block.active() ? "continue to" : "will";
+            this.context.log(`still ${verb} block sending ${block.partName()} to ${stillWaitingFor}`);
+            return;
+        }
+
+        const verb = block.active() ? "resumes" : "will no longer block";
+        this.context.enter(`${verb} sending ${block.partName()}`);
+        if (block.active()) {
+            block.deactivate();
             this.send(); // may block again
         }
         this.context.exit();
@@ -167,12 +215,17 @@ export default class Transaction {
         if (!block)
             return true; // never configured
 
-        if (block.active)
-            return false; // configured and already activated
+        const stillWaitingFor = block.stillWaiting();
+        if (stillWaitingFor) {
+            const verb = block.active() ? "continue to" : "will";
+            this.context.log(`not ready to send ${block.partName()}: ${stillWaitingFor}`);
+            block.activate(); // may already be active
+            return false;
+        }
 
-        block.active = true;
-        this.context.log(`not ready to send ${block.what}: ${block.waitingFor}`);
-        return false; // configured and now activated
+        const how = block.active() ? "now" : "still";
+        this.context.log(`${how} ready to send ${block.partName()}`);
+        return true;
     }
 
     sentHeaders() {
