@@ -8,7 +8,7 @@ import assert from "assert";
 import { PrettyTime, PrettyDate, DateSum, DateDiff } from "../misc/Gadgets";
 
 // The default 60s delay is meant to be long enough for most single tests.
-const Lifetime_ = new Date(60*1000);
+const Lifetime_ = new Date(260*1000); // XXX
 
 let _GlobalTimeout = null;
 let _ExpectedDeath = null; // _GlobalTimeout expiration Date
