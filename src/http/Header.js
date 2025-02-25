@@ -130,9 +130,9 @@ export default class Header {
         let values = this.values(name);
         let value = values.pop();
 
-        if (values.length > 1) { // multiple values
+        if (values.length) { // there were multiple items in values
             // TODO: We should compare _parsed_ items.
-            if (!value.every(function (item) {
+            if (!values.every(function (item) {
                 return item === value;
             }))
                 return undefined; // multiple different values
