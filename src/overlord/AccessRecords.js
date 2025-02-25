@@ -170,6 +170,7 @@ export function LogFormat(formatName)
     format += _LogFormatEntry('%>a');
     format += _LogFormatEntry('%Ss');
     format += _LogFormatEntry('%>Hs');
+    format += _LogFormatEntry('%<Hs');
     format += _LogFormatEntry('%<st');
     format += _LogFormatEntry('%rm');
     format += _LogFormatEntry('%ru');
