@@ -206,19 +206,35 @@ export default class Header {
         return null;
     }
 
-    values(name) {
+    // Space-trimmed delimiter-separated values of the named header field(s),
+    // without the delimiters. Returned field value(s) may be empty. A null
+    // delimiter prevents splitting individual header field values.
+    values(name, delimiter = undefined) {
+        if (delimiter === undefined)
+            delimiter = ','; // XXX: Treat Cookie-related headers specially
+
         let result = [];
         let id = Field.Id(name);
         for (let field of this.fields) {
-            if (field.id() === id)
-                result.push(field.value);
+            if (field.id() === id) {
+                if (delimiter === null) {
+                    result.push(field.value.trim());
+                } else {
+                    const rawItems = field.value.split(delimiter);
+                    const trimmedItems = Array.from(rawItems, item => item.trim());
+                    result.push(...trimmedItems);
+                }
+            }
         }
         return result;
     }
 
-    // throws if a single value was requested but 0 or 2+ were present
+    // Assumes that the named header field is not supposed to be repeated and,
+    // hence, does not use any value delimiters and must not be transmitted
+    // via multiple headers. Throws if no or multiple same-name header fields
+    // are present.
     value(name) {
-        let values = this.values(name);
+        const values = this.values(name, null);
         Must(values.length === 1);
         return values[0];
     }
@@ -227,8 +243,19 @@ export default class Header {
     expectField(expectedField) {
         assert(expectedField);
         const name = expectedField.name;
+        const receivedValue = this.value(name);
+        assert.equal(expectedField.value, receivedValue,
+            `expected '${name}: ${expectedField.value}' header field; ` +
+            `received '${name}: ${expectedField.value}' instead`);
+    }
+
+    // asserts that a matching header field value is present (possibly among
+    // other same-name comma-separated fields)
+    expectFieldValueAmongOthers(expectedField) {
+        assert(expectedField);
+        const name = expectedField.name;
         const actualValues = this.values(name);
-        Http.AssertForwardedHeaderFieldValue([ expectedField.value ], actualValues, `${name} header field`);
+        Http.AssertForwardedHeaderFieldValueAmongOthers(expectedField.value, actualValues, `${name} header field`);
     }
 
     add(...args) {

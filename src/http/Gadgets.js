@@ -79,11 +79,23 @@ export function AssertForwardedHeaderFieldValue(sent, received, context) {
     assert.equal(received.length, sent.length, `same number of sent and received ${context} values`);
     for (let i = 0; i < sent.length; ++i) {
         // trim while comparing but show failed assert using raw values
+        // TODO: See AssertForwardedHeaderField() regarding odd reporting here.
         if (sent[i].trim() !== received[i].trim()) {
             assert.equal(received[i], sent[i], `same ${context} value #${i}: ${sent[i]} is not ${received[i]}`);
             assert(false, `unreachable code: ${sent[i]} is not ${received[i]}`);
         }
     }
+}
+
+// assert if received HTTP header field value(s) do not include the sent value
+export function AssertForwardedHeaderFieldValueAmongOthers(sent, received, context) {
+    const trimmedSentValue = sent.trim();
+    for (let i = 0; i < received.length; ++i) {
+        // trim while comparing but show raw values in assert messages
+        if (trimmedSentValue === received[i].trim())
+            return;
+    }
+    throw new Error(`cannot find sent field value '${sent}' among ${received.length} received ${context} values`);
 }
 
 function AssertForwardedHeaderField(sent, received, field, kind) {
@@ -97,6 +109,17 @@ function AssertForwardedHeaderField(sent, received, field, kind) {
         if (IsFraming(name) && !received.header.has(name))
             return;
         assert(received.header.has(name), `received ${kind} has ${name}`);
+        // Both header.values(name) calls below will split monolithic values
+        // like dates using default "," delimiter. However, the result should
+        // work OK because individual value components (e.g., day of the week
+        // name in an If-Modified-Since header) should still match. The only
+        // known problem with this approach is that current diagnostics will
+        // look odd (e.g., reporting day of the week difference instead of
+        // whole-date difference). TODO: Recognize common monolithic headers?
+        //
+        // We could prevent splitting, but then we would assert when, say, a
+        // Connection header values are split differently across sent and
+        // received header fields.
         AssertForwardedHeaderFieldValue(
             sent.header.values(name),
             received.header.values(name),
