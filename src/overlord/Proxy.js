@@ -531,9 +531,14 @@ export class ProxyOverlord {
         console.log("Proxy restarted");
     }
 
-    async reconfigure() {
-        console.log("Proxy reconfiguring");
-        await this._remoteCall("/reconfigure");
+    async reconfigure(newConfig = undefined) {
+        console.log("Reconfiguring proxy");
+        // TODO: Caller(?) may need to start new peers and/or stop old ones if
+        // cache_peers have changed. See also: this._startCachePeers().
+        const command = new Command("/reconfigure");
+        if (newConfig !== undefined)
+            command.setConfig(newConfig.make());
+        await this._remoteCall(command);
         console.log("Proxy reconfigured");
     }
 
@@ -630,7 +635,7 @@ export class ProxyOverlord {
                 host: "127.0.0.1",
                 port: 13128,
                 headers: {
-                    'Pop-Version': 11,
+                    'Pop-Version': 12,
                 },
             };
 
