@@ -53,7 +53,7 @@ export class Config {
             this.setName(`peer${idx+1}`);
     }
 
-    toString() {
+    directive() {
         let cfg = `cache_peer` +
             ` ${this._httpListeningHostPort.host}` +
             ` parent` +
@@ -65,6 +65,13 @@ export class Config {
             cfg += ` name=${this._name}`;
 
         return cfg;
+    }
+
+    toString() {
+        // TODO: Printing directive line in caller context is rarely useful
+        // and usually too noisy. Replace with custom code returning something
+        // like name()-or-listenting_port?
+        return this.directive();
     }
 }
 

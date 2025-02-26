@@ -326,7 +326,7 @@ export class DutConfig {
         for (let idx = 0; idx < this._cachePeers.length; ++idx) {
             const cachePeerCfg = this._cachePeers[idx];
             cachePeerCfg.finalizeWithIndex(idx);
-            cfg += cachePeerCfg.toString() + "\n";
+            cfg += cachePeerCfg.directive() + "\n";
         }
 
         // prohibit DIRECT forwarding of requests meant for a cache_peer
