@@ -76,8 +76,14 @@ export class Config {
 }
 
 export class Agent extends ServerAgent {
-    constructor() {
-        super(...arguments);
+    constructor(config) {
+        assert.strictEqual(arguments.length, 1);
+
+        super();
+
+        assert(config);
+        assert(!this._config);
+        this._config = config;
 
         // TODO: Enhance Side::Agent.context generation to use class type name
 
@@ -92,6 +98,10 @@ export class Agent extends ServerAgent {
         this.onSubsequentTransaction((x) => {
             x.response.header.add("Via", `1.1 ${this.context.id} (Daft cache_peer${suffix})`);
         });
+    }
+
+    config() {
+        return this._config;
     }
 }
 

@@ -626,7 +626,7 @@ export class ProxyOverlord {
     }
 
     _startCachePeer(cachePeerCfg) {
-        const cachePeer = new CachePeer.Agent();
+        const cachePeer = new CachePeer.Agent(cachePeerCfg);
         cachePeer.listenAt(cachePeerCfg.httpListeningHostPort());
         this._cachePeers.push(cachePeer);
         return cachePeer.start();
