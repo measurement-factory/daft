@@ -327,14 +327,20 @@ export class DutConfig {
             const cachePeerCfg = this._cachePeers[idx];
             cachePeerCfg.finalizeWithIndex(idx);
             cfg += cachePeerCfg.directive() + "\n";
+
+            const routingField = CachePeer.RoutingField(cachePeerCfg);
+            cfg += `
+                acl targetsCachePeer_${cachePeerCfg.name()} req_header ${routingField.name} ${routingField.value}
+                cache_peer_access ${cachePeerCfg.name()} allow targetsCachePeer_${cachePeerCfg.name()}
+            `;
         }
 
         // prohibit DIRECT forwarding of requests meant for a cache_peer
         const routingField = CachePeer.RoutingField();
         cfg += `
             nonhierarchical_direct off
-            acl routedToCachePeer req_header ${routingField.name} ${routingField.value}
-            never_direct allow routedToCachePeer
+            acl targetsAnyCachePeer req_header ${routingField.name} ${routingField.value}
+            never_direct allow targetsAnyCachePeer
         `;
 
         return this._trimCfg(cfg);

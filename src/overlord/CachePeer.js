@@ -73,6 +73,12 @@ export class Config {
         // like name()-or-listenting_port?
         return this.directive();
     }
+
+    // Help DUT to route the request to this cache peer.
+    // See also: Attract()
+    attract(request) {
+        request.header.add(RoutingField(this));
+    }
 }
 
 export class Agent extends ServerAgent {
@@ -105,8 +111,14 @@ export class Agent extends ServerAgent {
     }
 }
 
-export function RoutingField() {
-    return new HttpField(Http.DaftFieldName("Routing"), "cache_peer");
+// Squid should route a request with this header field to a cache_peer.
+// Supplying cachePeerConfig routes the request to the given cache_peer.
+// See also: Attract(), Config::attract(), and DutConfig::_cachePeersCfg().
+export function RoutingField(cachePeerConfig = null) {
+    let value = 'cache_peer';
+    if (cachePeerConfig)
+        value += ` name=${cachePeerConfig.name()}`;
+    return new HttpField(Http.DaftFieldName("Routing"), value);
 }
 
 // help DUT to route the request to a cache peer
