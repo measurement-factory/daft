@@ -104,7 +104,7 @@ export class DutConfig {
         this._primaryListeningAddress = Config.proxyAuthority();
         this._rememberListeningPort(this._primaryListeningAddress.port); // usually 3128
 
-        this._withCachePeers(Config.dutCachePeers());
+        this.resetCachePeers(Config.dutCachePeers());
     }
 
     // DUT listening ports; they may be difficult for Overlord to infer
@@ -135,12 +135,21 @@ export class DutConfig {
         this._dedicatedWorkerPorts = enable;
     }
 
-    _withCachePeers(count) {
+    // Replace all cache_peer configurations with the given number of freshly generated ones.
+    // See also: reseCachePeersTo(newConfigs)
+    resetCachePeers(count) {
         assert(count >= 0);
-        assert(!this._cachePeers.length);
-        while (this._cachePeers.length < count) {
-            this._cachePeers.push(new CachePeer.Config());
-        }
+        let newConfigs = [];
+        while (newConfigs.length < count)
+            newConfigs.push(new CachePeer.Config());
+        this.resetCachePeersTo(newConfigs);
+    }
+
+    // Replace all cache_peer configurations with the given ones.
+    // See also: reseCachePeers(count)
+    resetCachePeersTo(newConfigs) {
+        this._cachePeers = [];
+        this._cachePeers.push(...newConfigs);
     }
 
     memoryCaching(enable) {
