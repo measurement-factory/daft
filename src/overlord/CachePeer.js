@@ -68,6 +68,14 @@ export class Agent extends ServerAgent {
         // expect a no-request TCP connection when the proxy is brought up and
         // at least one HTTP request after that
         this.keepListening(true);
+
+        // TODO: This works because the first transaction ought to be a TCP
+        // probe. Find a better way to supply the same header to all
+        // ServerAgent transactions.
+        const suffix = ` name=${this._config.name()}`;
+        this.onSubsequentTransaction((x) => {
+            x.response.header.add("Via", `1.1 ${this.context.id} (Daft cache_peer${suffix})`);
+        });
     }
 }
 
