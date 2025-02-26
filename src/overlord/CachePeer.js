@@ -25,10 +25,19 @@ export class Config {
         return this._httpListeningHostPort;
     }
 
-    // name() {
-    //     assert(this._name !== null); // require finalizeWithIndex()
-    //     return this._name;
-    // }
+    name() {
+        assert.strictEqual(arguments.length, 0);
+        // require prior finalizeWithIndex() or setName() call to simplify our callers
+        assert(this._name !== null);
+        return this._name;
+    }
+
+    setName(aName) {
+        assert.strictEqual(arguments.length, 1);
+        assert(this._name === null);
+        this._name = aName;
+        assert(this._name !== null);
+    }
 
     finalizeWithIndex(idx) {
         assert(idx >= 0); // zero-based
@@ -41,7 +50,7 @@ export class Config {
         }
 
         if (this._name === null)
-            this._name = `peer${idx+1}`;
+            this.setName(`peer${idx+1}`);
     }
 
     toString() {
