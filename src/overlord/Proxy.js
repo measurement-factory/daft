@@ -101,6 +101,9 @@ export class DutConfig {
         this._memoryPools = true; // mimics default
         this._customDirectives = [];
 
+        this._primaryListeningAddress = Config.proxyAuthority();
+        this._rememberListeningPort(this._primaryListeningAddress.port); // usually 3128
+
         this._withCachePeers(Config.dutCachePeers());
     }
 
@@ -181,14 +184,11 @@ export class DutConfig {
 
     // returns ready-to-use configuration text
     make() {
-        const primaryAddress = Config.proxyAuthority();
-        this._rememberListeningPort(primaryAddress.port); // usually 3128
-
         const kid = "kid${process_number}";
         const logDir = "/usr/local/squid/var/logs/overlord";
         const cfg = `
             # Daft-generated configuration
-            http_port ${primaryAddress.port}
+            http_port ${this._primaryListeningAddress.port}
             ${this._workersCfg()}
             ${this._cachePeersCfg()}
             ${this._collapsedForwardingCfg()}
@@ -216,7 +216,7 @@ export class DutConfig {
     // result[k] is the http_port dedicated to SMP worker #k (k >= 1)
     workerListeningAddresses() {
         assert(this._workers > 0);
-        const primaryAddress = Config.proxyAuthority();
+        const primaryAddress = this._primaryListeningAddress;
         let addresses = [{
             host: primaryAddress.host,
             port: primaryAddress.port
@@ -357,7 +357,7 @@ export class DutConfig {
             const port = Gadgets.ToUnsigned(rawPort);
             return port;
         } else {
-            return Config.proxyAuthority().port;
+            return this._primaryListeningAddress.port;
         }
 
     }
