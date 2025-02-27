@@ -326,24 +326,26 @@ export class DutConfig {
         for (let idx = 0; idx < this._cachePeers.length; ++idx) {
             const cachePeerCfg = this._cachePeers[idx];
             cachePeerCfg.finalizeWithIndex(idx);
-            cfg += cachePeerCfg.directive() + "\n";
-
-            const routingField = CachePeer.RoutingField(cachePeerCfg);
-            cfg += `
-                acl targetsCachePeer_${cachePeerCfg.name()} req_header ${routingField.name} ${routingField.value}
-                cache_peer_access ${cachePeerCfg.name()} allow targetsCachePeer_${cachePeerCfg.name()}
-            `;
+            cfg += cachePeerCfg.directives();
         }
 
-        // prohibit DIRECT forwarding of requests meant for a cache_peer
+        // Hack: To avoid changing rigid directives in smooth reconfiguration
+        // tests, ban even when all cache_peers are commented out.
+        // See also: CachePeer::Config::hidden().
+        cfg += this._banRequestsTargetingCachePeersFromGoingDirectCfg();
+
+        return this._trimCfg(cfg);
+    }
+
+    // prohibit DIRECT forwarding of requests meant for some cache_peer
+    _banRequestsTargetingCachePeersFromGoingDirectCfg() {
         const routingField = CachePeer.RoutingField();
-        cfg += `
+        const cfg = `
             nonhierarchical_direct off
             acl targetsAnyCachePeer req_header ${routingField.name} ${routingField.value}
             never_direct allow targetsAnyCachePeer
         `;
-
-        return this._trimCfg(cfg);
+        return cfg;
     }
 
     _memoryPoolsCfg() {

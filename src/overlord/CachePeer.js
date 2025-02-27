@@ -19,6 +19,10 @@ export class Config {
 
         this._httpListeningHostPort = null;
         this._name = null;
+
+        // The reason this peer has no cache_peer directives in squid.conf.
+        // Managed by this.hide() and this.show().
+        this._hidden = null;
     }
 
     httpListeningHostPort() {
@@ -39,6 +43,27 @@ export class Config {
         assert(this._name !== null);
     }
 
+    hidden() {
+        return this._hidden !== null;
+    }
+
+    // do not add a cache_peer directive to squid.conf
+    hide(reason) {
+        assert.strictEqual(arguments.length, 1);
+        assert(reason);
+        assert(!this.hidden()); // for debugging simplicity sake
+        console.log(`hiding ${this}: {$reason}`);
+        this._hidden = reason;
+        assert(this.hidden());
+    }
+
+    // undo hide() effects
+    show() {
+        assert.strictEqual(arguments.length, 0);
+        this._hidden = null; // may already be nil
+        assert(!this.hidden());
+    }
+
     finalizeWithIndex(idx) {
         assert(idx >= 0); // zero-based
 
@@ -53,8 +78,16 @@ export class Config {
             this.setName(`peer${idx+1}`);
     }
 
-    directive() {
-        let cfg = `cache_peer` +
+    // squid.conf configuration for this cache_peer
+    directives() {
+        let cfg = '';
+
+        if (this.hidden()) {
+            cfg += '# Disabled: ' + this._hidden + '\n';
+            cfg += '# '; // comment-out cache_peer directive that we add below
+        }
+
+        cfg += `cache_peer` +
             ` ${this._httpListeningHostPort.host}` +
             ` parent` +
             ` ${this._httpListeningHostPort.port}` +
@@ -64,14 +97,30 @@ export class Config {
         if (this._name !== null)
             cfg += ` name=${this._name}`;
 
+        cfg += "\n";
+
+        // Hack: To avoid changing rigid directives during smooth
+        // reconfiguration tests, add these even when this.hidden().
+        // See also: DutConfig::_cachePeersCfg().
+        if (true) {
+           const routingField = RoutingField(this);
+            cfg += `
+                acl targetsCachePeer_${this.name()} req_header ${routingField.name} ${routingField.value}
+                cache_peer_access ${this.name()} allow targetsCachePeer_${this.name()}
+            `;
+        }
+
         return cfg;
     }
 
     toString() {
-        // TODO: Printing directive line in caller context is rarely useful
-        // and usually too noisy. Replace with custom code returning something
-        // like name()-or-listenting_port?
-        return this.directive();
+        if (this._name !== null)
+            return `cache_peer/${this._name}`;
+
+        if (this._httpListeningHostPort)
+            return `cache_peer@${this._httpListeningHostPort.host}:${this._httpListeningHostPort.port}`;
+
+        return "[cache_peer]";
     }
 
     // Help DUT to route the request to this cache peer.
