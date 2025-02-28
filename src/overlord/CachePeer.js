@@ -52,7 +52,7 @@ export class Config {
         assert.strictEqual(arguments.length, 1);
         assert(reason);
         assert(!this.hidden()); // for debugging simplicity sake
-        console.log(`hiding ${this}: {$reason}`);
+        console.log(`hiding ${this}: ${reason}`);
         this._hidden = reason;
         assert(this.hidden());
     }
