@@ -400,7 +400,10 @@ export class ProxyOverlord {
     constructor(cfg) {
         assert.strictEqual(arguments.length, 1);
         assert(cfg);
-        this._dutConfig = cfg;
+
+        this._dutConfig = cfg; // proxy configuration handler (a DutConfig object)
+        this._sentDutConfig = null; // the last serialized this._dutConfig sent to the proxy (a string)
+
         this._start = null; // future start() promise
         this._oldHealth = null; // proxy status during the previous _remoteCall()
 
@@ -518,6 +521,9 @@ export class ProxyOverlord {
         }
 
         console.log("Resetting proxy");
+        assert(this._sentDutConfig === null);
+        this._sentDutConfig = finalizedConfig;
+
         const command = new Command("/reset");
         command.setConfig(finalizedConfig);
         command.setOption('valgrind-use', this._memoryLeakDetection ? "1" : "0");
@@ -548,13 +554,51 @@ export class ProxyOverlord {
         console.log("Proxy restarted");
     }
 
-    async reconfigure(newConfig = undefined) {
-        console.log("Reconfiguring proxy");
+    // Generates new squid.conf and reconfigures the proxy. The caller
+    // believes that this.config() state has changed after the proxy was
+    // (re)started or reconfigured. To detect configuration manipulation bugs,
+    // this method asserts (when possible) that the state has indeed changed.
+    async reconfigureAfterChanges() {
+        assert.strictEqual(arguments.length, 0);
+        console.log(`Reconfiguring proxy (and updating its configuration file)`);
+
         // TODO: Caller(?) may need to start new peers and/or stop old ones if
         // cache_peers have changed. See also: this._startCachePeers().
+
+        // caller expects configuration to change
+        const newConfig = this.config().make();
+        // we can test caller expectations only if we sent a config earlier
+        if (this._sentDutConfig !== null)
+            assert.notEqual(this._sentDutConfig, newConfig);
+
+        await this._reconfigure(newConfig);
+    }
+
+    // Reconfigures the proxy without generating a new squid.conf. The caller
+    // believes that this.config() state has not changed.
+    async reconfigureWithoutChanges(checkConfigChanges) {
+        assert.strictEqual(arguments.length, 1);
+        console.log(`Reconfiguring proxy (while reusing its old configuration file)`);
+
+        // Caller expects configuration to be preserved. When requested, we
+        // can test that expectation but only if we sent a config earlier.
+        if (checkConfigChanges && this._sentDutConfig !== null) {
+            const newConfig = this.config().make();
+            assert.strincEqual(this._sentDutConfig, newConfig);
+        }
+
+        await this._reconfigure(null);
+    }
+
+    async _reconfigure(newConfig) {
+        assert.strictEqual(arguments.length, 1);
+        assert.strictNotEqual(newConfig, undefined);
+
         const command = new Command("/reconfigure");
-        if (newConfig !== undefined)
-            command.setConfig(newConfig.make());
+        if (newConfig !== null) {
+            this._sentDutConfig = newConfig;
+            command.setConfig(newConfig);
+        }
         await this._remoteCall(command);
         console.log("Proxy reconfigured");
     }
