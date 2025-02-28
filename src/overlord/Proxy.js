@@ -584,7 +584,7 @@ export class ProxyOverlord {
         // can test that expectation but only if we sent a config earlier.
         if (checkConfigChanges && this._sentDutConfig !== null) {
             const newConfig = this.config().make();
-            assert.strincEqual(this._sentDutConfig, newConfig);
+            assert.strictEqual(this._sentDutConfig, newConfig);
         }
 
         await this._reconfigure(null);
@@ -592,7 +592,7 @@ export class ProxyOverlord {
 
     async _reconfigure(newConfig) {
         assert.strictEqual(arguments.length, 1);
-        assert.strictNotEqual(newConfig, undefined);
+        assert.notStrictEqual(newConfig, undefined);
 
         const command = new Command("/reconfigure");
         if (newConfig !== null) {
