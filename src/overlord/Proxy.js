@@ -339,11 +339,11 @@ export class DutConfig {
 
     // prohibit DIRECT forwarding of requests meant for some cache_peer
     _banRequestsTargetingCachePeersFromGoingDirectCfg() {
-        const routingField = CachePeer.RoutingField();
+        const aclName = 'targetsAnyCachePeer';
         const cfg = `
             nonhierarchical_direct off
-            acl targetsAnyCachePeer req_header ${routingField.name} ${routingField.value}
-            never_direct allow targetsAnyCachePeer
+            ${CachePeer.RoutingAclDirective(aclName)}
+            never_direct allow ${aclName}
         `;
         return cfg;
     }

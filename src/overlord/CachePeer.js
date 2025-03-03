@@ -103,10 +103,10 @@ export class Config {
         // reconfiguration tests, add these even when this.hidden().
         // See also: DutConfig::_cachePeersCfg().
         if (true) {
-           const routingField = RoutingField(this);
+            const aclName = `targetsCachePeer_${this.name()}`;
             cfg += `
-                acl targetsCachePeer_${this.name()} req_header ${routingField.name} ${routingField.value}
-                cache_peer_access ${this.name()} allow targetsCachePeer_${this.name()}
+                ${RoutingAclDirective(aclName, this)}
+                cache_peer_access ${this.name()} allow ${aclName}
             `;
         }
 
@@ -173,4 +173,17 @@ export function RoutingField(cachePeerConfig = null) {
 // help DUT to route the request to a cache peer
 export function Attract(request) {
     request.header.add(RoutingField());
+}
+
+// A squid.conf acl directive that matches a received HTTP request targeting
+// the given cache_peer (if given) or any cache_peer (otherwise). Has no
+// trailing new line to ease integration with formatted `multi-line strings`.
+export function RoutingAclDirective(name, cachePeer = null) {
+    const headerField = RoutingField(cachePeer);
+
+    // Squid ACLRegexData::parse() treats space as an ACL parameter delimiter.
+    // We also need to escape regex-significant characters inside the value.
+    const escapedRegex = headerField.value.replace(/[^\w]/g, '\\$&');
+
+    return `acl ${name} req_header ${headerField.name} ${escapedRegex}`;
 }
