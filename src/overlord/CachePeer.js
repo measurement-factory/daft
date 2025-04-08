@@ -23,6 +23,9 @@ export class Config {
         // The reason this peer has no cache_peer directives in squid.conf.
         // Managed by this.hide() and this.show().
         this._hidden = null;
+
+        // whether this cache peer would like to receive all or none requests
+        this._wildcardAttraction = null;
     }
 
     httpListeningHostPort() {
@@ -82,35 +85,33 @@ export class Config {
     directives() {
         let cfg = '';
 
-        if (this.hidden()) {
-            cfg += '# Disabled: ' + this._hidden + '\n';
-            cfg += '# '; // comment-out cache_peer directive that we add below
-        }
+        const visibilityMarker = '<shown_or_hidden> ';
 
-        cfg += `cache_peer` +
-            ` ${this._httpListeningHostPort.host}` +
-            ` parent` +
-            ` ${this._httpListeningHostPort.port}` +
-            ` 0` +
-            ` no-query no-digest`;
+        if (this.hidden())
+            cfg += '# Disabled: ' + this._hidden + '\n';
+
+        cfg += visibilityMarker + "cache_peer " +
+            this._httpListeningHostPort.host +
+            " parent " +
+            this._httpListeningHostPort.port +
+            " 0 no-query no-digest";
 
         if (this._name !== null)
             cfg += ` name=${this._name}`;
 
         cfg += "\n";
 
+        const aclNameForTargetingThisPeer = `targetsCachePeer_${this.name()}`;
         // Hack: To avoid changing rigid directives during smooth
-        // reconfiguration tests, add these even when this.hidden().
-        // See also: DutConfig::_cachePeersCfg().
-        if (true) {
-            const aclName = `targetsCachePeer_${this.name()}`;
-            cfg += `
-                ${RoutingAclDirective(aclName, this)}
-                cache_peer_access ${this.name()} allow ${aclName}
-            `;
-        }
+        // reconfiguration tests, add these acl directives even when
+        // this.hidden(). See also: DutConfig::_cachePeersCfg().
+        if (true)
+            cfg += "    " + RoutingAclDirective(aclNameForTargetingThisPeer, this) + "\n";
 
-        return cfg;
+        const rule = this._wildcardAttraction === null ? `allow ${aclNameForTargetingThisPeer}` : this._wildcardAttraction;
+        cfg += visibilityMarker + "    " + "cache_peer_access " + this.name() + ' ' + rule + "\n";
+
+        return cfg.replaceAll((visibilityMarker), (this.hidden() ? "# " : ""));
     }
 
     toString() {
@@ -123,10 +124,33 @@ export class Config {
         return "[cache_peer]";
     }
 
-    // Help DUT to route the request to this cache peer.
-    // See also: Attract()
+    // Help DUT to route the given request to this cache peer by modifying the
+    // request to match cache_peer_access rules that we always add for a
+    // cache_peer. See also: becomeAttractedTo() and Attract()
     attract(request) {
         request.header.add(RoutingField(this));
+    }
+
+    // Help DUT to route all requests to this cache peer by adding a
+    // cache_peer_access rule that would match any request. This method
+    // "supersedes" attract() -- attract() has no routing impact if this
+    // method is also called.
+    becomeAttractedToAll() {
+        assert.strictEqual(arguments.length, 0);
+        console.log(`attempting to route all cache_peer requests to ${this}`);
+        assert(!this._wildcardAttraction);
+        this._wildcardAttraction = "allow all";
+    }
+
+    // Help DUT to route all requests to this cache peer by adding a
+    // cache_peer_access rule that would match any request. This method
+    // "supersedes" attract() -- attract() has no routing impact if this
+    // method is also called.
+    becomeAttractedToNone() {
+        assert.strictEqual(arguments.length, 0);
+        console.log(`attempting to route all cache_peer requests away from ${this}`);
+        assert(!this._wildcardAttraction);
+        this._wildcardAttraction = "deny all";
     }
 }
 
@@ -172,7 +196,10 @@ export function RoutingField(cachePeerConfig = null) {
     return new HttpField(Http.DaftFieldName("Routing"), value);
 }
 
-// help DUT to route the request to a cache peer
+// Help DUT to route the request to a cache peer. This method modifies the
+// request to become attracted to cache_peers (rather than modifying
+// cache_peers to attract the given request).
+// See also: CachePeer::becomeAttractedTo()
 export function Attract(request) {
     request.header.add(RoutingField());
 }
