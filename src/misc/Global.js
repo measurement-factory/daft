@@ -15,7 +15,8 @@ export function DefaultSchemePort(scheme) {
         http: 80,
         https: 443,
         icap: 1344,
-        ftp: 21
+        ftp: 21,
+        urn: 80
     };
     const port = defaultPorts[scheme.toLowerCase()];
     Must(port !== undefined);
