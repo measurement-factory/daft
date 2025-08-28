@@ -756,7 +756,7 @@ export class ProxyOverlord {
 
         // extract newProblems before updating (cumulative) this._oldHealth
         const oldProblems = this._oldHealth ? this._oldHealth.problems : [];
-        const newProblems = health.problems.slice(oldProblems.length);
+        const newProblems = health.problems.filter(problem => !oldProblems.includes(problem));
         this._oldHealth = health;
 
         if (newProblems.length && this._ignoreProblems) {
