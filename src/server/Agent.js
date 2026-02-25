@@ -174,11 +174,16 @@ export default class Agent extends SideAgent {
         return this._runTransaction(this._transaction, userSocket);
     }
 
+    // override
     async _becomeIdle() {
         if (this._keepListening && !this._serverClosed) {
             this.context.log("awaiting more connections");
             return;
         }
+
+        if (this._savedSocket)
+            this.context.log("stopping with a saved transport connection");
+
         await this.stop();
     }
 

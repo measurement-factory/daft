@@ -182,6 +182,19 @@ export class Agent extends ServerAgent {
     config() {
         return this._config;
     }
+
+    // override
+    async _becomeIdle() {
+        if (this._savedSocket) {
+            this.context.log("awaiting more requests on the existing persistent connection");
+            this.resetTransaction();
+            const userSocket = this._savedSocket;
+            this._savedSocket = null;
+            return this._startServing(userSocket);
+        }
+
+        return super._becomeIdle();
+    }
 }
 
 // Squid should route a request with this header field to a cache_peer.
