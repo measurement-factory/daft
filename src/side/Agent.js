@@ -76,17 +76,17 @@ export default class Agent {
         return this._keepConnections;
     }
 
-    async _runTransaction(transaction, socket) {
+    async _runTransaction(transaction, transportConnection) {
         assert.strictEqual(arguments.length, 2);
         assert(!transaction.started());
 
         ++this._xStarted;
         this.context.log("starting transaction number", this._xStarted);
 
-        socket.removeAllListeners(); // e.g., we may have an 'error' handler
-        socket.setEncoding('binary');
+        transportConnection.socket().removeAllListeners(); // e.g., we may have an 'error' handler
+        transportConnection.socket().setEncoding('binary');
 
-        await transaction.run(socket);
+        await transaction.run(transportConnection);
 
         ++this._xFinished;
 
@@ -105,26 +105,29 @@ export default class Agent {
     }
 
     // keeps or closes the socket of a finish()ing transaction
-    absorbTransactionSocket(transaction, socket) {
+    absorbTransactionSocket(transaction, transportConnection) {
+        const socket = transportConnection.socket();
+        assert(socket);
 
         if (this._keepConnections) {
             // those who set this._keepConnections require a pconn
             assert(transaction.persistent());
-            assert(socket);
+
+            // TODO: Do not save unusable connections (e.g. after an EOF caused by cache_peer TCP probe).
 
             // no support for saving multiple sockets
             assert(!this._savedSocket);
-            this._savedSocket = socket;
+            this._savedSocket = transportConnection; // TODO: Rename this._savedSocket
 
             transaction.context.log("saved connection instead of closing it");
 
-            this._savedSocket.unref();
+            socket.unref();
 
             // We are done monitoring this socket; remove our event handlers.
             // The new transaction will register its own handlers.
             // TODO: Remove just the handlers that _we_ added (explicitly)?
             // Nodejs says we should not "remove listeners added elsewhere".
-            this._savedSocket.removeAllListeners();
+            socket.removeAllListeners();
 
             return;
         }
@@ -144,9 +147,11 @@ export default class Agent {
         assert(agent._savedSocket);
 
         this.context.log("reusing saved connection");
+        assert(!this._savedSocket);
         this._savedSocket = agent._savedSocket;
         agent._savedSocket = null;
-        this._savedSocket.ref();
+
+        this._savedSocket.socket().ref(); // rename this._savedSocket to _savedTransportConnection
         // and wait for start()
     }
 }

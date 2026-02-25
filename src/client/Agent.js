@@ -11,6 +11,7 @@ import Context from "../misc/Context";
 import SideAgent from "../side/Agent";
 import StatusLine from "../http/StatusLine";
 import Transaction from "./Transaction";
+import TransportConnection from "../side/TransportConnection";
 
 import net from "net";
 import Promise from 'bluebird';
@@ -78,7 +79,7 @@ export default class Agent extends SideAgent {
             Gadgets.PrettyAddress(this.localAddress),
             Gadgets.PrettyAddress(this.remoteAddress));
 
-        await this._runTransaction(this._transaction, this.socket);
+        await this._runTransaction(this._transaction, new TransportConnection(this.socket));
     }
 
     async _becomeIdle() {

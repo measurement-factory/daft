@@ -2,14 +2,16 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import syncNet from "net";
-import Promise from 'bluebird';
-import assert from "assert";
-import Context from "../misc/Context";
-import * as Gadgets from "../misc/Gadgets";
 import * as AddressPool from "../misc/AddressPool";
-import Transaction from "./Transaction";
+import * as Gadgets from "../misc/Gadgets";
+import Context from "../misc/Context";
 import SideAgent from "../side/Agent";
+import Transaction from "./Transaction";
+import TransportConnection from "../side/TransportConnection";
+
+import assert from "assert";
+import Promise from 'bluebird';
+import syncNet from "net";
 
 let asyncNet = Promise.promisifyAll(syncNet);
 
@@ -158,7 +160,7 @@ export default class Agent extends SideAgent {
             if (!this._keepListening)
                 this._serverClosed = this.server.closeAsync();
 
-            this._startServing(userSocket);
+            this._startServing(new TransportConnection(userSocket));
         });
 
         const addr = Gadgets.FinalizeListeningAddress(this.address());
@@ -196,10 +198,10 @@ export default class Agent extends SideAgent {
             if (stillOpenConnections)
                 this.context.log("still has open connections:", stillOpenConnections);
             if (this._keepConnections) {
-                if (!this._savedSocket)
-                    this.context.log("Warning: Have not preserved a connection for future reuse (yet?)");
+                if (this._savedSocket)
+                    this.context.log("preserved a persistent transport connection for future reuse");
                 if (stillOpenConnections)
-                    this.context.log("not waiting for (persistent) server connections to close");
+                    this.context.log("not waiting for a persistent transport connection to close");
             } else {
                 this.context.log("waiting for connections to close");
                 assert(this._serverClosed);

@@ -76,8 +76,12 @@ export default class Transaction {
         this.context = new Context("xact");
 
         this._startTime = null;
-        this.socket = null;
-        this._savedSocket = null; // post-finish() pconn
+
+        // a connection (e.g., TCP) carrying transfer protocol traffic (e.g., HTTP)
+        this._transportConnection = null;
+
+        // whether this._transportConnection was used before it was given to us
+        this._reusedTransportConnection = null; // becomes `true` or `false` when known
 
         this.messageIn = null; // e.g., Request for server transactions
         this.messageOut = null; // e.g., Request for client transactions
@@ -140,6 +144,10 @@ export default class Transaction {
 
     agent() {
         return this._agent;
+    }
+
+    get socket() {
+        return this._transportConnection ? this._transportConnection.socket() : null;
     }
 
     started() {
@@ -257,16 +265,22 @@ export default class Transaction {
         return this.messageIn.persistent() && this.messageOut.persistent();
     }
 
-    async run(socket) {
+    async run(transportConnection) {
         assert.strictEqual(arguments.length, 1);
         assert(!this.started());
 
         assert(!this._startTime);
         this._startTime = this.context.enter(`${this.ownerKind} transaction started`);
 
-        assert(socket);
-        assert(!this.socket);
-        this.socket = socket;
+        assert(!this._transportConnection);
+        assert(transportConnection);
+        this._transportConnection = transportConnection;
+        const xstarts = this._transportConnection.transactionsStarted();
+        this._reusedTransportConnection = xstarts > 0;
+        if (this._reusedTransportConnection)
+            this.context.log(`reusing transport connection after ${xstarts} transaction starts`);
+        this._transportConnection.noteTransactionStart();
+        assert(this.socket);
 
         /* setup event listeners */
 
@@ -275,7 +289,7 @@ export default class Transaction {
             this.context.log("aborting on I/O error:", error);
             // TODO: this.reportWhatWeAreDoing("were"); see checkpoint()
             this.socket.destroy();
-            this.socket = null;
+            this._transportConnection = null;
             this.finish(); // without checkpoint()
             this.context.exit();
         });
@@ -296,12 +310,22 @@ export default class Transaction {
                 this._closeLast = false;
             }
 
+            // Oversimplification: No support for talking to a half-closed sent-nothing peer.
+            // This helps with closing TCP probes to cache_peers.
+            if (!this._doneProducing && !this.messageIn) {
+                this._stopProducing(`EOF from ${this.peerKind}`);
+                this.socket.destroy();
+                this._transportConnection = null;
+                assert(!this.socket);
+            }
+
             // assume all 'data' events always arrive before 'end'
             if (!this._doneReceiving)
                 this.endReceiving(`${this.peerKind} disconnected`);
             else
                 this.checkpoint(); // probably will just report what we are waiting for
-            // TODO: Clear this.socket?
+
+            // TODO: Clear this.socket in all cases?
             this.context.exit();
         });
 
@@ -338,8 +362,8 @@ export default class Transaction {
         this.context.log(`${this.ownerKind} transaction ends...`);
 
         if (this.socket) {
-            this._agent.absorbTransactionSocket(this, this.socket);
-            this.socket = null;
+            this._agent.absorbTransactionSocket(this, this._transportConnection);
+            this._transportConnection = null;
         }
 
         this._finishedResolver(this);
@@ -581,6 +605,10 @@ export default class Transaction {
     fillMessageBody() {
         // generateDefaultMessage() fills the entire body
         assert(false);
+    }
+
+    reusedTransportConnection() {
+        return this._reusedTransportConnection; // might be null
     }
 
 }
