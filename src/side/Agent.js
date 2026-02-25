@@ -66,8 +66,14 @@ export default class Agent {
     }
 
     keepConnections() {
-        this.context.log("will require and reuse persistent connections");
-        this._keepConnections = true; // may already be true
+        if (!this._keepConnections) {
+            this.context.log("will not close idle persistent transport connections");
+            this._keepConnections = true;
+        }
+    }
+
+    keepingConnections() {
+        return this._keepConnections;
     }
 
     async _runTransaction(transaction, socket) {

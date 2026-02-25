@@ -138,6 +138,10 @@ export default class Transaction {
         this._customCheckpoint = null;
     }
 
+    agent() {
+        return this._agent;
+    }
+
     started() {
         return this._startTime !== null;
     }

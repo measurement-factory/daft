@@ -70,6 +70,11 @@ export default class Transaction extends SideTransaction {
         assert(this.response);
 
         this.response.generatorAddress(LocalAddress(this.socket));
+
+        const persistent = this.request.persistent() && this.agent().keepingConnections();
+        // TODO: To reflect HTTP version defaults, move addition to the Header itself.
+        this.response.header.addByDefault("Connection", persistent ? "keep-alive" : "close");
+
         this.response.finalize(this.request);
 
         this._finalizedMessage = true; // TODO: Move to Message::finalize()?
