@@ -161,6 +161,7 @@ export function LogFormat(formatName)
 {
     let format = 'logformat ' + formatName;
     format += _LogFormatEntry('%sn');
+    format += _LogFormatEntry('%master_xaction');
     format += _LogFormatEntry('%err_code');
     format += _LogFormatEntry('%err_detail');
     format += _LogFormatEntry('%et_', '%ts.%03tu'); // end time
