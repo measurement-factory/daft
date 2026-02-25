@@ -136,7 +136,7 @@ export class DutConfig {
     }
 
     // Replace all cache_peer configurations with the given number of freshly generated ones.
-    // See also: reseCachePeersTo(newConfigs)
+    // See also: resetCachePeersTo(newConfigs)
     resetCachePeers(count) {
         assert(count >= 0);
         let newConfigs = [];
