@@ -94,7 +94,7 @@ export class Config {
             this._httpListeningHostPort.host +
             " parent " +
             this._httpListeningHostPort.port +
-            " 0 no-query no-digest";
+            " 0 no-query no-digest no-netdb-exchange";
 
         if (this._name !== null)
             cfg += ` name=${this._name}`;
