@@ -185,11 +185,11 @@ export class Agent extends ServerAgent {
 
     // override
     async _becomeIdle() {
-        if (this._savedSocket) {
+        if (this._savedTransportConnection) {
             this.context.log("awaiting more requests on the existing persistent connection");
             this.resetTransaction();
-            const userSocket = this._savedSocket;
-            this._savedSocket = null;
+            const userSocket = this._savedTransportConnection;
+            this._savedTransportConnection = null;
             return this._startServing(userSocket);
         }
 

@@ -113,9 +113,8 @@ export default class Agent extends SideAgent {
 
     start() {
         return Promise.try(() => {
-            if (this._savedSocket) {
-                const socket = this._savedSocket;
-                this._savedSocket = null;
+            if (this._savedTransportConnection) {
+                const socket = this._forgetTransportConnection();
                 this._startServing(socket);
             } else {
                 this._startListening();
@@ -183,7 +182,7 @@ export default class Agent extends SideAgent {
             return;
         }
 
-        if (this._savedSocket)
+        if (this._savedTransportConnection)
             this.context.log("stopping with a saved transport connection");
 
         await this.stop();
@@ -198,7 +197,7 @@ export default class Agent extends SideAgent {
             if (stillOpenConnections)
                 this.context.log("still has open connections:", stillOpenConnections);
             if (this._keepConnections) {
-                if (this._savedSocket)
+                if (this._savedTransportConnection)
                     this.context.log("preserved a persistent transport connection for future reuse");
                 if (stillOpenConnections)
                     this.context.log("not waiting for a persistent transport connection to close");

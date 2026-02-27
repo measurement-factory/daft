@@ -33,7 +33,7 @@ export default class Agent {
 
         // A presumably open socket of a finish()ed transaction. Saved only if
         // requested by this._keepConnections.
-        this._savedSocket = null;
+        this._savedTransportConnection = null;
     }
 
     // the total number of transactions that started to run() so far
@@ -115,10 +115,7 @@ export default class Agent {
 
             // TODO: Do not save unusable connections (e.g. after an EOF caused by cache_peer TCP probe).
 
-            // no support for saving multiple sockets
-            assert(!this._savedSocket);
-            this._savedSocket = transportConnection; // TODO: Rename this._savedSocket
-
+            this._saveTransportConnection(transportConnection);
             transaction.context.log("saved connection instead of closing it");
 
             socket.unref();
@@ -144,14 +141,24 @@ export default class Agent {
         assert(this !== agent);
 
         // most likely, our caller requires a pconn reuse
-        assert(agent._savedSocket);
-
         this.context.log("reusing saved connection");
-        assert(!this._savedSocket);
-        this._savedSocket = agent._savedSocket;
-        agent._savedSocket = null;
-
-        this._savedSocket.socket().ref(); // rename this._savedSocket to _savedTransportConnection
+        this._saveTransportConnection(agent._forgetTransportConnection());
+        this._savedTransportConnection.socket().ref();
         // and wait for start()
+    }
+
+    _saveTransportConnection(transportConnection) {
+        assert(transportConnection);
+        // no support for saving multiple sockets
+        assert(!this._savedTransportConnection);
+        this._savedTransportConnection = transportConnection;
+    }
+
+    // returns and forgets a previously _savedTransportConnection
+    _forgetTransportConnection() {
+        assert(this._savedTransportConnection);
+        const transportConnection = this._savedTransportConnection;
+        this._savedTransportConnection = null;
+        return transportConnection;
     }
 }
