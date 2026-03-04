@@ -16,8 +16,10 @@ export default class Agent {
         /* kids must set this */
         this._transaction = undefined; // the very first transaction
 
+        this._startedTransactions = [];
+
         // transaction activity statistics
-        this._xStarted = 0;
+        this._xStarted = 0; // duplicates this._startedTransactions.length if we store all transactions
         this._xFinished = 0;
 
         this._stopped = new Promise((resolve) => {
@@ -51,6 +53,9 @@ export default class Agent {
         if (!this._stoppedResolver)
             return this._stopped; // may not be satisfied yet
 
+        if (this._savedTransportConnection)
+            this.context.log("stopping with a saved transport connection");
+
         // XXX: Prevent new transactions from starting beyond this point.
 
         const stoppedResolver = this._stoppedResolver;
@@ -82,6 +87,7 @@ export default class Agent {
 
         ++this._xStarted;
         this.context.log("starting transaction number", this._xStarted);
+        this._startedTransactions.push(transaction);
 
         transportConnection.socket().removeAllListeners(); // e.g., we may have an 'error' handler
         transportConnection.socket().setEncoding('binary');
@@ -102,6 +108,10 @@ export default class Agent {
 
     async _becomeIdle() {
         assert(!"pure virtual: kids must override");
+    }
+
+    startedTransactions() {
+        return this._startedTransactions;
     }
 
     // keeps or closes the socket of a finish()ing transaction
@@ -144,7 +154,7 @@ export default class Agent {
         this.context.log("reusing saved connection");
         this._saveTransportConnection(agent._forgetTransportConnection());
         this._savedTransportConnection.socket().ref();
-        // and wait for start()
+        // and wait for start() or run()
     }
 
     _saveTransportConnection(transportConnection) {
