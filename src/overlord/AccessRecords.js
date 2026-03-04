@@ -48,6 +48,11 @@ class AccessRecord {
         // success
     }
 
+    // whether the given %code was logged with the same value as in the given record
+    checkEqualIn(name, recordWithExpectedValues) {
+        return this.checkEqual(name, recordWithExpectedValues._getRawValue(name));
+    }
+
     // whether the given %code was logged with a value of '-'
     checkUnknown(name) {
         return this.checkEqual(name, '-');
@@ -162,6 +167,7 @@ export function LogFormat(formatName)
     let format = 'logformat ' + formatName;
     format += _LogFormatEntry('%sn');
     format += _LogFormatEntry('%master_xaction');
+    format += _LogFormatEntry('%transport::>connection_id');
     format += _LogFormatEntry('%err_code');
     format += _LogFormatEntry('%err_detail');
     format += _LogFormatEntry('%et_', '%ts.%03tu'); // end time
