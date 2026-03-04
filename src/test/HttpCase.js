@@ -120,6 +120,8 @@ export default class HttpCase {
         assert(agents.length); // a test case cannot work without an agent
         this.context.log(`starting ${agents.length} concurrent agents`);
 
+        let sawErrors = 0;
+
         try {
             if (this._server)
                 await this._server.start();
@@ -128,10 +130,22 @@ export default class HttpCase {
                 await this._proxy.start();
 
             await Promise.map(this._clients, client => client.run());
+        } catch (error) {
+            // see Runner::_TestAttempt() for justification of reporting before `finally`
+            this.context.log("starting/running failure: ", error);
+            ++sawErrors;
         } finally {
-            this._stopClock();
-            await this._stopAgents(); // some or all may already be stopped
+            try {
+                this._stopClock();
+                await this._stopAgents(); // some or all may already be stopped
+            } catch (error) {
+                this.context.log("stopping failure: ", error);
+                ++sawErrors;
+            }
         }
+
+        if (sawErrors)
+            throw new Error(`Test case failures (detailed earlier): ${sawErrors}`);
 
         // all agents are stopped here
         // check only after a successful run
