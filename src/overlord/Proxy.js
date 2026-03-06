@@ -631,11 +631,9 @@ export class ProxyOverlord {
 
     async getNewAccessRecords() {
         const allRecords = await this.getAllAccessRecords();
-        let newRecords = allRecords; // may be overwritten below
-        if (this._oldAccessRecords)
-            newRecords = this._oldAccessRecords.addUnique(allRecords);
-        else
-            this._oldAccessRecords = allRecords;
+        if (!this._oldAccessRecords)
+            this._oldAccessRecords = AccessRecords.Create();
+        const newRecords = this._oldAccessRecords.addUnique(allRecords);
         console.log(`New transactions logged by the proxy: ${newRecords.count()}`);
         return newRecords;
     }

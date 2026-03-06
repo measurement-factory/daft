@@ -115,8 +115,10 @@ class AccessRecords {
         return this._records; // may be empty
     }
 
-    // adds records that we have not seen before and
-    // returns AccessRecords containing those added records
+    // Adds records that we have not seen before and
+    // returns AccessRecords containing those added records.
+    // Currently, this method also ignores duplicates among allRecords,
+    // even though "we have not seen" any of them "before".
     addUnique(allRecords) {
         assert(allRecords instanceof AccessRecords);
         const newRecords = new AccessRecords();
@@ -148,6 +150,11 @@ class AccessRecords {
                 this._add(new AccessRecord(log, record));
         }
     }
+}
+
+// creates an empty AccessRecords collection
+export function Create() {
+    return new AccessRecords();
 }
 
 // converts JSON.parse() POP answer to AccessRecords

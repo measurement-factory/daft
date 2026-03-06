@@ -36,6 +36,9 @@ export default class HttpCase {
 
         this._startTime = null;
         this._finishTime = null;
+
+        this._accessRecordsSource = null;
+        this._accessRecords = null; // records created by this test (if extracted)
     }
 
     // allow this test case to run longer than usual
@@ -216,6 +219,24 @@ export default class HttpCase {
         return this._addReceivedResponseCheck(() => response);
     }
 
+    // extract new access.log records before running other checks
+    expectAccessRecordChecks(dut) {
+        assert(dut);
+
+        // for simplicity sake
+        assert(!this._started());
+        assert(!this._accessRecordsSource || this._accessRecordsSource === dut);
+        assert(!this._accessRecords);
+
+        this._accessRecordsSource = dut;
+    }
+
+    accessRecords() {
+        assert.strictEqual(arguments.length, 0);
+        assert(this._accessRecordsSource); // require expectAccessRecordChecks()
+        return this._accessRecords;
+    }
+
     // Will test whether each client got the response extracted by the given function.
     // For basic misses, use addMissCheck().
     // For basic hits, use addHitCheck().
@@ -231,6 +252,11 @@ export default class HttpCase {
     }
 
     async _doCheck() {
+
+        // collect records before any checks that may use them
+        if (this._accessRecordsSource)
+            this._accessRecords = await this._accessRecordsSource.getNewAccessRecords();
+
         if (this._server)
             await this._server.checks.run(this._server);
         if (this._proxy)
