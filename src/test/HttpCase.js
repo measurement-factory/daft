@@ -138,7 +138,7 @@ export default class HttpCase {
             try {
                 this._stopClock();
                 await this._stopAgents(); // some or all may already be stopped
-            } catch (error) {
+            } catch (error) { // may be the same starting/running error reported above
                 this.context.log("stopping failure: ", error);
                 ++sawErrors;
             }

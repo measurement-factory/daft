@@ -22,8 +22,10 @@ export default class Agent {
         this._xStarted = 0; // duplicates this._startedTransactions.length if we store all transactions
         this._xFinished = 0;
 
-        this._stopped = new Promise((resolve) => {
+        this._startedToStop = false; // whether this.stop() has been called
+        this._stopped = new Promise((resolve, reject) => {
             this._stoppedResolver = resolve;
+            this._stoppedRejecter = reject;
         });
 
         this.checks = new Checker();
@@ -48,9 +50,9 @@ export default class Agent {
         return this._xFinished;
     }
 
-    // a promise to stop doing anything; must be safe to call multiple times
+    // a promise to stop doing anything; must be safe to call multiple times, including re-entrant calls
     async stop() {
-        if (!this._stoppedResolver)
+        if (this._startedToStop)
             return this._stopped; // may not be satisfied yet
 
         if (this._savedTransportConnection)
@@ -58,10 +60,15 @@ export default class Agent {
 
         // XXX: Prevent new transactions from starting beyond this point.
 
-        const stoppedResolver = this._stoppedResolver;
-        this._stoppedResolver = null;
-        await this._stop();
-        stoppedResolver(this); // satisfy after cleanup in _stop()
+        // TODO: Encapsulate the code below to reuse.
+        try {
+            // This call might result in a re-entrant call to stop().
+            // If that second caller awaits its stop() result, we deadlock.
+            this._stoppedResolver(await this._stop());
+        }
+        catch (error) {
+            this._stoppedRejecter(error);
+        }
         return this._stopped;
     }
 
