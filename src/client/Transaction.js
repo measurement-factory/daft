@@ -41,7 +41,10 @@ export default class Transaction extends SideTransaction {
         assert(this.request);
 
         this.request.header.addByDefault("User-Agent", "DaftClient/1.0");
-        this.request.header.addByDefault("Connection", "close");
+
+        const persistent = this.agent().keepingConnections();
+        // TODO: To reflect HTTP version defaults, move addition to the Header itself.
+        this.request.header.addByDefault("Connection", persistent ? "keep-alive" : "close");
 
         this.request.startLine.finalize();
 

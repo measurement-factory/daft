@@ -72,14 +72,15 @@ export default class Agent extends SideAgent {
     }
 
     async _run() {
-        this.socket = await this._connect();
-        this.localAddress = { host: this.socket.localAddress, port: this.socket.localPort };
-        this.remoteAddress = { host: this.socket.remoteAddress, port: this.socket.remotePort };
+        const transportConnection = await this._reuseOrConnect();
+        const socket = transportConnection.socket();
+        const localAddress = { host: socket.localAddress, port: socket.localPort };
+        const remoteAddress = { host: socket.remoteAddress, port: socket.remotePort };
         this.context.log("connected %s to %s",
-            Gadgets.PrettyAddress(this.localAddress),
-            Gadgets.PrettyAddress(this.remoteAddress));
+            Gadgets.PrettyAddress(localAddress),
+            Gadgets.PrettyAddress(remoteAddress));
 
-        await this._runTransaction(this._transaction, new TransportConnection(this.socket));
+        await this._runTransaction(this._transaction, transportConnection);
     }
 
     async _becomeIdle() {
@@ -87,14 +88,16 @@ export default class Agent extends SideAgent {
     }
 
     async _stop() {
-        assert(!this._keepConnections); // no pconn support yet
-        if (this.socket) {
-            this.socket.destroy(); // XXX: what if a transaction does it too?
-            this.socket = null;
-            this.context.log("disconnected %s from %s",
-                Gadgets.PrettyAddress(this.localAddress),
-                Gadgets.PrettyAddress(this.remoteAddress));
-        }
+        if (this._savedTransportConnection)
+            this.context.log("preserved a persistent transport connection for future reuse");
+    }
+
+    // reuse a saved transport connection (if any) or _connect() (otherwise)
+    async _reuseOrConnect() {
+        if (this._savedTransportConnection)
+            return this._forgetTransportConnection();
+        const socket = await this._connect();
+        return new TransportConnection(socket);
     }
 
     // (a promise to) open a TCP connection to the next hop

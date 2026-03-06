@@ -182,9 +182,6 @@ export default class Agent extends SideAgent {
             return;
         }
 
-        if (this._savedTransportConnection)
-            this.context.log("stopping with a saved transport connection");
-
         await this.stop();
     }
 
