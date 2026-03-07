@@ -29,7 +29,6 @@ export default class Transaction { // XXX: extends SideTransaction
 
         this._started = false;
 
-        this.userSocket = null;
         this.originSocket = null;
 
         this.requestParser = null;
@@ -61,19 +60,23 @@ export default class Transaction { // XXX: extends SideTransaction
         this._finishedResolver(this);
     }
 
+    get userSocket() {
+        return this._transportConnection ? this._transportConnection.socket() : null;
+    }
+
     started() {
         return this._started;
     }
 
-    async run(userSocket) {
+    async run(transportConnection) {
         assert.strictEqual(arguments.length, 1);
 
         assert(!this._started);
         this._started = true;
 
-        assert(userSocket);
-        assert(!this.userSocket);
-        this.userSocket = userSocket;
+        assert(!this._transportConnection);
+        assert(transportConnection);
+        this._transportConnection = transportConnection;
 
         this.startServingUser(this.userSocket);
         this.sendRequest();
@@ -92,7 +95,7 @@ export default class Transaction { // XXX: extends SideTransaction
 
         this.userSocket.on('end', () => {
             console.log("user disconnected");
-            this.userSocket = null;
+            this._transportConnection = null;
             if (!this.originSocket)
                 this.destructor();
         });
@@ -347,7 +350,8 @@ export default class Transaction { // XXX: extends SideTransaction
     destroyUserSocket() {
         if (this.userSocket) {
             this.userSocket.destroy();
-            this.userSocket = null;
+            this._transportConnection = null;
+            assert(!this.userSocket);
         }
         if (!this.originSocket)
             this.destructor();
