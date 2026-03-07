@@ -230,7 +230,7 @@ export default class Transaction {
         const stillWaitingFor = block.stillWaiting();
         if (stillWaitingFor) {
             const verb = block.active() ? "continue to" : "will";
-            this.context.log(`not ready to send ${block.partName()}: ${stillWaitingFor}`);
+            this.context.log(`${verb} block sending ${block.partName()}: ${stillWaitingFor}`);
             block.activate(); // may already be active
             return false;
         }
