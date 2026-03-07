@@ -203,8 +203,16 @@ export default class Message {
     }
 
     persistent() {
-        // XXX: Honor HTTP version default.
-        return this.header.has("Connection", "keep-alive") !== null;
+        const values = this.header.values("Connection");
+        const hasClose = values.includes("close");
+        const hasKeepAlive = values.includes("keep-alive");
+        if (hasClose && hasKeepAlive)
+            throw new Error(`inconsistent persistent connection signal in an hTTP header:\n${this.header.raw()}`);
+        if (hasClose)
+            return false;
+        if (hasKeepAlive)
+            return true;
+        return this.startLine.protocol !== null && this.startLine.protocol === "HTTP/1.1";
     }
 
     _daftFieldName(suffix) {

@@ -197,7 +197,11 @@ export default class Header {
         return false;
     }
 
+    // Whether the header has at least one field with the given name. The
+    // first matching header field is returned, but callers should not assume
+    // that there are no other matching fields. See also: values()
     has(name) {
+        assert.strictEqual(arguments.length, 1);
         let id = Field.Id(name);
         for (let field of this.fields) {
             if (field.id() === id)
