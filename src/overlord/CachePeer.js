@@ -12,6 +12,60 @@ import HttpField from "../http/Field";
 // TODO: Make cache_peer address(es) configurable
 const FirstPort = 4130;
 
+// Squid should route a request with this header field to a cache_peer.
+// Supplying cachePeerConfig routes the request to the given cache_peer.
+// See also: Attract(), Config::attract(), and DutConfig::_cachePeersCfg().
+export function RoutingField(cachePeerConfig = null) {
+    let value = 'cache_peer';
+    if (cachePeerConfig)
+        value += ` name=${cachePeerConfig.name()}`;
+    else
+        value += ` any`;
+    return new HttpField(Http.DaftFieldName("Routing"), value);
+}
+
+// Help DUT to route the request to a cache peer. This method modifies the
+// request to become attracted to cache_peers (rather than modifying
+// cache_peers to attract the given request).
+// See also: CachePeer::becomeAttractedTo()
+export function Attract(request) {
+    request.header.add(RoutingField());
+}
+
+// A regex matching the given header field value. Uses squid.conf syntax.
+function _FieldToRegex(value) {
+    // Squid ACLRegexData::parse() treats space as an ACL parameter delimiter.
+    // We also need to escape regex-significant characters inside the value.
+    return '^' + value.replace(/[^\w]/g, '\\$&') + '$';
+}
+
+// Returns a squid.conf acl directive that matches these received requests:
+// * If cachePeer is given, matches requests targeting that specific cachePeer
+//   and "route me through any cache_peer" requests.
+// * If cachecPeer was not given, matches requests targeting any cache_peer.
+//
+// TODO: Should this ACL also match requests that do not specify any routing
+// preferences (i.e. "go direct or route me through any cache_peer" requests?
+//
+// The return value has no trailing new line to ease integration with
+// formatted `multi-line cfg strings`.
+export function RoutingAclDirective(name, cachePeer = undefined) {
+    const headerField = RoutingField(cachePeer);
+    let cfg = `acl ${name} req_header ${headerField.name}`;
+    if (cachePeer) {
+        cfg += ` ${_FieldToRegex(headerField.value)}`;
+        // Also match requests that are earmarked for a cache_peer but do not
+        // target a specific one (e.g., this happens after calling Attract()).
+        const headerFieldWildcard = RoutingField();
+        cfg += ` ${_FieldToRegex(headerFieldWildcard.value)}`;
+    } else {
+        // headerField.value is "cache_peer any", but we also want to match
+        // any request targeting a specific cache_peer
+        cfg += ` ^cache_peer`; // keep in sync with RoutingField()
+    }
+    return cfg;
+}
+
 // e.g., cache_peer 127.0.0.1 parent 4128 0 no-query no-digest name=peer1
 export class Config {
     constructor() {
@@ -197,56 +251,3 @@ export class Agent extends ServerAgent {
     }
 }
 
-// Squid should route a request with this header field to a cache_peer.
-// Supplying cachePeerConfig routes the request to the given cache_peer.
-// See also: Attract(), Config::attract(), and DutConfig::_cachePeersCfg().
-export function RoutingField(cachePeerConfig = null) {
-    let value = 'cache_peer';
-    if (cachePeerConfig)
-        value += ` name=${cachePeerConfig.name()}`;
-    else
-        value += ` any`;
-    return new HttpField(Http.DaftFieldName("Routing"), value);
-}
-
-// Help DUT to route the request to a cache peer. This method modifies the
-// request to become attracted to cache_peers (rather than modifying
-// cache_peers to attract the given request).
-// See also: CachePeer::becomeAttractedTo()
-export function Attract(request) {
-    request.header.add(RoutingField());
-}
-
-// A regex matching the given header field value. Uses squid.conf syntax.
-function _FieldToRegex(value) {
-    // Squid ACLRegexData::parse() treats space as an ACL parameter delimiter.
-    // We also need to escape regex-significant characters inside the value.
-    return '^' + value.replace(/[^\w]/g, '\\$&') + '$';
-}
-
-// Returns a squid.conf acl directive that matches these received requests:
-// * If cachePeer is given, matches requests targeting that specific cachePeer
-//   and "route me through any cache_peer" requests.
-// * If cachecPeer was not given, matches requests targeting any cache_peer.
-//
-// TODO: Should this ACL also match requests that do not specify any routing
-// preferences (i.e. "go direct or route me through any cache_peer" requests?
-//
-// The return value has no trailing new line to ease integration with
-// formatted `multi-line cfg strings`.
-export function RoutingAclDirective(name, cachePeer = undefined) {
-    const headerField = RoutingField(cachePeer);
-    let cfg = `acl ${name} req_header ${headerField.name}`;
-    if (cachePeer) {
-        cfg += ` ${_FieldToRegex(headerField.value)}`;
-        // Also match requests that are earmarked for a cache_peer but do not
-        // target a specific one (e.g., this happens after calling Attract()).
-        const headerFieldWildcard = RoutingField();
-        cfg += ` ${_FieldToRegex(headerFieldWildcard.value)}`;
-    } else {
-        // headerField.value is "cache_peer any", but we also want to match
-        // any request targeting a specific cache_peer
-        cfg += ` ^cache_peer`; // keep in sync with RoutingField()
-    }
-    return cfg;
-}
