@@ -451,7 +451,7 @@ export class ProxyOverlord {
         // attempts to change this._memoryLeakDetection and then restarting
         // Squid: We restart() Squid with the original squid.conf that may
         // stop reflecting this._memoryLeakDetection value at restart time.
-        assert(this._memoryLeakDetection == undefined);
+        assert(this._memoryLeakDetection === undefined);
         if (how === undefined)
             console.log("Will determine whether to detect memory leaks at proxy startup time");
         else if (how === false)
