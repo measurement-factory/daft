@@ -125,7 +125,7 @@ export class DutConfig {
     }
 
     workers(count) {
-        assert(count > 0);
+        assert(count >= 0);
         this._workers = count;
     }
 
@@ -224,7 +224,11 @@ export class DutConfig {
     // result[0] (i.e. the first address) is the default port shared by all workers
     // result[k] is the http_port dedicated to SMP worker #k (k >= 1)
     workerListeningAddresses() {
+        // We can extend support to no-daemon cases by, for example, removing
+        // this and similar assertion/assumptions and using just the
+        // primaryAddress for the primary/only process.
         assert(this._workers > 0);
+
         const primaryAddress = this._primaryListeningAddress;
         let addresses = [{
             host: primaryAddress.host,
@@ -302,10 +306,11 @@ export class DutConfig {
     }
 
     _workersCfg() {
-        if (!this._workers)
-            return '';
+        let cfg = '';
 
-        let cfg = `workers ${this._workers}\n`;
+        if (this._workers !== null)
+            cfg += `workers ${this._workers}\n`;
+
         if (this._dedicatedWorkerPorts) {
             const dedicatedPortSuffix = '${process_number}';
             cfg += `http_port ${DedicatedPortPrefix}${dedicatedPortSuffix}\n`;
