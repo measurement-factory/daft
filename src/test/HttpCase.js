@@ -209,6 +209,8 @@ export default class HttpCase {
     // will test whether each client got server's last response
     addMissCheck() {
         assert.strictEqual(arguments.length, 0);
+        // the server response used for this._addReceivedResponseCheck() below was probably fully sent (at least once)
+        this.check(() => assert(this._server.transactionsFinished()));
         return this._addReceivedResponseCheck(() => this._server.transaction().response);
     }
 
