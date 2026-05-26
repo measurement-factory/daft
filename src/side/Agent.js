@@ -2,9 +2,9 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import Promise from 'bluebird';
-import Checker from "../test/Checker";
 import assert from "assert";
+import Checker from "../test/Checker.js";
+import Promise from 'bluebird';
 
 export default class Agent {
     constructor(context) {

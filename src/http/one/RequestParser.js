@@ -4,10 +4,10 @@
 
 /* Incrementally parses HTTP request messages, including headers and body */
 
-import Uri from "../../anyp/Uri";
-import RequestLine from "../RequestLine";
-import Request from "../Request";
-import MessageParser from "./MessageParser";
+import MessageParser from "./MessageParser.js";
+import Request from "../Request.js";
+import RequestLine from "../RequestLine.js";
+import Uri from "../../anyp/Uri.js";
 
 export default class RequestParser extends MessageParser {
 

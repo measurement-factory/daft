@@ -4,12 +4,12 @@
 
 /* Anything addressable by a fragmentless URI. */
 
-import Uri from "../anyp/Uri";
-import Body from "../http/Body";
-import Header from "../http/Header";
-import * as Gadgets from "../misc/Gadgets";
-import * as FuzzyTime from "../misc/FuzzyTime";
-import { Must } from "../misc/Gadgets";
+import { Must } from "../misc/Gadgets.js";
+import * as FuzzyTime from "../misc/FuzzyTime.js";
+import * as Gadgets from "../misc/Gadgets.js";
+import Body from "../http/Body.js";
+import Header from "../http/Header.js";
+import Uri from "../anyp/Uri.js";
 
 export default class Resource {
     constructor(description) {

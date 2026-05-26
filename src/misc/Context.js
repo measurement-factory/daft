@@ -2,8 +2,8 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import { UniqueId, PrettyDate } from "../misc/Gadgets.js";
 import assert from 'assert';
-import { UniqueId, PrettyDate } from "../misc/Gadgets";
 
 export default class Context {
     constructor(label, counter = undefined) {

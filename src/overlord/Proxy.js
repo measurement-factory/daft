@@ -4,17 +4,16 @@
 
 /* Proxy Overlord Protocol client for controlling a (possibly remote) proxy. */
 
+import * as AccessRecords from "../overlord/AccessRecords.js";
+import * as CachePeer from "../overlord/CachePeer.js";
+import * as Gadgets from "../misc/Gadgets.js";
+import * as Lifetime from "../misc/Lifetime.js";
 import assert from "assert";
+import Command from "../overlord/Command.js";
+import Config from "../misc/Config.js";
 import http from "http";
 import Promise from 'bluebird';
 import util from "util";
-
-import * as AccessRecords from "../overlord/AccessRecords";
-import * as CachePeer from "../overlord/CachePeer";
-import * as Config from "../misc/Config";
-import * as Gadgets from "../misc/Gadgets";
-import * as Lifetime from "../misc/Lifetime";
-import Command from "../overlord/Command";
 
 // This default is used only when memory caching is enabled via --dut-memory-cache=true.
 const DefaultMemoryCacheSize = 100*1024*1024; // bytes (squid.conf defaults to 256 MB)

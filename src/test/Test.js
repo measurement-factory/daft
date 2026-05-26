@@ -2,8 +2,8 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import { Must } from "../misc/Gadgets.js";
 import assert from "assert";
-import { Must } from "../misc/Gadgets";
 
 // a single test attempt: a (startup, test thread run(s), shutdown) sequence
 export default class Test {

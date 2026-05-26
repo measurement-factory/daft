@@ -2,8 +2,8 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import IdentityEncoder from "./IdentityEncoder";
-import ChunkedEncoder from "./ChunkedEncoder";
+import ChunkedEncoder from "./ChunkedEncoder.js";
+import IdentityEncoder from "./IdentityEncoder.js";
 
 export function requestPrefix(message) {
     if (message.startLine.protocol === "HTTP/0.9")

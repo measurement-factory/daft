@@ -4,15 +4,14 @@
 
 /* Manages an HTTP response message, including headers and body */
 
-import * as Config from "../misc/Config";
-import * as Range from "./Range";
-import Body from "./Body";
-import Field from "./Field";
-import Message from "./Message";
-import StatusLine from "./StatusLine";
-import { Must } from "../misc/Gadgets";
-
+import { Must } from "../misc/Gadgets.js";
+import * as Range from "./Range.js";
 import assert from "assert";
+import Body from "./Body.js";
+import Config from "../misc/Config.js";
+import Field from "./Field.js";
+import Message from "./Message.js";
+import StatusLine from "./StatusLine.js";
 
 Config.Recognize([
     {

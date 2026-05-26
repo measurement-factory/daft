@@ -4,12 +4,11 @@
 
 /* Manages HTTP URI. */
 
+import { Must, UniqueId } from "../misc/Gadgets.js";
+import * as Global from "../misc/Global.js";
 import assert from "assert";
-
-import * as Config from "../misc/Config";
-import * as Global from "../misc/Global";
-import Authority from "./Authority";
-import { Must, UniqueId } from "../misc/Gadgets";
+import Authority from "./Authority.js";
+import Config from "../misc/Config.js";
 
 export default class Uri {
 

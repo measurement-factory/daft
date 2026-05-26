@@ -1,9 +1,9 @@
-import Promise from "bluebird";
-import * as Config from "../misc/Config";
-import * as Gadgets from "../misc/Gadgets";
-import RunTest from "../test/Runner";
+import * as Gadgets from "../misc/Gadgets.js";
 import assert from "assert";
+import Config from "../misc/Config.js";
 import path from "path";
+import Promise from "bluebird";
+import RunTest from "../test/Runner.js";
 
 function help(...error) {
     console.log("Usage:");

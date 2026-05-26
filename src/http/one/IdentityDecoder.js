@@ -4,7 +4,7 @@
 
 /* Pass-through "null" or "identity" decoder. Does not modify incoming data. */
 
-import Decoder from "./Decoder";
+import Decoder from "./Decoder.js";
 
 export default class IdentityDecoder extends Decoder {
 

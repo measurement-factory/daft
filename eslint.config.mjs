@@ -1,10 +1,30 @@
-{
-    "parser": "babel-eslint", // dynamic import() chokes native eslint parser
-    "env": {
-        "node": true,
-        "es6": true,
+import { defineConfig } from "eslint/config";
+import globals from "globals";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import js from "@eslint/js";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const compat = new FlatCompat({
+    baseDirectory: __dirname,
+    recommendedConfig: js.configs.recommended,
+    allConfig: js.configs.all
+});
+
+export default defineConfig([{
+    "extends": compat.extends("eslint:recommended"),
+
+    "languageOptions": {
+        globals: {
+            ...globals.node,
+        },
+
+        "ecmaVersion": 2020,
+        "sourceType": "module",
     },
-    "extends": "eslint:recommended",
+
     "rules": {
         "curly": 0,
         "eol-last": 2,
@@ -65,4 +85,4 @@
         "keyword-spacing": 2,
         "space-unary-ops": [2, { "words": true, "nonwords": false }],
     }
-}
+}]);

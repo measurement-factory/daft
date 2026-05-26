@@ -4,14 +4,13 @@
 
 /* Incrementally parses an HTTP message, including first-line, headers, and body */
 
-import * as Config from "../../misc/Config";
-import Body from "../Body";
-import ChunkedDecoder from "./ChunkedDecoder";
-import IdentityDecoder from "./IdentityDecoder";
-import { Must, PrettyMime, PrettyBody } from "../../misc/Gadgets";
-import { parseHeader } from "./HeaderParser";
-
+import { Must, PrettyMime, PrettyBody } from "../../misc/Gadgets.js";
+import { parseHeader } from "./HeaderParser.js";
 import assert from "assert";
+import Body from "../Body.js";
+import ChunkedDecoder from "./ChunkedDecoder.js";
+import Config from "../../misc/Config.js";
+import IdentityDecoder from "./IdentityDecoder.js";
 
 export default class MessageParser {
 

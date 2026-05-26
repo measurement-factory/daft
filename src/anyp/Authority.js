@@ -10,9 +10,8 @@
  * In raw authority strings, IPv6 hosts are bracketed: [::1]:8080.
  */
 
-import { Must } from "../misc/Gadgets";
-import * as Gadgets from "../misc/Gadgets";
-
+import { Must } from "../misc/Gadgets.js";
+import * as Gadgets from "../misc/Gadgets.js";
 
 export default class Authority {
 

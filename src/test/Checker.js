@@ -2,10 +2,9 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import * as Gadgets from "../misc/Gadgets.js";
 import assert from "assert";
 import Promise from "bluebird";
-
-import * as Gadgets from "../misc/Gadgets";
 
 // A container of delayed function calls, each call performing some simple
 // post-test validation. The calls made in their registration order.

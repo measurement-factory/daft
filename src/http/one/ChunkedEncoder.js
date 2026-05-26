@@ -4,9 +4,9 @@
 
 /* Wraps incoming data into chunked coding, one chunk per encode() call. */
 
-import Encoder from "./Encoder";
-import * as Config from "../../misc/Config";
 import assert from "assert";
+import Config from "../../misc/Config.js";
+import Encoder from "./Encoder.js";
 
 Config.Recognize([
     {

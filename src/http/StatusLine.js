@@ -4,8 +4,8 @@
 
 /* Manages HTTP status-line. */
 
-import { Must } from "../misc/Gadgets";
-import * as Misc from "../misc/Gadgets";
+import { Must } from "../misc/Gadgets.js";
+import * as Misc from "../misc/Gadgets.js";
 
 export default class StatusLine {
 

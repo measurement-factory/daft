@@ -4,7 +4,7 @@
 
 /* Manages HTTP request-line. */
 
-import Uri from "../anyp/Uri";
+import Uri from "../anyp/Uri.js";
 
 export default class RequestLine {
 
