@@ -2,20 +2,19 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import * as Config from "../misc/Config";
-import * as Gadgets from "../misc/Gadgets";
-import * as Http from "../http/Gadgets";
-import * as Range from "../http/Range";
-import * as RangeParser from "../http/one/RangeParser";
-import Context from "../misc/Context";
-import SideAgent from "../side/Agent";
-import StatusLine from "../http/StatusLine";
-import Transaction from "./Transaction";
-import TransportConnection from "../side/TransportConnection";
-
+import * as Gadgets from "../misc/Gadgets.js";
+import * as Http from "../http/Gadgets.js";
+import * as Range from "../http/Range.js";
+import * as RangeParser from "../http/one/RangeParser.js";
+import assert from "assert";
+import Config from "../misc/Config.js";
+import Context from "../misc/Context.js";
 import net from "net";
 import Promise from 'bluebird';
-import assert from "assert";
+import SideAgent from "../side/Agent.js";
+import StatusLine from "../http/StatusLine.js";
+import Transaction from "./Transaction.js";
+import TransportConnection from "../side/TransportConnection.js";
 
 let Clients = 0;
 

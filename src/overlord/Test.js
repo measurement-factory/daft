@@ -2,9 +2,9 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import { DutConfig, ProxyOverlord } from "./Proxy.js";
 import assert from "assert";
-import BaseTest from "../test/Test";
-import { DutConfig, ProxyOverlord } from "./Proxy";
+import BaseTest from "../test/Test.js";
 
 // tests a ProxyOverlord-controlled proxy
 export default class Test extends BaseTest {

@@ -2,11 +2,11 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import Promise from 'bluebird';
-import * as MessageWriter from "../http/one/MessageWriter";
-import * as Gadgets from "../misc/Gadgets";
-import Context from "../misc/Context";
+import * as Gadgets from "../misc/Gadgets.js";
+import * as MessageWriter from "../http/one/MessageWriter.js";
 import assert from "assert";
+import Context from "../misc/Context.js";
+import Promise from 'bluebird';
 
 // asynchronous preconditions for sending a given message part
 class SendingBlock {

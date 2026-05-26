@@ -4,14 +4,14 @@
 
 /* Tests whether an HTTP proxy forwards an HTTP/0.9 response */
 
-import HttpTestCase from "../src/test/HttpCase";
-import Response from "../src/http/Response";
-import Body from "../src/http/Body";
-import * as Config from "../src/misc/Config";
-import { responsePrefix } from "../src/http/one/MessageWriter";
-import Test from "../src/overlord/Test";
-import ConfigGen from "../src/test/ConfigGen";
+import { responsePrefix } from "../src/http/one/MessageWriter.js";
 import assert from "assert";
+import Body from "../src/http/Body.js";
+import Config from "../src/misc/Config.js";
+import ConfigGen from "../src/test/ConfigGen.js";
+import HttpTestCase from "../src/test/HttpCase.js";
+import Response from "../src/http/Response.js";
+import Test from "../src/overlord/Test.js";
 
 export default class MyTest extends Test {
 

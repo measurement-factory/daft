@@ -4,8 +4,8 @@
 
 /* Manages raw (dechunked) HTTP message body buffer/pipeline. */
 
-import { Must, RandomText } from "../misc/Gadgets";
-import * as Config from "../misc/Config";
+import { Must, RandomText } from "../misc/Gadgets.js";
+import Config from "../misc/Config.js";
 
 export default class Body {
 

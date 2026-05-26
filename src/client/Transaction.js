@@ -2,10 +2,10 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import SideTransaction from "../side/Transaction";
-import ResponseParser from "../http/one/ResponseParser";
-import Request from "../http/Request";
 import assert from "assert";
+import Request from "../http/Request.js";
+import ResponseParser from "../http/one/ResponseParser.js";
+import SideTransaction from "../side/Transaction.js";
 
 // sends a request and receives the corresponding response
 export default class Transaction extends SideTransaction {

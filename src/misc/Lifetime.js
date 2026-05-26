@@ -4,8 +4,8 @@
 
 /* Manages program lifetime. */
 
+import { PrettyTime, PrettyDate, DateSum, DateDiff } from "../misc/Gadgets.js";
 import assert from "assert";
-import { PrettyTime, PrettyDate, DateSum, DateDiff } from "../misc/Gadgets";
 
 // The default 60s delay is meant to be long enough for most single tests.
 const Lifetime_ = new Date(60*1000);

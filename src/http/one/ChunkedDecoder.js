@@ -4,7 +4,7 @@
 
 /* Removes chunked coding from incoming data. */
 
-import Decoder from "./Decoder";
+import Decoder from "./Decoder.js";
 
 export default class ChunkedDecoder extends Decoder {
 

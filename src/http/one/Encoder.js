@@ -4,7 +4,7 @@
 
 /* Content- or transfer-encoding logic common to all encoders. */
 
-import { Must } from "../../misc/Gadgets";
+import { Must } from "../../misc/Gadgets.js";
 
 export default class Encoder {
     constructor(codingName) {

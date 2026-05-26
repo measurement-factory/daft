@@ -4,11 +4,10 @@
 
 /* Manages an HTTP request message, including headers and body */
 
-import * as Config from "../misc/Config";
-import Message from "./Message";
-import RequestLine from "./RequestLine";
-
 import assert from "assert";
+import Config from "../misc/Config.js";
+import Message from "./Message.js";
+import RequestLine from "./RequestLine.js";
 
 Config.Recognize([
     {

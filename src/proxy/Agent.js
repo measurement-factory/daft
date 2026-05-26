@@ -2,14 +2,14 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import syncNet from "net";
-import Promise from 'bluebird';
 import assert from "assert";
-import Context from "../misc/Context";
-import * as Config from "../misc/Config";
-import Transaction from "./Transaction";
-import TransportConnection from "../side/TransportConnection";
-import SideAgent from "../side/Agent";
+import Config from "../misc/Config.js";
+import Context from "../misc/Context.js";
+import Promise from 'bluebird';
+import SideAgent from "../side/Agent.js";
+import syncNet from "net";
+import Transaction from "./Transaction.js";
+import TransportConnection from "../side/TransportConnection.js";
 
 let asyncNet = Promise.promisifyAll(syncNet);
 

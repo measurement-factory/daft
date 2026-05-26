@@ -6,7 +6,6 @@
 
 import assert from "assert";
 
-
 const _HopByHopHeaderNames = [
     "Connection",
     "Keep-Alive",

@@ -4,7 +4,7 @@
 
 /* imprecise moments in time frequently used for testing */
 
-import * as Gadgets from "./Gadgets";
+import * as Gadgets from "./Gadgets.js";
 
 export let ShortRange = new Date(3*1000); // 3 seconds
 export let MediumRange = new Date(24*60*60*1000); // 1 day

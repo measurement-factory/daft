@@ -2,11 +2,11 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import HttpTestCase from "../src/test/HttpCase";
-import Proxy from "../src/proxy/Agent";
-import * as Http from "../src/http/Gadgets";
-import Test from "../src/test/Test";
+import * as Http from "../src/http/Gadgets.js";
 import assert from "assert";
+import HttpTestCase from "../src/test/HttpCase.js";
+import Proxy from "../src/proxy/Agent.js";
+import Test from "../src/test/Test.js";
 
 export default class MyTest extends Test {
     async run() {

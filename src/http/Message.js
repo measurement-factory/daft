@@ -4,15 +4,14 @@
 
 /* Base class for HTTP request or response message, including headers and body */
 
-import Authority from "../anyp/Authority";
-import Body from "./Body";
-import Header from "./Header";
-import { Must } from "../misc/Gadgets";
-import * as Config from "../misc/Config";
-import * as Gadgets from "../misc/Gadgets";
-import * as Http from "../http/Gadgets";
-
+import { Must } from "../misc/Gadgets.js";
+import * as Gadgets from "../misc/Gadgets.js";
+import * as Http from "../http/Gadgets.js";
 import assert from "assert";
+import Authority from "../anyp/Authority.js";
+import Body from "./Body.js";
+import Config from "../misc/Config.js";
+import Header from "./Header.js";
 
 Config.Recognize([
     {

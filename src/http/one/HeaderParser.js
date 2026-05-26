@@ -2,9 +2,9 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import Header from "../Header";
-import Field from "../Field";
-import { Must } from "../../misc/Gadgets";
+import { Must } from "../../misc/Gadgets.js";
+import Field from "../Field.js";
+import Header from "../Header.js";
 
 function parseField(raw) {
     let fieldRe = /^(.*?)([\t ]*:[\t ]*)(.*?)([\t \r]*\n)$/;

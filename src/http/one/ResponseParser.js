@@ -2,13 +2,12 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import Body from "../Body";
-import IdentityDecoder from "./IdentityDecoder";
-import MessageParser from "./MessageParser";
-import Response from "../Response";
-import StatusLine from "../StatusLine";
-
 import assert from "assert";
+import Body from "../Body.js";
+import IdentityDecoder from "./IdentityDecoder.js";
+import MessageParser from "./MessageParser.js";
+import Response from "../Response.js";
+import StatusLine from "../StatusLine.js";
 
 export default class ResponseParser extends MessageParser {
 

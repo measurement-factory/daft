@@ -4,12 +4,11 @@
 
 /* Manages HTTP message header. */
 
-import * as Http from "../http/Gadgets";
-import * as Misc from "../misc/Gadgets";
-import Field from "./Field";
-import { Must } from "../misc/Gadgets";
-
+import { Must } from "../misc/Gadgets.js";
+import * as Http from "../http/Gadgets.js";
+import * as Misc from "../misc/Gadgets.js";
 import assert from "assert";
+import Field from "./Field.js";
 
 export default class Header {
 

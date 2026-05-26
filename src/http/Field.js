@@ -4,8 +4,7 @@
 
 /* A name:value(s) pair. */
 
-import { Must } from "../misc/Gadgets";
-
+import { Must } from "../misc/Gadgets.js";
 
 export default class Field {
 

@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from "assert";
-import * as Config from "../misc/Config";
+import Config from "../misc/Config.js";
 
 Config.Recognize([
     {

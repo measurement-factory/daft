@@ -7,7 +7,43 @@
 /* all other globals are in Global.js */
 
 import assert from "assert";
+import optionatorMaker from 'optionator';
 import util from "util";
+
+// We default-export an instance of this class, commonly known as Config.
+// Except for its constructor, the class is assembled _dynamically_ from
+// recognized configuration options (see various Api.prototype calls below),
+// so that class users can use Config.foo() and legacy Config.Foo expressions
+// to access a configuration option named --foo. The set of supported or
+// "recognized" configuration options depends, in part, on the test plot.
+class Api {
+    constructor() {
+        Object.assign(this, {});
+        return new Proxy(this, {
+            get(target, prop, receiver) {
+                // exclude built-ins from the checks further below
+                if (typeof prop === 'symbol' || prop === 'prototype') {
+                    return Reflect.get(target, prop, receiver);
+                }
+
+                // catch Config.Foo and Config.foo() typos
+                if (!(prop in target)) {
+                    throw new Error(`Unrecognized Config.${prop} name`);
+                }
+
+                return Reflect.get(target, prop, receiver);
+            }
+        });
+    }
+}
+
+// Define this object early, before its Api class has been finalized, so that
+// our option evaluation wrappers below can use Config.foo() expressions, just
+// like code that imports our module uses them.
+const Config = new Api();
+
+// TODO: Remove these diff reducing exports by declaring these variables and
+// functions as Config.Recognize() arguments or, if needed, Api class methods!
 
 // Used to form request URLs (set via --origin-authority).
 export const OriginAuthority = null;
@@ -55,8 +91,6 @@ export function HugeCachableBodySize() {
 
 // either the given body size (if known) or the configured body size
 function suspectedBodySize(bodySize) {
-    // to access (using a common name) the Config option we export ourselves
-    const Config = module.exports;
     return bodySize === undefined ? Config.bodySize() : bodySize;
 }
 
@@ -64,8 +98,6 @@ export const ContentRangeBoundary = ProxySignature + "-123456789";
 
 // whether to log overall body handling progress
 export function logBodyProgress(bodySize) {
-    // to access (using a common name) the Config option we export ourselves
-    const Config = module.exports;
     // by default, report progress except for huge bodies
     if (Config.LogBodies === undefined) {
         const suspectedSize = suspectedBodySize(bodySize);
@@ -76,8 +108,6 @@ export function logBodyProgress(bodySize) {
 
 // whether to log body contents
 export function logBodyContents(bodySize) {
-    // to access (using a common name) the Config option we export ourselves
-    const Config = module.exports;
     // by default, log contents of small non-default bodies only
     if (Config.LogBodies === undefined) {
         const suspectedSize = suspectedBodySize(bodySize);
@@ -237,13 +267,6 @@ class ActiveOptions {
 // current configuration options
 let _ActiveOptions = null;
 
-// (re)sets the legacy Config.Key value, including defaults and generated ones
-function _force(key, value) {
-    _assertRecognition(key);
-    const uppedKey = key.charAt(0).toUpperCase() + key.slice(1);
-    module.exports[uppedKey] = value; // legacy Config.Key access
-}
-
 // change a few global options, leaving the rest as is
 // Options are a camelName:value map. TODO: Replace with (camelName, value).
 export function use(options) {
@@ -251,7 +274,6 @@ export function use(options) {
     assert(!(options instanceof ActiveOptions));
     assert(_ActiveOptions);
     for (const key of Object.keys(options)) {
-        _force(key, options[key]);
         _ActiveOptions.resetOption(key, options[key]);
     }
 }
@@ -261,7 +283,7 @@ export function reset(newOptions) {
     assert(newOptions instanceof ActiveOptions);
     _ActiveOptions = newOptions;
     for (const key of newOptions.names()) {
-        _force(key, newOptions.value(key));
+        _assertRecognition(key);
     }
 }
 
@@ -288,12 +310,22 @@ function _Import(options, optionsWithoutDefaults) {
 
         // create Config.camelName()
         // TODO: Find a way to avoid eslint no-loop-func errors here.
-        module.exports[camelName] = function () {
+        Api.prototype[camelName] = function () {
             assert(_ActiveOptions);
             assert(_ActiveOptions instanceof ActiveOptions);
             // call _ActiveOptions->camelName() with evaluated camelName:
             return ActiveOptions.prototype[camelName].call(_ActiveOptions);
         };
+
+        // create legacy Config.CamelName
+        const uppedKey = camelName.charAt(0).toUpperCase() + camelName.slice(1);
+        Object.defineProperty(Api.prototype, uppedKey, {
+            get() {
+                assert(_ActiveOptions);
+                assert(_ActiveOptions instanceof ActiveOptions);
+                return _ActiveOptions._raw[camelName]; // may be undefined
+             }
+        });
     }
 
     assert(!_ActiveOptions);
@@ -304,8 +336,6 @@ function _Import(options, optionsWithoutDefaults) {
 // return false: Throwing in such cases would require sophisticated catchers,
 // exposing the generated usage text, and/or usually useless stack trace.
 export function Finalize(argv) {
-    const optionatorMaker = require('optionator');
-
     const optionator = optionatorMaker({
         prepend: "usage: daft.js run <test.js> [options]",
         options: _CliOptions
@@ -356,6 +386,28 @@ export function optionValue(camelName) {
     return _ActiveOptions.value(camelName);
 }
 
+// TODO: Remove these diff reducers (and the corresponding "export function"
+// statements above) by declaring these functions as Api class methods.
+Api.prototype.isForwardProxy = isForwardProxy;
+Api.prototype.isReverseProxy = isReverseProxy;
+Api.prototype.DefaultBodySize = DefaultBodySize;
+Api.prototype.LargeBodySize = LargeBodySize;
+Api.prototype.HugeCachableBodySize = HugeCachableBodySize;
+Api.prototype.logBodyProgress = logBodyProgress;
+Api.prototype.logBodyContents = logBodyContents;
+Api.prototype.Recognize = Recognize;
+Api.prototype.isExplicitlySet = isExplicitlySet;
+Api.prototype.RecognizedOptionNames = RecognizedOptionNames;
+Api.prototype.use = use;
+Api.prototype.reset = reset;
+Api.prototype.Finalize = Finalize;
+Api.prototype.clone = clone;
+Api.prototype.sprint = sprint;
+Api.prototype.optionValue = optionValue;
+
+export default Config;
+
+// TODO: Use Config.Recognize() call spelling.
 Recognize([
     {
         option: "help",

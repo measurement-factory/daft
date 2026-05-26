@@ -4,7 +4,7 @@
 
 /* Pass-through "null" or "identity" encoder. Does not modify incoming data. */
 
-import Encoder from "./Encoder";
+import Encoder from "./Encoder.js";
 
 export default class IdentityEncoder extends Encoder {
 

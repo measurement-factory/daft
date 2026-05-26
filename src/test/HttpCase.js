@@ -4,17 +4,16 @@
 
 /* Manages a single case testing an HTTP client, server, and/or proxy. */
 
-import * as Config from "../misc/Config";
-import * as Gadgets from "../misc/Gadgets";
-import * as Lifetime from "../misc/Lifetime";
-import Checker from "../test/Checker";
-import Client from "../client/Agent";
-import Context from "../misc/Context";
-import Server from "../server/Agent";
-import { Must } from "../misc/Gadgets";
-
+import { Must } from "../misc/Gadgets.js";
+import * as Gadgets from "../misc/Gadgets.js";
+import * as Lifetime from "../misc/Lifetime.js";
 import assert from "assert";
+import Checker from "../test/Checker.js";
+import Client from "../client/Agent.js";
+import Config from "../misc/Config.js";
+import Context from "../misc/Context.js";
 import Promise from "bluebird";
+import Server from "../server/Agent.js";
 
 let HttpCases = 0;
 

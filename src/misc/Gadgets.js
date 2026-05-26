@@ -3,8 +3,8 @@
  * Licensed under the Apache License, Version 2.0.                       */
 
 import assert from "assert";
+import Config from "../misc/Config.js";
 import Promise from 'bluebird';
-import * as Config from "../misc/Config";
 
 /* Assorted small handy global functions. */
 

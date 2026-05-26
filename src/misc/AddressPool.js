@@ -4,9 +4,9 @@
 
 // Manages a pool of unique host:port addresses.
 
-import { Must } from "./Gadgets";
-import * as Config from "./Config";
+import { Must } from "./Gadgets.js";
 import assert from "assert";
+import Config from "./Config.js";
 
 // a member of the address pool
 class AddressMapItem {

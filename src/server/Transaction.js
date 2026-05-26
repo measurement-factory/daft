@@ -2,12 +2,12 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
-import SideTransaction from "../side/Transaction";
-import { forcesEof } from "../http/one/MessageWriter";
-import RequestParser from "../http/one/RequestParser";
-import Response from "../http/Response";
-import { LocalAddress } from "../misc/Gadgets";
+import { forcesEof } from "../http/one/MessageWriter.js";
+import { LocalAddress } from "../misc/Gadgets.js";
 import assert from "assert";
+import RequestParser from "../http/one/RequestParser.js";
+import Response from "../http/Response.js";
+import SideTransaction from "../side/Transaction.js";
 
 // receives a request and sends the corresponding response
 export default class Transaction extends SideTransaction {

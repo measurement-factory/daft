@@ -2,12 +2,11 @@
  * Copyright (C) 2015,2016 The Measurement Factory.
  * Licensed under the Apache License, Version 2.0.                       */
 
+import * as Http from "../http/Gadgets.js";
 import assert from "assert";
-
-import * as GlobalConfig from "../misc/Config";
-import * as Http from "../http/Gadgets";
-import ServerAgent from "../server/Agent";
-import HttpField from "../http/Field";
+import GlobalConfig from "../misc/Config.js";
+import HttpField from "../http/Field.js";
+import ServerAgent from "../server/Agent.js";
 
 // TODO: Make cache_peer address(es) configurable
 const FirstPort = 4130;

@@ -4,8 +4,8 @@
 
 /* Objects shared by many modules except Config which is in Config.js */
 
-import TypeMap from "./TypeMap";
-import { Must } from "./Gadgets";
+import { Must } from "./Gadgets.js";
+import TypeMap from "./TypeMap.js";
 
 export let Types = new TypeMap();
 

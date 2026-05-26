@@ -4,16 +4,15 @@
 
 /* Transaction is a single (user agent request, origin response) tuple. */
 
-import net from "net";
-import RequestParser from "../http/one/RequestParser";
-import ResponseParser from "../http/one/ResponseParser";
-import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter";
-import Body from "../http/Body";
-import Context from "../misc/Context";
-import * as Config from "../misc/Config";
-import { Must, SendBytes, ReceivedBytes, PrettyMime, PrettyBody } from "../misc/Gadgets";
-
+import { Must, SendBytes, ReceivedBytes, PrettyMime, PrettyBody } from "../misc/Gadgets.js";
+import { requestPrefix, responsePrefix, bodyEncoder } from "../http/one/MessageWriter.js";
 import assert from "assert";
+import Body from "../http/Body.js";
+import Config from "../misc/Config.js";
+import Context from "../misc/Context.js";
+import net from "net";
+import RequestParser from "../http/one/RequestParser.js";
+import ResponseParser from "../http/one/ResponseParser.js";
 
 export default class Transaction { // XXX: extends SideTransaction
 

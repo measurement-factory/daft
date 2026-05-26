@@ -4,7 +4,7 @@
 
 /* Content- or transfer-decoding logic common to all decoders. */
 
-import { Must } from "../../misc/Gadgets";
+import { Must } from "../../misc/Gadgets.js";
 
 export default class Decoder {
     constructor(codingName) {
