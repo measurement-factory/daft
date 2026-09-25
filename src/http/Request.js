@@ -8,6 +8,7 @@ import assert from "assert";
 import Config from "../misc/Config.js";
 import Message from "./Message.js";
 import RequestLine from "./RequestLine.js";
+import Uri from "../anyp/Uri.js";
 
 Config.Recognize([
     {
@@ -26,9 +27,14 @@ export default class Request extends Message {
         this.enforceMinimumPrefixSize(Config.requestPrefixSizeMinimum());
     }
 
+    target(uri) {
+        assert(uri instanceof Uri);
+        this.startLine.uri = uri.clone();
+    }
+
     for(resource) {
         this.relatedResource(resource, "For");
-        this.startLine.uri = resource.uri.clone();
+        this.target(resource.uri);
     }
 
     with(resource) {
